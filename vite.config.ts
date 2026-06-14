@@ -11,9 +11,10 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg'],
       manifest: {
-        name: 'Teach Jumping Fitness',
-        short_name: 'JumpTeach',
-        description: 'Spotify-synced calling display for jumping fitness coaches',
+        name: 'CueSheet',
+        short_name: 'CueSheet',
+        description:
+          'CueSheet turns your Spotify playlist into a timed cue sheet, calling each jumping-fitness step in time with the music.',
         theme_color: '#0b0f14',
         background_color: '#0b0f14',
         display: 'standalone',

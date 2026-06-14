@@ -1,6 +1,9 @@
-# Teach Jumping Fitness
+# CueSheet
 
-A mobile PWA for jumping-fitness coaches. It shows a list of audio tracks; each
+CueSheet turns your Spotify playlist into a timed cue sheet, calling each
+jumping-fitness step in time with the music.
+
+It's a mobile PWA for jumping-fitness coaches: it shows a list of tracks; each
 track opens a player that displays the **prepared order of step callings** synced
 to the music, with a big "NOW / NEXT + countdown" display you can read from the
 trampoline.

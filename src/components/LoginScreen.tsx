@@ -5,10 +5,10 @@ export default function LoginScreen({ error }: { error: string | null }) {
     <div className="screen center">
       <div className="card login">
         <div className="logo">🤾</div>
-        <h1>Teach Jumping Fitness</h1>
+        <h1>CueSheet</h1>
         <p className="muted">
-          Connect Spotify to control the music on your tablet/speaker and see your
-          prepared step callings synced to the track.
+          CueSheet turns your Spotify playlist into a timed cue sheet, calling
+          each jumping-fitness step in time with the music.
         </p>
         {error && <p className="error">{error}</p>}
         <button className="primary big" onClick={() => beginLogin()}>
