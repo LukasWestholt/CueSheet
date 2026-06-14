@@ -39,6 +39,8 @@ Steps are authored **musically, not in seconds**. In `src/data/tracks.ts` each t
 
 **Private track lists:** `tracks.ts` exports `TRACKS` via an `import.meta.glob` loader — if a **gitignored** `src/data/tracks.local.ts` exists (exporting `TRACKS: Track[]`, see `tracks.local.example.ts`) it fully replaces the committed `DEFAULT_TRACKS`; otherwise (CI, Docker, fresh clone) the defaults are used. So coaches keep real routines uncommitted; the glob means a missing file never breaks the build.
 
+At **runtime**, a localStorage override (`tjf.tracks`, `src/data/tracksStore.ts`) takes precedence over the code-defined `TRACKS`: `App` lifts the routine list into state seeded from the store (guarded by `validateTracks`), and the **Routines panel** (`RoutinesManager`) imports/exports the list as JSON and resets back to the code-defined set. `validateTracks` (`src/data/validateTracks.ts`) gates imports (dup ids = error, dup URIs = warning); `collectStepLibrary` (`src/data/stepLibrary.ts`) derives the distinct-move palette for the upcoming step editor.
+
 The seconds-based timeline is **derived**, not stored:
 
 - `src/data/beats.ts#beatsForStep(measures)` — one measure ("Takt") = a full 8-count, so a step is `measures × 8` beats (halves fall out: 2.5 → 20). Step lengths never shrink, so the derived timeline doesn't drift across a track. This convention is the project's domain rule — keep it in sync with `src/data/tracks.ts`'s doc comment.

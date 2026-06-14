@@ -204,6 +204,87 @@ button:active {
   font-weight: 700;
 }
 
+/* Routines manager ------------------------------------------------------- */
+.routines {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-top: 16px;
+}
+.routines-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+}
+.routines-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 10px 0 4px;
+}
+.routines-actions .ghost {
+  flex: 1;
+  min-width: 80px;
+  font-size: 0.9rem;
+}
+.routines-result {
+  margin: 6px 0;
+}
+.ok-note {
+  color: var(--accent);
+  font-size: 0.9rem;
+}
+.issues {
+  list-style: none;
+  margin: 6px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+.issues li {
+  font-size: 0.82rem;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+.issues li.error {
+  border-left: 3px solid var(--danger);
+}
+.issues li.warning {
+  border-left: 3px solid var(--warn);
+}
+.issue-where {
+  font-weight: 600;
+}
+.moves-toggle {
+  padding-left: 0;
+}
+.moves-list {
+  list-style: none;
+  margin: 4px 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.moves-list li {
+  display: inline-flex;
+  gap: 6px;
+  align-items: baseline;
+  background: var(--surface-2);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+}
+.move-count {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
 /* Resume session --------------------------------------------------------- */
 .resume-btn {
   margin-bottom: 16px;

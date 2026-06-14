@@ -2,11 +2,21 @@ import { useEffect, useState } from 'react';
 import { IS_CONFIGURED } from './config';
 import { handleRedirectCallback, isLoggedIn, logout } from './spotify/auth';
 import { getPlaybackState, getTracksInfo, type TrackInfo } from './spotify/api';
-import { TRACKS } from './data/tracks';
+import { TRACKS, type Track } from './data/tracks';
+import { clearStoredTracks, loadStoredTracks, saveStoredTracks } from './data/tracksStore';
+import { validateTracks } from './data/validateTracks';
 import LoginScreen from './components/LoginScreen';
 import TrackList from './components/TrackList';
 import PlayerScreen from './components/PlayerScreen';
 import DevicePicker from './components/DevicePicker';
+import RoutinesManager from './components/RoutinesManager';
+
+/** Use a valid stored override if present, else the code-defined routines. */
+function initialTracks(): { tracks: Track[]; overridden: boolean } {
+  const stored = loadStoredTracks();
+  if (stored && validateTracks(stored).ok) return { tracks: stored, overridden: true };
+  return { tracks: TRACKS, overridden: false };
+}
 
 type View = 'list' | 'player';
 
@@ -22,11 +32,26 @@ export default function App() {
   const [infosError, setInfosError] = useState<string | null>(null);
   // Index of one of our tracks that Spotify is already playing (e.g. after a reload).
   const [resumeIndex, setResumeIndex] = useState<number | null>(null);
+  // The routine list: a stored override (imported/edited) or the code-defined set.
+  const [{ tracks, overridden }, setTrackState] = useState(initialTracks);
 
   const openTrack = (index: number, asResume = false) => {
     setSelectedIndex(index);
     setResume(asResume);
     setView('player');
+  };
+
+  const importTracks = (next: Track[]) => {
+    saveStoredTracks(next);
+    setTrackState({ tracks: next, overridden: true });
+    setSelectedIndex(0);
+    setResumeIndex(null);
+  };
+  const resetTracks = () => {
+    clearStoredTracks();
+    setTrackState({ tracks: TRACKS, overridden: false });
+    setSelectedIndex(0);
+    setResumeIndex(null);
   };
 
   // Handle the OAuth redirect, then determine login state.
@@ -48,13 +73,13 @@ export default function App() {
   // Once logged in, fetch list metadata (titles/durations) in one batch.
   useEffect(() => {
     if (!loggedIn) return;
-    getTracksInfo(TRACKS.map((t) => t.spotifyUri))
+    getTracksInfo(tracks.map((t) => t.spotifyUri))
       .then((infos) => {
         setTrackInfos(infos);
         setInfosError(null);
       })
       .catch((e) => setInfosError(e instanceof Error ? e.message : String(e)));
-  }, [loggedIn]);
+  }, [loggedIn, tracks]);
 
   // On (re)load, offer to resume if Spotify is already playing one of our tracks.
   useEffect(() => {
@@ -62,11 +87,11 @@ export default function App() {
     getPlaybackState()
       .then((snap) => {
         if (!snap?.trackUri) return;
-        const idx = TRACKS.findIndex((t) => t.spotifyUri === snap.trackUri);
+        const idx = tracks.findIndex((t) => t.spotifyUri === snap.trackUri);
         setResumeIndex(idx >= 0 ? idx : null);
       })
       .catch(() => {});
-  }, [loggedIn]);
+  }, [loggedIn, tracks]);
 
   if (!IS_CONFIGURED) {
     return (
@@ -108,24 +133,30 @@ export default function App() {
               Log out
             </button>
           </header>
-          {resumeIndex != null && (
+          {resumeIndex != null && tracks[resumeIndex] && (
             <button
               className="resume-btn primary big"
               onClick={() => openTrack(resumeIndex, true)}
             >
               ▶ Go back to your last session —{' '}
-              {TRACKS[resumeIndex].title ??
-                trackInfos[TRACKS[resumeIndex].spotifyUri]?.title ??
+              {tracks[resumeIndex].title ??
+                trackInfos[tracks[resumeIndex].spotifyUri]?.title ??
                 'current track'}
             </button>
           )}
           <DevicePicker selectedDeviceId={deviceId} onSelect={setDeviceId} />
           {infosError && <p className="error">Couldn’t load track info: {infosError}</p>}
-          <TrackList tracks={TRACKS} infos={trackInfos} onSelect={(i) => openTrack(i)} />
+          <TrackList tracks={tracks} infos={trackInfos} onSelect={(i) => openTrack(i)} />
+          <RoutinesManager
+            tracks={tracks}
+            overridden={overridden}
+            onImport={importTracks}
+            onReset={resetTracks}
+          />
         </>
       ) : (
         <PlayerScreen
-          tracks={TRACKS}
+          tracks={tracks}
           startIndex={selectedIndex}
           deviceId={deviceId}
           resume={resume}
