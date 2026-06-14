@@ -85,8 +85,13 @@ export default function TrackEditor({
     };
   }, [results]);
 
-  const chooseResult = (r: TrackSearchResult) => {
-    patch({ spotifyUri: r.uri, title: draft.title ?? r.title, artist: draft.artist ?? r.artist });
+  const chooseResult = (r: TrackSearchResult, bpm?: number) => {
+    patch({
+      spotifyUri: r.uri,
+      title: draft.title ?? r.title,
+      artist: draft.artist ?? r.artist,
+      ...(bpm != null ? { bpm } : {}),
+    });
     setQuery('');
     setResults([]);
   };
@@ -154,16 +159,21 @@ export default function TrackEditor({
               const known = r.uri in bpmByUri;
               const bpm = bpmByUri[r.uri];
               return (
-                <li key={r.uri}>
-                  <button className="search-result" onClick={() => chooseResult(r)}>
+                <li key={r.uri} className="sr-row">
+                  <button className="sr-pick" onClick={() => chooseResult(r)}>
                     <span className="sr-meta">
                       <span className="sr-title">{r.title}</span>
                       <span className="sr-artist">{r.artist}</span>
                     </span>
-                    <span className="sr-aside">
-                      <span className="sr-bpm">{!known ? '…' : bpm != null ? `${bpm} BPM` : 'no BPM'}</span>
-                      <span className="sr-dur">{fmtDuration(r.durationMs)}</span>
-                    </span>
+                    <span className="sr-dur">{fmtDuration(r.durationMs)}</span>
+                  </button>
+                  <button
+                    className="sr-bpm-btn"
+                    onClick={() => bpm != null && chooseResult(r, bpm)}
+                    disabled={bpm == null}
+                    title={bpm != null ? 'Use this track and set its BPM' : undefined}
+                  >
+                    {!known ? '…' : bpm != null ? `${bpm} BPM` : 'no BPM'}
                   </button>
                 </li>
               );
