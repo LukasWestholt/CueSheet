@@ -457,14 +457,31 @@ button:active {
   gap: 2px;
 }
 .timeline li {
+  display: block;
+}
+.row-jump {
   display: grid;
   grid-template-columns: 52px 1fr auto;
   gap: 10px;
   align-items: baseline;
+  width: 100%;
   padding: 8px 10px;
   border-radius: 10px;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
-.timeline li.row-active {
+.row-jump:not(:disabled):active {
+  background: var(--surface-2);
+}
+.row-jump:disabled {
+  cursor: default;
+}
+.row-jump.row-active {
   background: var(--surface-2);
 }
 .row-time {
@@ -479,7 +496,7 @@ button:active {
   color: var(--accent);
   font-size: 0.82rem;
 }
-.row-active .row-step {
+.row-jump.row-active .row-step {
   color: var(--accent);
 }
 

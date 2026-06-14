@@ -6,6 +6,7 @@ import {
   pause as apiPause,
   playTrack,
   resume as apiResume,
+  seek as apiSeek,
   type PlaybackSnapshot,
 } from '../spotify/api';
 
@@ -37,6 +38,8 @@ export interface PlayerEngine {
   togglePlayPause: () => void;
   next: () => void;
   prev: () => void;
+  /** Jump to a raw song position (ms, before sync offset). */
+  seekTo: (positionMs: number) => void;
   skipGap: () => void;
   holdNow: () => void; // the "pause permanently between tracks" button
   setAutoContinue: (v: boolean) => void;
@@ -209,6 +212,22 @@ export function usePlayerEngine(
     void playIndex(i);
   }, [playIndex]);
 
+  const seekTo = useCallback((rawPositionMs: number) => {
+    const p = phaseRef.current;
+    if (p !== 'playing' && p !== 'paused') return;
+    const duration =
+      snapshotRef.current?.durationMs || tracks[indexRef.current]?.durationMs || 0;
+    const target = Math.max(0, duration > 0 ? Math.min(rawPositionMs, duration) : rawPositionMs);
+    apiSeek(target, deviceIdRef.current ?? undefined).catch(() => {});
+    // Reflect the new position immediately so display + callings don't wait for
+    // the next poll.
+    const snap = snapshotRef.current;
+    if (snap) {
+      snapshotRef.current = { ...snap, progressMs: target, fetchedAt: Date.now() };
+    }
+    setPositionMs(target);
+  }, [tracks]);
+
   const skipGap = useCallback(() => {
     if (phaseRef.current === 'gap' || phaseRef.current === 'held') {
       void playIndex(indexRef.current + 1);
@@ -243,6 +262,7 @@ export function usePlayerEngine(
     togglePlayPause,
     next,
     prev,
+    seekTo,
     skipGap,
     holdNow,
     setAutoContinue,

@@ -173,15 +173,24 @@ export default function PlayerScreen({
         </p>
       </div>
 
-      {/* Coach view: the full prepared order of steps */}
+      {/* Coach view: the full prepared order of steps — tap a step to jump there */}
       <section className="timeline">
         <h3>Prepared steps</h3>
         <ol>
           {callings.map((c, i) => (
-            <li key={i} className={i === activeRow ? 'row-active' : ''}>
-              <span className="row-time">{fmt(c.time * 1000)}</span>
-              <span className="row-step">{c.step}</span>
-              {c.cue && <span className="row-cue">{c.cue}</span>}
+            <li key={i}>
+              <button
+                type="button"
+                className={`row-jump${i === activeRow ? ' row-active' : ''}`}
+                // Seek so this step becomes the audible "now": the sync offset is
+                // subtracted because positionSeconds = (rawPosition + offset).
+                onClick={() => engine.seekTo(c.time * 1000 - offsetMs)}
+                disabled={engine.phase !== 'playing' && engine.phase !== 'paused'}
+              >
+                <span className="row-time">{fmt(c.time * 1000)}</span>
+                <span className="row-step">{c.step}</span>
+                {c.cue && <span className="row-cue">{c.cue}</span>}
+              </button>
             </li>
           ))}
         </ol>
