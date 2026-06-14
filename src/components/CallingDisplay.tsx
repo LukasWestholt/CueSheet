@@ -1,10 +1,10 @@
 import type { Calling } from '../data/tracks';
-import { resolveCallings } from '../data/callings';
+import { resolveCallings, deriveCountIn } from '../data/callings';
 
 // The "4/4" count-in: in the final counts before a switch, the coach calls
-// "3, 2, 1, <next move>". We surface that as a beat-synced visual cue.
-const LEAD_BEATS = 4; // how early the next move is emphasised
-const COUNT_FROM = 3; // show the spoken "3, 2, 1"
+// "3, 2, 1, <next move>". We surface that as a beat-synced visual cue. Each
+// number spans BEATS_PER_COUNT beats (see deriveCountIn), so the spoken count
+// is calm enough to call out rather than flying by once per beat.
 
 export default function CallingDisplay({
   callings,
@@ -20,14 +20,13 @@ export default function CallingDisplay({
     positionSeconds,
   );
 
-  // Convert the remaining time into musical counts (beats).
+  // Convert the remaining time into musical counts (beats), then into a
+  // half-time count-in where each displayed number spans 2 beats.
   const countsToNext =
     secondsToNext !== null && bpm ? (secondsToNext * bpm) / 60 : null;
-  const announcing = next !== null && countsToNext !== null && countsToNext <= LEAD_BEATS;
-  const countIn =
-    countsToNext !== null && countsToNext <= COUNT_FROM
-      ? Math.max(1, Math.ceil(countsToNext))
-      : null;
+  const { count: countIn, announcing: countAnnouncing } =
+    deriveCountIn(countsToNext);
+  const announcing = next !== null && countAnnouncing;
 
   // Countdown ring fills as we approach the next calling.
   const ringPct = Math.round(segmentProgress * 100);

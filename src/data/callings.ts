@@ -40,3 +40,48 @@ export function resolveCallings(
     segmentProgress: Math.min(1, Math.max(0, segmentProgress)),
   };
 }
+
+/**
+ * How many musical beats one displayed count-in number spans. At 2, the
+ * count-in ticks every 2 beats ("4/4" feel) instead of every beat ("8/8"),
+ * so "3 … 2 … 1 … <next>" plays back roughly half as fast.
+ */
+export const BEATS_PER_COUNT = 2;
+
+/** Highest count-in number shown (the "3" in "3, 2, 1"). */
+export const COUNT_FROM = 3;
+
+/**
+ * How many displayed counts before the switch the next move gets emphasised
+ * ("CALL NOW"). One count, so the highlight lines up with the final count.
+ */
+export const LEAD_COUNTS = 1;
+
+export interface CountIn {
+  /** The number to show (1..COUNT_FROM), or null when not yet counting in. */
+  count: number | null;
+  /** Whether the next move should be emphasised ("CALL NOW"). */
+  announcing: boolean;
+}
+
+/**
+ * Derives the beat-synced count-in from the beats remaining until the next
+ * step. Each displayed number spans `beatsPerCount` beats, so e.g. with the
+ * default of 2 the count shows "3" ~6 beats out, "2" ~4, "1" ~2.
+ *
+ * `countsToNext` is `secondsToNext * bpm / 60`; pass null when BPM is unknown
+ * (the caller then falls back to the seconds ring).
+ */
+export function deriveCountIn(
+  countsToNext: number | null,
+  beatsPerCount: number = BEATS_PER_COUNT,
+): CountIn {
+  if (countsToNext === null) return { count: null, announcing: false };
+
+  const displayCount = Math.ceil(countsToNext / beatsPerCount);
+  const count =
+    displayCount <= COUNT_FROM ? Math.max(1, displayCount) : null;
+  const announcing = count !== null && displayCount <= LEAD_COUNTS;
+
+  return { count, announcing };
+}
