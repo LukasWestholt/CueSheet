@@ -55,12 +55,10 @@ No router library. `src/App.tsx` switches views with local state (`list` ⇄ `pl
 
 ## Functions
 
-Unchecked entries are TODO / Wishlist.
-
-Ideas for features and improvements, grouped by theme. Not committed work — a backlog to pull from.
+Grouped by theme; unchecked entries are backlog. **Checked = built, type-checked, lint-clean, unit-tested and committed** — but Spotify-API paths are tested with mocks, so not every checked item has been verified against the live Spotify API or in a real offline browser. Caveats are noted inline.
 
 ### Authoring routines (highest leverage — today it's hand-edited TS)
-- [x] **In-app step editor.** Add/edit/reorder `steps` (step, cue, measures) from the UI instead of `tracks.ts`/`tracks.local.ts`; persist to `localStorage` per URI like calibration does. (`TrackEditor` + `tracksStore` `tjf.tracks`; plus in-app Spotify search, step-library block-insert, BPM recommendation/guidance.)
+- [x] **In-app step editor.** Add/edit/reorder `steps` (step, cue, measures) from the UI instead of `tracks.ts`/`tracks.local.ts`; persist to `localStorage`. (`TrackEditor` + `tracksStore`; stored as one `tjf.tracks` list override — not per-URI; plus in-app Spotify search, step-library block-insert, BPM guidance.)
 - [x] **Import/export routines as JSON.** Back up and share `tracks.local.ts` content without git; download/upload a file. Mitigates the gitignored-and-only-on-one-device risk. (`RoutinesManager` + `validateTracks`.)
 - [x] **Live re-time while authoring.** "Mark step boundary" tap mode during playback that fills `measures` from the music, the way first-beat capture already works. (`TapToTime` + `tapsToTiming`.)
 - [ ] **Validate routine vs. track length.** Warn when accumulated callings overshoot/undershoot `durationMs` so a mis-typed `measures` is caught before class.
@@ -78,9 +76,9 @@ Ideas for features and improvements, grouped by theme. Not committed work — a 
 - [ ] **Beat-grid / count visualization** (1-2-3-4-5-6-7-8) ticking with the music, driven by `bpm` + `firstBeatSec`.
 
 ### Robustness & offline
-- [x] **Reconnect / device-lost handling.** Surface when the target Connect device disappears or playback is hijacked by another app, with a one-tap re-target. (engine `noDevice` + `recover()`, recovery banner.)
+- [~] **Reconnect / device-lost handling.** Surface when the target Connect device disappears or playback is hijacked by another app, with a one-tap re-target. (engine `noDevice` + `recover()`, recovery banner — handles the device *disappearing*; does **not** yet detect another app *hijacking* the session. Unit-tested with mocks, not against a live device.)
 - [x] **Token-expiry UX.** Graceful re-auth when the refresh fails mid-class rather than a silent stall. (`AUTH_EXPIRED_EVENT` → login screen; plus `startTokenAutoRefresh` proactive background refresh.)
-- [x] **Offline audit.** Verify the shell, track list, and authored callings truly work offline (matches the stated offline-first goal). (`useOnline` banner + gated fetches; precache verified.)
+- [x] **Offline audit.** Verify the shell, track list, and authored callings truly work offline (matches the stated offline-first goal). (`useOnline` banner + gated fetches; precache manifest **inspected** — not yet confirmed in a live offline browser session.)
 - [ ] **PWA install prompt / affordance.** (the offline audit half of the old combined item is done; the install prompt remains.)
 - [ ] **Fast loading search insert bar.** Hard code some search results and display them opening a search without text for quick access the most popular 20 jumping fitness songs offline.
 - [ ] Can we make the progress bar circle has more units, so that it flows more?
