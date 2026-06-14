@@ -170,6 +170,23 @@ export default function PlayerScreen({
 
       {engine.error && <p className="error">{engine.error}</p>}
 
+      {engine.noDevice && (
+        <div className="device-lost">
+          <span>
+            Lost the playback device. Open Spotify on your tablet (and press play), or
+            reconnect:
+          </span>
+          <div className="device-lost-actions">
+            <button className="ghost" onClick={onBack}>
+              Devices
+            </button>
+            <button className="primary" onClick={engine.recover}>
+              Reconnect
+            </button>
+          </div>
+        </div>
+      )}
+
       <CallingDisplay
         callings={callings}
         positionSeconds={positionSeconds}

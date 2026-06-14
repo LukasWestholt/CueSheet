@@ -661,6 +661,26 @@ button:active {
   font-size: 1.3rem;
 }
 
+/* Device-lost recovery banner -------------------------------------------- */
+.device-lost {
+  background: var(--surface);
+  border: 1px solid #4a3a1a;
+  border-left: 3px solid var(--warn);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.device-lost-actions {
+  display: flex;
+  gap: 8px;
+}
+.device-lost-actions button {
+  flex: 1;
+}
+
 /* Calling display -------------------------------------------------------- */
 .calling-display {
   background: var(--surface);

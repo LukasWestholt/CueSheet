@@ -4,13 +4,14 @@ import type { Track } from '../data/tracks';
 import type { PlaybackSnapshot } from '../spotify/api';
 
 // Mocked Spotify API (hoisted so the vi.mock factory can reference it).
-const { playTrack, pause, resume, getPlaybackState } = vi.hoisted(() => ({
+const { playTrack, pause, resume, getPlaybackState, getDevices } = vi.hoisted(() => ({
   playTrack: vi.fn(async () => {}),
   pause: vi.fn(async () => {}),
   resume: vi.fn(async () => {}),
   getPlaybackState: vi.fn<() => Promise<PlaybackSnapshot | null>>(),
+  getDevices: vi.fn(async () => [] as { id: string; name: string; is_active: boolean }[]),
 }));
-vi.mock('../spotify/api', () => ({ playTrack, pause, resume, getPlaybackState }));
+vi.mock('../spotify/api', () => ({ playTrack, pause, resume, getPlaybackState, getDevices }));
 
 import { usePlayerEngine } from './usePlayerEngine';
 
@@ -46,6 +47,8 @@ beforeEach(() => {
   resume.mockClear();
   getPlaybackState.mockReset();
   getPlaybackState.mockResolvedValue(null);
+  getDevices.mockReset();
+  getDevices.mockResolvedValue([]);
 });
 
 afterEach(() => {
@@ -183,5 +186,43 @@ describe('usePlayerEngine', () => {
     act(() => result.current.holdNow());
     expect(pause).toHaveBeenCalled();
     expect(result.current.phase).toBe('held');
+  });
+
+  it('flags the device as lost after repeated empty polls', async () => {
+    // Default getPlaybackState resolves null (no active device).
+    const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
+    await startAt(result, 0);
+    expect(result.current.noDevice).toBe(false);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_500); // two empty polls
+    });
+    expect(result.current.noDevice).toBe(true);
+  });
+
+  it('recover() re-acquires a device and resumes the current track', async () => {
+    const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
+    await startAt(result, 0);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_500);
+    });
+    expect(result.current.noDevice).toBe(true);
+
+    getDevices.mockResolvedValue([{ id: 'tablet', name: 'Tablet', is_active: true }]);
+    getPlaybackState.mockResolvedValue({
+      isPlaying: true,
+      progressMs: 0,
+      durationMs: 10_000,
+      trackUri: 'spotify:track:a',
+      deviceId: 'tablet',
+      deviceName: 'Tablet',
+      fetchedAt: Date.now(),
+    });
+    playTrack.mockClear();
+    await act(async () => {
+      result.current.recover();
+      await vi.advanceTimersByTimeAsync(20);
+    });
+    expect(playTrack).toHaveBeenCalledWith('spotify:track:a', 'tablet', 0);
+    expect(result.current.noDevice).toBe(false);
   });
 });

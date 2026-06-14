@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Track } from '../data/tracks';
 import { interpolatePosition } from '../playback/position';
 import {
+  getDevices,
   getPlaybackState,
   pause as apiPause,
   playTrack,
@@ -22,6 +23,7 @@ export type Phase =
 const POLL_MS = 1000; // how often we ask Spotify for the true position
 const TICK_MS = 100; // how often we re-render the interpolated position
 const END_GUARD_MS = 500; // treat as ended this close to the track's end
+const NO_DEVICE_NULLS = 2; // consecutive empty polls before declaring the device lost
 const PREV_TRACK_WINDOW_MS = 3000; // a 2nd "prev" within this jumps to the previous track
 
 export interface PlayerEngine {
@@ -35,6 +37,8 @@ export interface PlayerEngine {
   gapRemaining: number;
   autoContinue: boolean;
   deviceName: string | null;
+  /** True when Spotify has no active device (the tablet dropped off Connect). */
+  noDevice: boolean;
   error: string | null;
 
   start: (index: number) => void;
@@ -50,6 +54,8 @@ export interface PlayerEngine {
   extendGap: (seconds: number) => void;
   holdNow: () => void; // the "pause permanently between tracks" button
   setAutoContinue: (v: boolean) => void;
+  /** Re-acquire a playback device and resume the current track. */
+  recover: () => void;
 }
 
 export function usePlayerEngine(
@@ -64,6 +70,7 @@ export function usePlayerEngine(
   const [gapRemaining, setGapRemaining] = useState(gapSeconds);
   const [autoContinue, setAutoContinueState] = useState(true);
   const [deviceName, setDeviceName] = useState<string | null>(null);
+  const [noDevice, setNoDevice] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Refs mirror state so the timers/poller read fresh values without resetting.
@@ -74,11 +81,14 @@ export function usePlayerEngine(
   const gapDeadlineRef = useRef(0);
   const deviceIdRef = useRef(deviceId);
   const lastPrevAtRef = useRef(0);
+  const noDeviceRef = useRef(noDevice);
+  const nullPollsRef = useRef(0);
 
   indexRef.current = index;
   phaseRef.current = phase;
   autoRef.current = autoContinue;
   deviceIdRef.current = deviceId;
+  noDeviceRef.current = noDevice;
 
   const track = tracks[index];
 
@@ -135,7 +145,17 @@ export function usePlayerEngine(
       if (!active) return;
       try {
         const snap = await getPlaybackState();
-        if (cancelled || !snap) return;
+        if (cancelled) return;
+        if (!snap) {
+          // No active device — declare it lost after a couple of empty polls.
+          nullPollsRef.current += 1;
+          if (nullPollsRef.current >= NO_DEVICE_NULLS && !noDeviceRef.current) {
+            setNoDevice(true);
+          }
+          return;
+        }
+        nullPollsRef.current = 0;
+        if (noDeviceRef.current) setNoDevice(false);
         snapshotRef.current = snap;
         setDeviceName(snap.deviceName);
         // If Spotify reports it stopped near the end, the track finished.
@@ -166,7 +186,8 @@ export function usePlayerEngine(
 
       if (p === 'playing') {
         const snap = snapshotRef.current;
-        if (snap) {
+        // Freeze the position while the device is lost (nothing is playing).
+        if (snap && !noDeviceRef.current) {
           const pos = interpolatePosition(snap);
           const duration = snap.durationMs || tracks[indexRef.current]?.durationMs || 0;
           setPositionMs(pos);
@@ -282,6 +303,31 @@ export function usePlayerEngine(
     autoRef.current = v;
   }, []);
 
+  const recover = useCallback(() => {
+    void (async () => {
+      try {
+        const devices = await getDevices();
+        const target = devices.find((d) => d.is_active) ?? devices[0];
+        if (!target) return; // none available — keep showing the lost banner
+        deviceIdRef.current = target.id;
+        setDeviceName(target.name);
+        const pos = snapshotRef.current ? interpolatePosition(snapshotRef.current) : 0;
+        await playTrack(
+          tracks[indexRef.current].spotifyUri,
+          target.id,
+          Math.max(0, Math.round(pos)),
+        );
+        nullPollsRef.current = 0;
+        setNoDevice(false);
+        setError(null);
+        setPhase('playing');
+        phaseRef.current = 'playing';
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+      }
+    })();
+  }, [tracks]);
+
   return {
     index,
     track,
@@ -291,6 +337,7 @@ export function usePlayerEngine(
     gapRemaining,
     autoContinue,
     deviceName,
+    noDevice,
     error,
     start,
     togglePlayPause,
@@ -302,5 +349,6 @@ export function usePlayerEngine(
     holdNow,
     setAutoContinue,
     attach,
+    recover,
   };
 }
