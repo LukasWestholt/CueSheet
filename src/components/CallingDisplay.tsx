@@ -37,26 +37,29 @@ export default function CallingDisplay({
     return a && b && bpm ? ((b.time - a.time) * bpm) / 60 : Infinity;
   };
   const curIdx = current ? callings.indexOf(current) : -1;
+  const stepLen = stepCounts(curIdx);
+  const isShortCur = stepLen <= SHORT_COUNTS;
   let shortRunBack = 0; // consecutive short steps immediately before curIdx
-  if (curIdx >= 0 && stepCounts(curIdx) <= SHORT_COUNTS) {
+  if (curIdx >= 0 && isShortCur) {
     for (let i = curIdx; i - 1 >= 0 && stepCounts(i - 1) <= SHORT_COUNTS; i--) {
       shortRunBack++;
     }
   }
-  const altFrame = announcing && shortRunBack % 2 === 1;
+  // The first short step in a run (shortRunBack 0) is the first announcement
+  // that crowds its predecessor, so it flips to yellow; then they alternate.
+  const altFrame = announcing && isShortCur && shortRunBack % 2 === 0;
 
   // Dev-only debug: why the yellow alt frame is (not) on, and how close it was
   // — e.g. "+1.5c over short" means the step missed the SHORT_COUNTS cut-off by
   // 1.5 counts, so raising the threshold would have turned it yellow.
-  const stepLen = stepCounts(curIdx);
   const stepLenLabel = Number.isFinite(stepLen) ? stepLen.toFixed(1) : '∞';
   const altReason = !announcing
     ? 'idle'
     : altFrame
       ? 'YELLOW'
-      : stepLen > SHORT_COUNTS
+      : !isShortCur
         ? `+${(stepLen - SHORT_COUNTS).toFixed(1)}c over short (≤${SHORT_COUNTS})`
-        : `short, run ${shortRunBack} (even → green)`;
+        : `short, run ${shortRunBack} (odd → green)`;
 
   // Countdown ring fills as we approach the next calling.
   const ringPct = Math.round(segmentProgress * 100);
