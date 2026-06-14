@@ -35,11 +35,11 @@ This hook is the core and the trickiest file. It runs a phase state machine: `id
 
 ## Calling data (the routines)
 
-Steps are authored **musically, not in seconds**. In `src/data/tracks.ts` each track has a `firstBeatSec`, a `bpm` (optional), and `steps: { step, cue, takte }[]` where `takte` is the step's length in 8-counts (halves allowed). The `spotifyUri` values are `REPLACE_ME` placeholders to swap for real track URIs.
+Steps are authored **musically, not in seconds**. In `src/data/tracks.ts` each track has a `firstBeatSec`, a `bpm` (optional), and `steps: { step, cue, measures }[]` where `measures` is the step's length in 8-counts (halves allowed). The `spotifyUri` values are `REPLACE_ME` placeholders to swap for real track URIs.
 
 The seconds-based timeline is **derived**, not stored:
 
-- `src/data/beats.ts#beatsForStep(takte)` — a step of `x` Takte = `(x-1)` bars of 8/8 + one closing 4/4 (`8·(x-1)+4` beats); a `.5` adds a 4/8 (+4). This convention is the project's domain rule — keep it in sync with `src/data/tracks.ts`'s doc comment.
+- `src/data/beats.ts#beatsForStep(measures)` — one measure ("Takt") = a full 8-count, so a step is `measures × 8` beats (halves fall out: 2.5 → 20). Step lengths never shrink, so the derived timeline doesn't drift across a track. This convention is the project's domain rule — keep it in sync with `src/data/tracks.ts`'s doc comment.
 - `buildCallings(steps, firstBeatSec, bpm)` accumulates beats → absolute-time `Calling[]`.
 - `PlayerScreen` resolves BPM (manual `track.bpm` wins; else `getTrackTempo()` via Spotify audio-features, which is **deprecated for apps created after Nov 2024** and may 403 — always keep a manual `bpm`), memoizes `buildCallings`, and feeds the `Calling[]` to `resolveCallings`.
 - `src/data/callings.ts#resolveCallings(callings, positionSeconds)` maps a position to current/next calling + countdown; `CallingDisplay` and the coach timeline both derive from it.

@@ -1,25 +1,20 @@
 import type { Calling, StepCalling } from './tracks';
 
-export const BEATS_PER_FULL_BAR = 8; // an "8/8" Takt
-export const BEATS_PER_SHORT_BAR = 4; // the closing "4/4" (and a half-Takt "4/8")
+export const BEATS_PER_MEASURE = 8; // one measure ("Takt") = a full 8-count (8/8)
 
 /**
- * Number of beats a step occupies.
+ * Number of beats a step occupies: one measure = a full 8-count, so a step of
+ * `measures` 8-counts is `measures × 8` beats. Half measures fall out naturally
+ * (2.5 → 20 beats = two 8/8 + one 4/8). Step lengths therefore never shrink, so
+ * the derived timeline does not drift across a track.
  *
- * Model: a step of `takte` 8-counts is (takte − 1) full bars of 8/8 plus one
- * closing bar of 4/4. A half Takt (x.5) contributes an extra 4/8 bar.
- *
- *   takte 4   -> 3×8 + 4            = 28 beats
- *   takte 2   -> 1×8 + 4            = 12 beats
- *   takte 2.5 -> 1×8 + 4 (½) + 4    = 16 beats
- *   takte 1   ->        4           =  4 beats
+ *   measures 4   -> 32 beats
+ *   measures 2   -> 16 beats
+ *   measures 2.5 -> 20 beats
+ *   measures 1   ->  8 beats
  */
-export function beatsForStep(takte: number): number {
-  if (takte <= 0) return 0;
-  const fullEights = Math.max(0, Math.floor(takte) - 1);
-  const frac = takte - Math.floor(takte);
-  const hasHalf = Math.abs(frac - 0.5) < 1e-9;
-  return fullEights * BEATS_PER_FULL_BAR + (hasHalf ? BEATS_PER_SHORT_BAR : 0) + BEATS_PER_SHORT_BAR;
+export function beatsForStep(measures: number): number {
+  return measures > 0 ? measures * BEATS_PER_MEASURE : 0;
 }
 
 /**
@@ -37,7 +32,7 @@ export function buildCallings(
   let beatCursor = 0;
   return steps.map((s) => {
     const time = firstBeatSec + beatCursor * secondsPerBeat;
-    beatCursor += beatsForStep(s.takte);
+    beatCursor += beatsForStep(s.measures);
     return { time, step: s.step, cue: s.cue };
   });
 }
