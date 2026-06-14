@@ -875,6 +875,66 @@ button:active {
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
+
+/* Tap-to-time overlay ---------------------------------------------------- */
+.tap-card {
+  align-items: stretch;
+  text-align: left;
+  width: min(440px, 92vw);
+  max-height: 88vh;
+}
+.tap-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+}
+.tap-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  max-height: 38vh;
+}
+.tap-steps li {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+.tap-steps li.tap-target {
+  background: var(--surface-2);
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.tap-steps .row-measures {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.tap-big {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 20px 18px;
+  font-size: 1.2rem;
+}
+.tap-progress {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+  font-size: 0.95rem;
+}
+.tap-actions {
+  display: flex;
+  gap: 8px;
+}
+.tap-actions .ghost {
+  flex: 1;
+  font-size: 0.9rem;
+}
 .add-time {
   background: var(--surface-2);
   border: 1px solid #2c3a47;

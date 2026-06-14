@@ -7,6 +7,7 @@ import { useTrackMeta } from '../hooks/useTrackMeta';
 import { useCalibration } from '../hooks/useCalibration';
 import { useWakeLock } from '../hooks/useWakeLock';
 import CallingDisplay from './CallingDisplay';
+import TapToTime from './TapToTime';
 
 const OFFSET_KEY = 'tjf.syncOffsetMs';
 const TAP_RESET_MS = 2000; // start a fresh tap series after this gap
@@ -24,6 +25,7 @@ export default function PlayerScreen({
   deviceId,
   resume = false,
   onBack,
+  onUpdateTrack,
 }: {
   tracks: Track[];
   startIndex: number;
@@ -31,9 +33,13 @@ export default function PlayerScreen({
   /** Attach to already-running playback instead of starting from 0. */
   resume?: boolean;
   onBack: () => void;
+  /** Persist edits to a track (used by tap-to-time). */
+  onUpdateTrack?: (index: number, track: Track) => void;
 }) {
   const engine = usePlayerEngine(tracks, deviceId);
   useWakeLock(true);
+
+  const [tapping, setTapping] = useState(false);
 
   // Sync offset compensates for Bluetooth speaker latency (display vs. audible).
   const [offsetMs, setOffsetMs] = useState<number>(() =>
@@ -67,6 +73,18 @@ export default function PlayerScreen({
   );
 
   const positionSeconds = (engine.positionMs + offsetMs) / 1000;
+
+  // Tap-to-time: write the captured first beat + per-step measures back to the
+  // track. Only enabled when a BPM is known and a persist callback is wired.
+  const canTapTime = onUpdateTrack != null && meta.bpm != null;
+  const saveTapTiming = (firstBeatSec: number, measures: number[]) => {
+    onUpdateTrack?.(engine.index, {
+      ...track,
+      firstBeatSec,
+      steps: track.steps.map((s, i) => ({ ...s, measures: measures[i] ?? s.measures })),
+    });
+    setTapping(false);
+  };
   // Prefer the live Spotify duration; fall back to fetched/authored metadata.
   const duration = engine.durationMs || meta.durationMs;
   const progressPct = duration > 0 ? Math.min(100, (engine.positionMs / duration) * 100) : 0;
@@ -265,6 +283,12 @@ export default function PlayerScreen({
         </p>
       </div>
 
+      {canTapTime && (
+        <button className="hold-btn" onClick={() => setTapping(true)}>
+          Tap-to-time the steps
+        </button>
+      )}
+
       {/* Coach view: the full prepared order of steps — tap a step to jump there */}
       <section className="timeline">
         <h3>Prepared steps</h3>
@@ -318,6 +342,17 @@ export default function PlayerScreen({
             </button>
           </div>
         </div>
+      )}
+
+      {tapping && meta.bpm != null && (
+        <TapToTime
+          steps={track.steps}
+          bpm={meta.bpm}
+          positionSeconds={positionSeconds}
+          onRestart={() => engine.seekTo(0)}
+          onSave={saveTapTiming}
+          onCancel={() => setTapping(false)}
+        />
       )}
 
       <div className="debug">

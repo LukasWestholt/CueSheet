@@ -57,6 +57,14 @@ export default function App() {
   const importTracks = (next: Track[]) => persistTracks(next);
   const resetTracks = () => persistTracks(TRACKS, true);
 
+  // Update a single track in place (tap-to-time) without resetting the player's
+  // selection — keeps the same Spotify track playing with the new timing.
+  const updateTrack = (index: number, updated: Track) => {
+    const next = tracks.map((t, i) => (i === index ? updated : t));
+    saveStoredTracks(next);
+    setTrackState({ tracks: next, overridden: true });
+  };
+
   const openEditor = (index: number | null) => {
     setEditIndex(index);
     setView('editor');
@@ -198,6 +206,7 @@ export default function App() {
           deviceId={deviceId}
           resume={resume}
           onBack={() => setView('list')}
+          onUpdateTrack={updateTrack}
         />
       )}
     </div>
