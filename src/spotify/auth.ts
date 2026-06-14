@@ -6,6 +6,9 @@ const TOKEN_KEY = 'tjf.spotify.tokens';
 const VERIFIER_KEY = 'tjf.spotify.verifier';
 const AUTH_BASE = 'https://accounts.spotify.com';
 
+/** Fired when the session can't be refreshed (refresh token invalid/expired). */
+export const AUTH_EXPIRED_EVENT = 'tjf:auth-expired';
+
 interface StoredTokens {
   access_token: string;
   refresh_token: string;
@@ -115,27 +118,70 @@ export async function handleRedirectCallback(): Promise<boolean> {
   return true;
 }
 
+/**
+ * Exchanges the refresh token for a fresh access token. Returns true on success;
+ * on failure clears the session and notifies the app (AUTH_EXPIRED_EVENT) so it
+ * can drop to login instead of surfacing scattered request errors.
+ */
+async function refreshTokens(): Promise<boolean> {
+  const tokens = getTokens();
+  if (!tokens?.refresh_token) return false;
+  try {
+    const res = await fetch(`${AUTH_BASE}/api/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: SPOTIFY_CLIENT_ID,
+        grant_type: 'refresh_token',
+        refresh_token: tokens.refresh_token,
+      }),
+    });
+    if (!res.ok) {
+      logout();
+      if (typeof window !== 'undefined') window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
+      return false;
+    }
+    storeTokens(await res.json());
+    return true;
+  } catch {
+    // Network error — keep the session; the next attempt may succeed.
+    return false;
+  }
+}
+
 /** Returns a valid access token, refreshing transparently when needed. */
 export async function getAccessToken(): Promise<string> {
   const tokens = getTokens();
   if (!tokens) throw new Error('Not logged in');
   if (Date.now() < tokens.expires_at) return tokens.access_token;
+  if (!(await refreshTokens())) throw new Error('Session expired — please log in again.');
+  return getTokens()!.access_token;
+}
 
-  const body = new URLSearchParams({
-    client_id: SPOTIFY_CLIENT_ID,
-    grant_type: 'refresh_token',
-    refresh_token: tokens.refresh_token,
-  });
-  const res = await fetch(`${AUTH_BASE}/api/token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body,
-  });
-  if (!res.ok) {
-    logout();
-    throw new Error('Session expired — please log in again.');
-  }
-  const data = await res.json();
-  storeTokens(data);
-  return data.access_token as string;
+let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+
+/**
+ * Proactively refreshes the access token shortly before it expires, on a
+ * self-rescheduling timer, so a long class never hits an expired token mid-API
+ * call. Returns a cleanup function; call it on logout/unmount.
+ */
+export function startTokenAutoRefresh(): () => void {
+  const schedule = () => {
+    if (refreshTimer) clearTimeout(refreshTimer);
+    refreshTimer = null;
+    const tokens = getTokens();
+    if (!tokens) return;
+    // expires_at already has a 60s safety margin; refresh 60s before that.
+    const delay = Math.max(0, tokens.expires_at - Date.now() - 60_000);
+    refreshTimer = setTimeout(() => {
+      void refreshTokens().then((ok) => {
+        if (ok) schedule();
+      });
+    }, delay);
+  };
+  schedule();
+  return () => {
+    if (refreshTimer) clearTimeout(refreshTimer);
+    refreshTimer = null;
+  };
 }

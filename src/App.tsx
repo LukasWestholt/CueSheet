@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { IS_CONFIGURED } from './config';
-import { handleRedirectCallback, isLoggedIn, logout } from './spotify/auth';
+import {
+  AUTH_EXPIRED_EVENT,
+  handleRedirectCallback,
+  isLoggedIn,
+  logout,
+  startTokenAutoRefresh,
+} from './spotify/auth';
 import { getPlaybackState, getTracksInfo, type TrackInfo } from './spotify/api';
 import { TRACKS, type Track } from './data/tracks';
 import { clearStoredTracks, loadStoredTracks, saveStoredTracks } from './data/tracksStore';
@@ -130,6 +136,23 @@ export default function App() {
         setReady(true);
       }
     })();
+  }, []);
+
+  // Keep the access token fresh in the background while logged in.
+  useEffect(() => {
+    if (!loggedIn) return;
+    return startTokenAutoRefresh();
+  }, [loggedIn]);
+
+  // If a token refresh fails mid-session, drop to login with a clear message.
+  useEffect(() => {
+    const onExpired = () => {
+      setLoggedIn(false);
+      setAuthError('Your Spotify session expired — please log in again.');
+      setView('list');
+    };
+    window.addEventListener(AUTH_EXPIRED_EVENT, onExpired);
+    return () => window.removeEventListener(AUTH_EXPIRED_EVENT, onExpired);
   }, []);
 
   // Once logged in, fetch list metadata (titles/durations) in one batch.
