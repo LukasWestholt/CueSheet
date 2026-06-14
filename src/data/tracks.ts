@@ -49,11 +49,13 @@ export interface Calling {
 }
 
 // ---------------------------------------------------------------------------
-// MOCK DATA — replace spotifyUri values with real tracks from your account.
+// DEFAULT (committed) tracks — a small public sample. Your real set lives in
+// the gitignored `tracks.local.ts` (see the loader at the bottom of this file),
+// so you can keep private routines without committing/pushing them.
 // Find a URI in the Spotify app: Share → Copy Spotify URI.
 // Tune firstBeatSec / bpm / measures to your track.
 // ---------------------------------------------------------------------------
-export const TRACKS: Track[] = [
+const DEFAULT_TRACKS: Track[] = [
   {
     id: 'main-1-0',
     title: 'Low',
@@ -127,3 +129,15 @@ export const TRACKS: Track[] = [
     ],
   },
 ];
+
+// Private track list: drop a `src/data/tracks.local.ts` (gitignored — see
+// tracks.local.example.ts for the shape) that `export const TRACKS: Track[]`.
+// When present it fully replaces DEFAULT_TRACKS; absent (CI, Docker, fresh
+// clone) we fall back to the committed defaults. import.meta.glob tolerates the
+// file not existing, so the build never breaks when it's missing.
+const localModules = import.meta.glob<{ TRACKS?: Track[] }>('./tracks.local.ts', {
+  eager: true,
+});
+const localTracks = Object.values(localModules)[0]?.TRACKS;
+
+export const TRACKS: Track[] = localTracks?.length ? localTracks : DEFAULT_TRACKS;
