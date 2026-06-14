@@ -285,3 +285,6 @@ logs/
 .claude/skills/*
 !.claude/skills/spotify-search/
 skills-lock.json
+
+# Vite PWA dev output
+dev-dist/
