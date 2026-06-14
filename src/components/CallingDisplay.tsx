@@ -49,23 +49,10 @@ export default function CallingDisplay({
   // that crowds its predecessor, so it flips to yellow; then they alternate.
   const altFrame = announcing && isShortCur && shortRunBack % 2 === 0;
 
-  // Dev-only debug: why the yellow alt frame is (not) on, and how close it was
-  // — e.g. "+1.5c over short" means the step missed the SHORT_COUNTS cut-off by
-  // 1.5 counts, so raising the threshold would have turned it yellow.
-  const stepLenLabel = Number.isFinite(stepLen) ? stepLen.toFixed(1) : '∞';
-  const altReason = !announcing
-    ? 'idle'
-    : altFrame
-      ? 'YELLOW'
-      : !isShortCur
-        ? `+${(stepLen - SHORT_COUNTS).toFixed(1)}c over short (≤${SHORT_COUNTS})`
-        : `short, run ${shortRunBack} (odd → green)`;
-
   // Countdown ring fills as we approach the next calling.
   const ringPct = Math.round(segmentProgress * 100);
 
   return (
-    <>
     <div
       className={`calling-display ${announcing ? 'announcing' : ''} ${
         altFrame ? 'announcing-alt' : ''
@@ -105,12 +92,5 @@ export default function CallingDisplay({
         {next?.cue && <span className="cue">{next.cue}</span>}
       </div>
     </div>
-      {import.meta.env.DEV && (
-        <div className="calling-debug">
-          frame {altFrame ? 'YELLOW' : 'green'} · step#{curIdx} {stepLenLabel}c ·{' '}
-          {altReason}
-        </div>
-      )}
-    </>
   );
 }
