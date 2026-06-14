@@ -330,6 +330,27 @@ button:active {
 .countdown.imminent .ring {
   animation: pulse 1s ease-in-out infinite;
 }
+.ring-num.count {
+  font-size: 3.2rem;
+  color: var(--accent);
+}
+
+/* Count-in: emphasise the next move so the coach calls "3, 2, 1, <move>". */
+.calling-display.announcing {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.next.next-announce {
+  opacity: 1;
+}
+.next-announce .label {
+  color: var(--accent);
+}
+.next-announce .step-next {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--accent);
+}
 @keyframes pulse {
   50% {
     transform: scale(1.06);

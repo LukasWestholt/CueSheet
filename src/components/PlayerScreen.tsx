@@ -110,7 +110,11 @@ export default function PlayerScreen({
 
       {engine.error && <p className="error">{engine.error}</p>}
 
-      <CallingDisplay callings={callings} positionSeconds={positionSeconds} />
+      <CallingDisplay
+        callings={callings}
+        positionSeconds={positionSeconds}
+        bpm={bpm ?? undefined}
+      />
 
       <div className="progress">
         <div className="progress-bar">
