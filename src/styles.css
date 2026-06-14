@@ -318,14 +318,16 @@ button:active {
   border-radius: 50%;
   background: var(--surface);
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: center;
   gap: 2px;
+  line-height: 1;
 }
 .ring-num {
   font-size: 2.4rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
+  line-height: 1;
 }
 .ring-unit {
   color: var(--muted);
@@ -353,8 +355,9 @@ button:active {
   color: var(--accent);
 }
 .next-announce .step-next {
-  font-size: 2rem;
+  font-size: 2.6rem;
   font-weight: 800;
+  line-height: 1.05;
   color: var(--accent);
 }
 @keyframes pulse {

@@ -48,19 +48,16 @@ export function resolveCallings(
  */
 export const BEATS_PER_COUNT = 2;
 
-/** Highest count-in number shown (the "3" in "3, 2, 1"). */
-export const COUNT_FROM = 3;
-
-/**
- * How many displayed counts before the switch the next move gets emphasised
- * ("CALL NOW"). One count, so the highlight lines up with the final count.
- */
-export const LEAD_COUNTS = 1;
+/** Highest count-in number shown (the "4" in "4, 3, 2, 1"). */
+export const COUNT_FROM = 4;
 
 export interface CountIn {
   /** The number to show (1..COUNT_FROM), or null when not yet counting in. */
   count: number | null;
-  /** Whether the next move should be emphasised ("CALL NOW"). */
+  /**
+   * Whether the next move should be emphasised ("CALL NOW"). True for the whole
+   * count-in window, so the coach sees the upcoming step enlarged from "4" on.
+   */
   announcing: boolean;
 }
 
@@ -79,9 +76,9 @@ export function deriveCountIn(
   if (countsToNext === null) return { count: null, announcing: false };
 
   const displayCount = Math.ceil(countsToNext / beatsPerCount);
-  const count =
-    displayCount <= COUNT_FROM ? Math.max(1, displayCount) : null;
-  const announcing = count !== null && displayCount <= LEAD_COUNTS;
+  const count = displayCount <= COUNT_FROM ? Math.max(1, displayCount) : null;
+  // Emphasise the next move for the whole count-in window (last COUNT_FROM counts).
+  const announcing = count !== null;
 
   return { count, announcing };
 }
