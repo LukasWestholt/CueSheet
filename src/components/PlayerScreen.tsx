@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Track } from '../data/tracks';
 import { buildCallings } from '../data/beats';
-import { getTrackTempo } from '../spotify/api';
 import { usePlayerEngine } from '../hooks/usePlayerEngine';
+import { useTrackMeta } from '../hooks/useTrackMeta';
 import { useWakeLock } from '../hooks/useWakeLock';
 import CallingDisplay from './CallingDisplay';
 
@@ -48,31 +48,18 @@ export default function PlayerScreen({
 
   const track = engine.track;
 
-  // Resolve BPM: a manual value always wins; otherwise try Spotify (which may
-  // be unavailable for newer apps). Callings are derived from steps + BPM.
-  const [bpm, setBpm] = useState<number | null>(track.bpm ?? null);
-  useEffect(() => {
-    if (track.bpm) {
-      setBpm(track.bpm);
-      return;
-    }
-    setBpm(null);
-    let active = true;
-    getTrackTempo(track.spotifyUri)
-      .then((tempo) => active && setBpm(tempo))
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, [track.spotifyUri, track.bpm]);
+  // Title/artist/duration come from Spotify; BPM + first beat are best-effort
+  // (deprecated endpoints) with manual override. Callings derive from these.
+  const meta = useTrackMeta(track);
 
   const callings = useMemo(
-    () => (bpm ? buildCallings(track.steps, track.firstBeatSec, bpm) : []),
-    [track, bpm],
+    () => (meta.bpm ? buildCallings(track.steps, meta.firstBeatSec, meta.bpm) : []),
+    [track, meta.bpm, meta.firstBeatSec],
   );
 
   const positionSeconds = (engine.positionMs + offsetMs) / 1000;
-  const duration = track.durationMs;
+  // Prefer the live Spotify duration; fall back to fetched/authored metadata.
+  const duration = engine.durationMs || meta.durationMs;
   const progressPct = duration > 0 ? Math.min(100, (engine.positionMs / duration) * 100) : 0;
 
   const playLabel =
@@ -101,10 +88,10 @@ export default function PlayerScreen({
       </header>
 
       <div className="track-head">
-        <h2>{track.title}</h2>
+        <h2>{meta.title}</h2>
         <span className="track-artist">
-          {track.artist}
-          {bpm ? ` · ${Math.round(bpm)} BPM` : ' · detecting tempo…'}
+          {meta.artist}
+          {meta.bpm ? ` · ${Math.round(meta.bpm)} BPM` : ' · detecting tempo…'}
         </span>
       </div>
 
@@ -113,7 +100,7 @@ export default function PlayerScreen({
       <CallingDisplay
         callings={callings}
         positionSeconds={positionSeconds}
-        bpm={bpm ?? undefined}
+        bpm={meta.bpm ?? undefined}
       />
 
       <div className="progress">

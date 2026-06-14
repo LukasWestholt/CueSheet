@@ -11,7 +11,7 @@ npm run preview    # serve the production build
 npm run typecheck  # tsc -b (no emit); the build runs this first, so a green build means types pass
 ```
 
-No linter or CI is configured. Tests run on **Vitest** (`npm test` watch, `npm run test:run` once). **Business logic is what gets tested**: the pure functions (`resolveCallings`, `interpolatePosition`, `beatsForStep`/`buildCallings`) and the player phase transitions / gap / hold. UI components and Spotify network calls are not tested — `usePlayerEngine.test.ts` mocks `src/spotify/api.ts` and drives the engine's two timers with `vi.useFakeTimers()` + `advanceTimersByTimeAsync`. Test files (`*.test.ts`) are excluded from the production build in `tsconfig.app.json`, so they are type-checked by Vitest, not `tsc -b`.
+No linter or CI is configured. Tests run on **Vitest** (`npm test` watch, `npm run test:run` once). **Business logic is what gets tested**: the pure functions (`resolveCallings`, `interpolatePosition`, `beatsForStep`/`buildCallings`, `resolveTrackMeta`) and the player phase transitions / gap / hold. UI components and Spotify network calls are not tested — `usePlayerEngine.test.ts` mocks `src/spotify/api.ts` and drives the engine's two timers with `vi.useFakeTimers()` + `advanceTimersByTimeAsync`. Test files (`*.test.ts`) are excluded from the production build in `tsconfig.app.json`, so they are type-checked by Vitest, not `tsc -b`.
 
 Requires a `.env` (gitignored): `cp .env.example .env` and set `VITE_SPOTIFY_CLIENT_ID`. Without it the app renders a "Setup needed" screen (`IS_CONFIGURED` gate in `src/config.ts`). The Client ID is a public identifier, not a secret.
 
@@ -41,7 +41,8 @@ The seconds-based timeline is **derived**, not stored:
 
 - `src/data/beats.ts#beatsForStep(measures)` — one measure ("Takt") = a full 8-count, so a step is `measures × 8` beats (halves fall out: 2.5 → 20). Step lengths never shrink, so the derived timeline doesn't drift across a track. This convention is the project's domain rule — keep it in sync with `src/data/tracks.ts`'s doc comment.
 - `buildCallings(steps, firstBeatSec, bpm)` accumulates beats → absolute-time `Calling[]`.
-- `PlayerScreen` resolves BPM (manual `track.bpm` wins; else `getTrackTempo()` via Spotify audio-features, which is **deprecated for apps created after Nov 2024** and may 403 — always keep a manual `bpm`), memoizes `buildCallings`, and feeds the `Calling[]` to `resolveCallings`.
+- Track metadata is **mostly fetched from Spotify**, not authored: only `id`, `spotifyUri`, and `steps` are required; `title`/`artist`/`durationMs`/`firstBeatSec`/`bpm` are optional overrides. `useTrackMeta` (player) + the pure `resolveTrackMeta` (`src/data/meta.ts`, authored-wins-over-fetched) resolve them. Title/artist/duration come from `/tracks` (reliable); BPM (`/audio-features`) and first beat (`/audio-analysis`, `bars[0].start`) are **best-effort — deprecated for apps created after Nov 2024 and may 403**, so manual values stay the fallback. `TrackList` gets the same info in one batch (`getTracksInfo`).
+- `PlayerScreen` memoizes `buildCallings(track.steps, meta.firstBeatSec, meta.bpm)` and feeds the `Calling[]` to `resolveCallings`. The progress bar uses the **live** duration the engine exposes (`engine.durationMs`, from the Spotify snapshot), falling back to `meta.durationMs`.
 - `src/data/callings.ts#resolveCallings(callings, positionSeconds)` maps a position to current/next calling + countdown; `CallingDisplay` and the coach timeline both derive from it.
 
 ## Navigation

@@ -29,6 +29,8 @@ export interface PlayerEngine {
   phase: Phase;
   /** Interpolated playback position in ms (raw, before any sync offset). */
   positionMs: number;
+  /** Live track duration in ms from Spotify (0 until first poll). */
+  durationMs: number;
   gapRemaining: number;
   autoContinue: boolean;
   deviceName: string | null;
@@ -53,6 +55,7 @@ export function usePlayerEngine(
   const [index, setIndex] = useState(0);
   const [phase, setPhase] = useState<Phase>('idle');
   const [positionMs, setPositionMs] = useState(0);
+  const [durationMs, setDurationMs] = useState(0);
   const [gapRemaining, setGapRemaining] = useState(gapSeconds);
   const [autoContinue, setAutoContinueState] = useState(true);
   const [deviceName, setDeviceName] = useState<string | null>(null);
@@ -158,6 +161,7 @@ export function usePlayerEngine(
           const pos = interpolatePosition(snap);
           const duration = snap.durationMs || tracks[indexRef.current]?.durationMs || 0;
           setPositionMs(pos);
+          setDurationMs(duration);
           if (duration > 0 && pos >= duration - END_GUARD_MS) {
             enterGapOrEnd();
           }
@@ -254,6 +258,7 @@ export function usePlayerEngine(
     track,
     phase,
     positionMs,
+    durationMs,
     gapRemaining,
     autoContinue,
     deviceName,

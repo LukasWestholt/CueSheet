@@ -19,17 +19,23 @@ export interface StepCalling {
 
 export interface Track {
   id: string;
-  title: string;
-  artist: string;
   /** Spotify track URI, e.g. "spotify:track:xxxxxxxxxxxxxxxxxxxxxx". */
   spotifyUri: string;
-  /** Fallback duration (ms); the live value from Spotify overrides this. */
-  durationMs: number;
-  /** Seconds into the track where the first beat (count 1) lands. */
-  firstBeatSec: number;
-  /** Beats per minute. If omitted, the app tries to fetch it from Spotify. */
-  bpm?: number;
   steps: StepCalling[];
+
+  // Everything below is OPTIONAL — when omitted, it is read from Spotify.
+  // An authored value always overrides the fetched one.
+
+  /** Override the track title (else fetched from /tracks). */
+  title?: string;
+  /** Override the artist (else fetched from /tracks). */
+  artist?: string;
+  /** Override the duration in ms (else the live Spotify value is used). */
+  durationMs?: number;
+  /** Seconds into the track where count 1 lands (else from audio-analysis). */
+  firstBeatSec?: number;
+  /** Beats per minute (else from audio-features; both may be deprecated/403). */
+  bpm?: number;
 }
 
 /**
@@ -49,7 +55,7 @@ export interface Calling {
 // ---------------------------------------------------------------------------
 export const TRACKS: Track[] = [
   {
-    id: 'warm-up-1',
+    id: 'main-1-0',
     title: 'Low',
     artist: 'Flo Rida',
     spotifyUri: 'spotify:track:0t2w4jQazlBggyZS4axpnw',
@@ -58,30 +64,66 @@ export const TRACKS: Track[] = [
     bpm: 128,
     steps: [
       { step: 'Jogging', cue: 'intro', measures: 4 },
-      { step: 'Basic + Low', cue: 'chorus', measures: 8 },
-      { step: 'Jogging + Kick', cue: 'verse', measures: 8 },
-      { step: 'Basic + Low', cue: 'chorus', measures: 8 },
-      { step: 'Jogging + Kick', cue: 'verse', measures: 8 },
-      { step: 'Basic + Low', cue: 'chorus', measures: 8 },
-      { step: 'Jogging + Kick', cue: 'verse', measures: 8 },
-      { step: 'Basic + Low', cue: 'chorus', measures: 8 },
+      { step: 'Basic', cue: 'chorus', measures: 3 },
+      { step: 'Low', cue: 'chorus', measures: 1 },
+      { step: 'Basic', cue: 'chorus', measures: 3 },
+      { step: 'Low', cue: 'chorus', measures: 1 },
+      { step: 'Jogging', cue: 'verse', measures: 4 },
+      { step: 'Kick', cue: 'verse', measures: 4 },
+      { step: 'Basic', cue: 'chorus', measures: 3 },
+      { step: 'Low', cue: 'chorus', measures: 1 },
+      { step: 'Basic', cue: 'chorus', measures: 3 },
+      { step: 'Low', cue: 'chorus', measures: 1 },
+      { step: 'Jogging', cue: 'verse', measures: 4 },
+      { step: 'Kick', cue: 'verse', measures: 4 },
+      { step: 'Basic', cue: 'chorus', measures: 3 },
+      { step: 'Low', cue: 'chorus', measures: 1 },
+      { step: 'Basic', cue: 'chorus', measures: 3 },
+      { step: 'Low', cue: 'chorus', measures: 1 },
+      { step: 'Jogging', cue: 'verse', measures: 4 },
+      { step: 'Kick', cue: 'verse', measures: 4 },
+      { step: 'Basic', cue: 'chorus', measures: 3 },
+      { step: 'Low', cue: 'chorus', measures: 1 },
+      { step: 'Basic', cue: 'chorus', measures: 3 },
+      { step: 'Low', cue: 'chorus', measures: 1 },
     ],
   },
   {
-    id: 'core-1',
-    title: 'Core & Balance',
-    artist: 'Demo Artist',
-    spotifyUri: 'spotify:track:REPLACE_ME_0000000000003',
-    durationMs: 3 * 60_000,
-    firstBeatSec: 0.6,
-    bpm: 120,
+    id: 'main-1-1',
+    spotifyUri: 'spotify:track:3CeCwYWvdfXbZLXFhBrbnf',
+    firstBeatSec: 1,
+    // 119 beats Love Story
     steps: [
-      { step: 'Seated Bounce', cue: 'engage core', measures: 4 },
-      { step: 'Plank Hold', cue: 'on the mat', measures: 4 },
-      { step: 'Single-Leg Bounce', cue: 'left', measures: 4 },
-      { step: 'Single-Leg Bounce', cue: 'right', measures: 4 },
-      { step: 'Balance Hold', cue: 'arms wide', measures: 4 },
-      { step: 'Cool Down', cue: 'stretch tall', measures: 4 },
+      { step: 'Tip Toe', cue: '', measures: 4 },
+      { step: 'Bounce Balance', cue: '', measures: 8 },
+      { step: 'Jogging', cue: '', measures: 4 },
+      { step: 'Pony', cue: '', measures: 4 },
+      { step: 'Bounce Balance', cue: '', measures: 4 },
+      { step: 'Jogging', cue: '', measures: 4 },
+      { step: 'Pony', cue: '', measures: 8 },
+      { step: 'Jogging', cue: '', measures: 4 },
+      { step: 'Tip Toe', cue: '', measures: 4 },
+      { step: 'Jogging', cue: '', measures: 4 },
+      { step: 'Pony', cue: '', measures: 4 },
+      { step: 'Tip Toe', cue: '', measures: 4 },
+    ],
+  },
+  {
+    id: 'main-1-2',
+    spotifyUri: 'spotify:track:4zPVMv84MMHehLNZYIS1Zv',
+    firstBeatSec: 1,
+    // 130 beats Barbie Girl Tiesto
+    steps: [
+      { step: 'Jogging', cue: '', measures: 4 },
+      { step: 'Tip Toe', cue: '', measures: 4.5 },
+      { step: 'Jogging', cue: '', measures: 4 },
+      { step: 'Kick', cue: '', measures: 4 },
+      { step: 'Kick Double', cue: '', measures: 4 },
+      { step: 'Tip Toe', cue: '', measures: 4 },
+      { step: 'Bounce Balance', cue: '', measures: 4 },
+      { step: 'Jogging', cue: '', measures: 4 },
+      { step: 'Kick', cue: '', measures: 4 },
+      { step: 'Kick im V', cue: '', measures: 4 },
     ],
   },
 ];
