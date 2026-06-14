@@ -144,6 +144,42 @@ export async function getTracksInfo(uris: string[]): Promise<Record<string, Trac
   return out;
 }
 
+export interface TrackSearchResult {
+  uri: string;
+  id: string;
+  title: string;
+  artist: string;
+  durationMs: number;
+  isrc: string | null;
+}
+
+/** Searches the Spotify catalog for tracks matching a free-text query. */
+export async function searchTracks(query: string, limit = 8): Promise<TrackSearchResult[]> {
+  const q = query.trim();
+  if (!q) return [];
+  const res = await api(`/search?type=track&limit=${limit}&q=${encodeURIComponent(q)}`);
+  if (!res.ok) return [];
+  const data = await res.json();
+  const items = (data.tracks?.items ?? []) as {
+    uri?: string;
+    id?: string;
+    name?: string;
+    artists?: { name: string }[];
+    duration_ms?: number;
+    external_ids?: { isrc?: string };
+  }[];
+  return items
+    .filter((t) => t.uri && t.id)
+    .map((t) => ({
+      uri: t.uri as string,
+      id: t.id as string,
+      title: t.name ?? '',
+      artist: (t.artists ?? []).map((a) => a.name).join(', '),
+      durationMs: t.duration_ms ?? 0,
+      isrc: t.external_ids?.isrc ?? null,
+    }));
+}
+
 /**
  * First-beat timestamp (seconds) from audio-analysis (first bar, else first
  * beat). Returns null on failure — this endpoint is deprecated for apps created

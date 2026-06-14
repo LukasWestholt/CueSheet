@@ -391,6 +391,68 @@ button:active {
   gap: 6px;
   margin: 8px 0;
 }
+
+/* Editor: Spotify search results ----------------------------------------- */
+.search-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.sr-status {
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding: 4px 2px;
+}
+.search-result {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  text-align: left;
+  background: var(--surface-2);
+  padding: 10px 12px;
+}
+.sr-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.sr-title {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sr-artist {
+  color: var(--muted);
+  font-size: 0.82rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sr-aside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.sr-bpm {
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+.sr-dur {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
 .danger-btn {
   color: var(--danger);
   border-color: #3a2730;

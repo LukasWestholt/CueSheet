@@ -1,7 +1,14 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Track, StepCalling } from '../data/tracks';
 import type { StepLibraryEntry } from '../data/stepLibrary';
 import { validateTracks } from '../data/validateTracks';
+import { searchTracks, type TrackSearchResult } from '../spotify/api';
+import { getBpmByIsrc } from '../beatdata/deezer';
+
+function fmtDuration(ms: number): string {
+  const total = Math.round(ms / 1000);
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+}
 
 function blankTrack(): Track {
   return {
@@ -35,6 +42,54 @@ export default function TrackEditor({
     initial ? structuredClone(initial) : blankTrack(),
   );
   const [picked, setPicked] = useState<Set<string>>(new Set());
+
+  // Spotify track search (debounced) to fill the URI without pasting.
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<TrackSearchResult[]>([]);
+  const [searching, setSearching] = useState(false);
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) {
+      setResults([]);
+      setSearching(false);
+      return;
+    }
+    let active = true;
+    setSearching(true);
+    const id = setTimeout(() => {
+      searchTracks(q)
+        .then((r) => active && (setResults(r), setSearching(false)))
+        .catch(() => active && (setResults([]), setSearching(false)));
+    }, 300);
+    return () => {
+      active = false;
+      clearTimeout(id);
+    };
+  }, [query]);
+
+  // Lazily look up each result's BPM from Deezer (by ISRC). Absent key = still
+  // loading; null = no data; number = BPM.
+  const [bpmByUri, setBpmByUri] = useState<Record<string, number | null>>({});
+  useEffect(() => {
+    setBpmByUri({});
+    if (results.length === 0) return;
+    let active = true;
+    const set = (uri: string, bpm: number | null) =>
+      active && setBpmByUri((m) => ({ ...m, [uri]: bpm }));
+    for (const r of results) {
+      if (!r.isrc) set(r.uri, null);
+      else getBpmByIsrc(r.isrc).then((bpm) => set(r.uri, bpm)).catch(() => set(r.uri, null));
+    }
+    return () => {
+      active = false;
+    };
+  }, [results]);
+
+  const chooseResult = (r: TrackSearchResult) => {
+    patch({ spotifyUri: r.uri, title: draft.title ?? r.title, artist: draft.artist ?? r.artist });
+    setQuery('');
+    setResults([]);
+  };
 
   const issues = useMemo(() => validateTracks([draft]).issues, [draft]);
   const hasErrors = issues.some((i) => i.level === 'error');
@@ -84,6 +139,37 @@ export default function TrackEditor({
       <h2>{initial ? 'Edit routine' : 'New routine'}</h2>
 
       <div className="editor-fields">
+        <label className="field">
+          <span>Search Spotify</span>
+          <input
+            value={query}
+            placeholder="song or artist…"
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </label>
+        {(searching || results.length > 0) && (
+          <ul className="search-results">
+            {searching && results.length === 0 && <li className="sr-status">Searching…</li>}
+            {results.map((r) => {
+              const known = r.uri in bpmByUri;
+              const bpm = bpmByUri[r.uri];
+              return (
+                <li key={r.uri}>
+                  <button className="search-result" onClick={() => chooseResult(r)}>
+                    <span className="sr-meta">
+                      <span className="sr-title">{r.title}</span>
+                      <span className="sr-artist">{r.artist}</span>
+                    </span>
+                    <span className="sr-aside">
+                      <span className="sr-bpm">{!known ? '…' : bpm != null ? `${bpm} BPM` : 'no BPM'}</span>
+                      <span className="sr-dur">{fmtDuration(r.durationMs)}</span>
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
         <label className="field">
           <span>Spotify URI</span>
           <input
