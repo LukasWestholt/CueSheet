@@ -437,6 +437,45 @@ button:active {
   accent-color: var(--accent);
 }
 
+/* Calibration ------------------------------------------------------------ */
+.calib-row {
+  background: var(--surface);
+  padding: 14px 16px;
+  border-radius: var(--radius);
+}
+.calib-actions {
+  display: flex;
+  gap: 8px;
+  margin: 10px 0 8px;
+}
+.tap-btn {
+  flex: 1;
+  background: var(--surface-2);
+  border: 1px solid #2c3a47;
+  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px;
+}
+.tap-btn:active {
+  background: var(--accent);
+  color: #04210f;
+}
+.tap-bpm {
+  font-size: 1.4rem;
+  font-variant-numeric: tabular-nums;
+}
+.calib-actions .ghost {
+  flex: 1;
+  font-size: 0.9rem;
+}
+.calib-foot {
+  display: flex;
+  justify-content: space-between;
+}
+
 /* Timeline --------------------------------------------------------------- */
 .timeline {
   background: var(--surface);

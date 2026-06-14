@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Track } from '../data/tracks';
+import type { Calibration } from '../data/calibration';
 import { resolveTrackMeta, type FetchedMeta, type ResolvedMeta } from '../data/meta';
 import { getFirstBeatSec, getTrackInfo, getTrackTempo } from '../spotify/api';
 
 /**
  * Fetches the metadata a track doesn't author itself: title/artist/duration
  * (always available), plus best-effort BPM and first-beat (deprecated endpoints
- * — fall back to manual values). Authored values are never fetched.
+ * — fall back to manual values). Authored values are never fetched. A saved tap
+ * `calibration` overrides the fetched BPM/first-beat (but not authored values).
  */
-export function useTrackMeta(track: Track): ResolvedMeta {
+export function useTrackMeta(track: Track, calibration?: Calibration | null): ResolvedMeta {
   const [fetched, setFetched] = useState<Partial<FetchedMeta>>({});
 
   useEffect(() => {
@@ -35,5 +37,11 @@ export function useTrackMeta(track: Track): ResolvedMeta {
     };
   }, [track.spotifyUri, track.bpm, track.firstBeatSec]);
 
-  return useMemo(() => resolveTrackMeta(track, fetched), [track, fetched]);
+  return useMemo(() => {
+    // Calibration sits between Spotify (fetched) and authored values.
+    const merged: Partial<FetchedMeta> = { ...fetched };
+    if (calibration?.bpm != null) merged.bpm = calibration.bpm;
+    if (calibration?.firstBeatSec != null) merged.firstBeatSec = calibration.firstBeatSec;
+    return resolveTrackMeta(track, merged);
+  }, [track, fetched, calibration]);
 }

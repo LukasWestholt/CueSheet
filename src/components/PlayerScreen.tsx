@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Track } from '../data/tracks';
 import { buildCallings } from '../data/beats';
+import { bpmFromTaps } from '../data/calibration';
 import { usePlayerEngine } from '../hooks/usePlayerEngine';
 import { useTrackMeta } from '../hooks/useTrackMeta';
+import { useCalibration } from '../hooks/useCalibration';
 import { useWakeLock } from '../hooks/useWakeLock';
 import CallingDisplay from './CallingDisplay';
 
 const OFFSET_KEY = 'tjf.syncOffsetMs';
+const TAP_RESET_MS = 2000; // start a fresh tap series after this gap
 
 function fmt(ms: number): string {
   const total = Math.max(0, Math.round(ms / 1000));
@@ -48,9 +51,10 @@ export default function PlayerScreen({
 
   const track = engine.track;
 
-  // Title/artist/duration come from Spotify; BPM + first beat are best-effort
-  // (deprecated endpoints) with manual override. Callings derive from these.
-  const meta = useTrackMeta(track);
+  // Title/artist/duration come from Spotify; BPM + first beat are tapped in by
+  // the coach (saved calibration) since Spotify's tempo endpoints are gone.
+  const { cal, update: updateCal, clear: clearCal } = useCalibration(track.spotifyUri);
+  const meta = useTrackMeta(track, cal);
 
   const callings = useMemo(
     () => (meta.bpm ? buildCallings(track.steps, meta.firstBeatSec, meta.bpm) : []),
@@ -61,6 +65,36 @@ export default function PlayerScreen({
   // Prefer the live Spotify duration; fall back to fetched/authored metadata.
   const duration = engine.durationMs || meta.durationMs;
   const progressPct = duration > 0 ? Math.min(100, (engine.positionMs / duration) * 100) : 0;
+
+  // --- Tap tempo + downbeat calibration --------------------------------------
+  const tapsRef = useRef<number[]>([]);
+  const [tapBpm, setTapBpm] = useState<number | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const onTap = () => {
+    const now = performance.now();
+    const taps = tapsRef.current;
+    if (taps.length && now - taps[taps.length - 1] > TAP_RESET_MS) taps.length = 0;
+    taps.push(now);
+    if (taps.length > 8) taps.shift();
+    setTapBpm(bpmFromTaps(taps));
+  };
+  const saveTappedBpm = () => {
+    if (tapBpm) updateCal({ bpm: tapBpm });
+    tapsRef.current = [];
+    setTapBpm(null);
+  };
+  const markFirstBeat = () => updateCal({ firstBeatSec: Math.max(0, positionSeconds) });
+  const copyToData = async () => {
+    const snippet = `bpm: ${meta.bpm ?? 0}, firstBeatSec: ${meta.firstBeatSec.toFixed(2)},`;
+    try {
+      await navigator.clipboard.writeText(snippet);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard may be unavailable */
+    }
+  };
 
   const playLabel =
     engine.phase === 'playing'
@@ -157,6 +191,47 @@ export default function PlayerScreen({
         />
         <p className="hint">
           Nudge if the called step is ahead of / behind what you hear on the speaker.
+        </p>
+      </div>
+
+      {/* Tap-tempo calibration (Spotify's tempo endpoints are gone) */}
+      <div className="calib-row">
+        <div className="sync-head">
+          <span>Tempo &amp; first beat</span>
+          <span className="muted">
+            {meta.bpm ? `${Math.round(meta.bpm)} BPM` : 'no BPM'} ·{' '}
+            {`1st @ ${meta.firstBeatSec.toFixed(2)}s`}
+          </span>
+        </div>
+        <div className="calib-actions">
+          <button className="tap-btn" onClick={onTap}>
+            Tap tempo
+            <span className="tap-bpm">{tapBpm ? `${tapBpm}` : '—'}</span>
+          </button>
+          <button className="ghost" onClick={saveTappedBpm} disabled={!tapBpm}>
+            Save BPM
+          </button>
+          <button
+            className="ghost"
+            onClick={markFirstBeat}
+            disabled={engine.phase !== 'playing' && engine.phase !== 'paused'}
+          >
+            Mark first beat
+          </button>
+        </div>
+        <div className="calib-foot">
+          <button className="link" onClick={copyToData} disabled={!cal}>
+            {copied ? 'Copied!' : 'Copy to tracks.ts'}
+          </button>
+          {cal && (
+            <button className="link" onClick={clearCal}>
+              Clear
+            </button>
+          )}
+        </div>
+        <p className="hint">
+          Tap along to the beat a few times, Save, then tap “Mark first beat” on
+          count 1. Saved per track on this device.
         </p>
       </div>
 
