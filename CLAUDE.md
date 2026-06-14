@@ -50,3 +50,38 @@ The seconds-based timeline is **derived**, not stored:
 ## Navigation
 
 No router library. `src/App.tsx` switches views with local state (`list` ⇄ `player`) and special-cases the `/callback` path to complete the OAuth exchange before rendering.
+
+## TODO / Wishlist
+
+Ideas for features and improvements, grouped by theme. Not committed work — a backlog to pull from.
+
+### Authoring routines (highest leverage — today it's hand-edited TS)
+- [ ] **In-app step editor.** Add/edit/reorder `steps` (step, cue, measures) from the UI instead of `tracks.ts`/`tracks.local.ts`; persist to `localStorage` per URI like calibration does.
+- [ ] **Import/export routines as JSON.** Back up and share `tracks.local.ts` content without git; download/upload a file. Mitigates the gitignored-and-only-on-one-device risk.
+- [ ] **Live re-time while authoring.** "Mark step boundary" tap mode during playback that fills `measures` from the music, the way first-beat capture already works.
+- [ ] **Validate routine vs. track length.** Warn when accumulated callings overshoot/undershoot `durationMs` so a mis-typed `measures` is caught before class.
+
+### Class / session flow
+- [ ] **Setlist mode.** Order several tracks into a session and auto-advance through them (the 20s gap already exists per-track; extend to a queue with total session time + remaining estimate).
+- [ ] **Per-track sync offset.** Today the Sync offset is global; Bluetooth latency can vary by device/track. Consider persisting offset per device or per URI.
+- [ ] **Auto-calibrate Bluetooth latency** instead of a manual slider (e.g. a tap-to-the-beat calibration that derives the constant lag).
+
+### Coach-facing display
+- [ ] **Stage / big-display mode.** Maximize the current + next cue for visibility across a studio; minimal chrome.
+- [ ] **Haptic / vibration cue** on step change (Vibration API) and optional **TTS voice callout** of the next cue through the iPhone's own speaker (the tablet owns the music, so the phone is free to speak).
+- [ ] **Mirror / left-right labeling** for cues so the coach can call mirrored to the class.
+- [ ] **Beat-grid / count visualization** (1-2-3-4-5-6-7-8) ticking with the music, driven by `bpm` + `firstBeatSec`.
+
+### Robustness & offline
+- [ ] **Reconnect / device-lost handling.** Surface when the target Connect device disappears or playback is hijacked by another app, with a one-tap re-target.
+- [ ] **Token-expiry UX.** Graceful re-auth when the refresh fails mid-class rather than a silent stall.
+- [ ] **Install prompt + offline audit.** Verify the shell, track list, and authored callings truly work offline (matches the stated offline-first goal); add a PWA install affordance.
+
+### Track list UX
+- [ ] **Search / filter / favorites** in `TrackList` as the list grows.
+- [ ] **Seed tracks from a Spotify playlist** (one call to import URIs, then author steps).
+
+### Engineering / quality
+- [ ] **Component tests** for `PlayerScreen` gap/held overlays and `CallingDisplay` (currently only business logic is tested).
+- [ ] **Wire up ESLint in CI** (config was added; make it run on PRs).
+- [ ] **Revisit track-end heuristic** (`duration − 500ms`) — make the threshold configurable or smarter to avoid early/late gap entry on tracks with long outros.
