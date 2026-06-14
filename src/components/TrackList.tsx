@@ -12,10 +12,12 @@ export default function TrackList({
   tracks,
   infos,
   onSelect,
+  onEdit,
 }: {
   tracks: Track[];
   infos: Record<string, TrackInfo>;
   onSelect: (index: number) => void;
+  onEdit?: (index: number) => void;
 }) {
   return (
     <ul className="track-list">
@@ -25,7 +27,7 @@ export default function TrackList({
         const artist = t.artist ?? info?.artist ?? '';
         const durationMs = t.durationMs ?? info?.durationMs;
         return (
-          <li key={t.id}>
+          <li key={t.id} className="track-li">
             <button className="track-row" onClick={() => onSelect(i)}>
               <span className="track-index">{i + 1}</span>
               <span className="track-meta">
@@ -39,6 +41,11 @@ export default function TrackList({
                 )}
               </span>
             </button>
+            {onEdit && (
+              <button className="track-edit" onClick={() => onEdit(i)}>
+                Edit
+              </button>
+            )}
           </li>
         );
       })}

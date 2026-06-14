@@ -285,6 +285,117 @@ button:active {
   font-variant-numeric: tabular-nums;
 }
 
+/* Track list edit affordance + new routine ------------------------------- */
+.track-li {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+.track-li .track-row {
+  flex: 1;
+}
+.track-edit {
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding: 0 14px;
+}
+.new-routine {
+  width: 100%;
+  margin-top: 10px;
+}
+
+/* Step editor ------------------------------------------------------------ */
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.editor h2 {
+  margin: 0;
+}
+.editor h3 {
+  margin: 4px 0 0;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+.editor input {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid #2c3a47;
+  border-radius: 10px;
+  padding: 10px 12px;
+  width: 100%;
+}
+.editor-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+.field > span {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.field-row {
+  display: flex;
+  gap: 10px;
+}
+.editor-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.editor-step {
+  display: grid;
+  grid-template-columns: 1fr 1fr 64px auto;
+  gap: 6px;
+  align-items: center;
+}
+.step-measures {
+  text-align: center;
+}
+.step-ops {
+  display: flex;
+  gap: 4px;
+}
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: var(--surface-2);
+  border-radius: 8px;
+  font-size: 1rem;
+}
+.icon-btn:disabled {
+  opacity: 0.4;
+}
+.icon-btn.danger {
+  color: var(--danger);
+}
+.add-step {
+  align-self: flex-start;
+}
+.library .lib-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+.danger-btn {
+  color: var(--danger);
+  border-color: #3a2730;
+}
+
 /* Resume session --------------------------------------------------------- */
 .resume-btn {
   margin-bottom: 16px;

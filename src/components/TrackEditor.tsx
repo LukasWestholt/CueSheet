@@ -1,0 +1,221 @@
+import { useMemo, useState } from 'react';
+import type { Track, StepCalling } from '../data/tracks';
+import type { StepLibraryEntry } from '../data/stepLibrary';
+import { validateTracks } from '../data/validateTracks';
+
+function blankTrack(): Track {
+  return {
+    id: `local-${Date.now().toString(36)}`,
+    spotifyUri: '',
+    steps: [{ step: '', cue: '', measures: 4 }],
+  };
+}
+
+function numField(v: number | undefined): string {
+  return v == null ? '' : String(v);
+}
+function parseOptionalNum(s: string): number | undefined {
+  return s.trim() === '' ? undefined : Number(s);
+}
+
+export default function TrackEditor({
+  initial,
+  library,
+  onSave,
+  onDelete,
+  onCancel,
+}: {
+  initial: Track | null;
+  library: StepLibraryEntry[];
+  onSave: (track: Track) => void;
+  onDelete?: () => void;
+  onCancel: () => void;
+}) {
+  const [draft, setDraft] = useState<Track>(() =>
+    initial ? structuredClone(initial) : blankTrack(),
+  );
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+
+  const issues = useMemo(() => validateTracks([draft]).issues, [draft]);
+  const hasErrors = issues.some((i) => i.level === 'error');
+
+  const patch = (p: Partial<Track>) => setDraft((d) => ({ ...d, ...p }));
+  const setStep = (i: number, p: Partial<StepCalling>) =>
+    setDraft((d) => ({ ...d, steps: d.steps.map((s, j) => (j === i ? { ...s, ...p } : s)) }));
+  const addStep = () =>
+    setDraft((d) => ({ ...d, steps: [...d.steps, { step: '', cue: '', measures: 4 }] }));
+  const removeStep = (i: number) =>
+    setDraft((d) => ({ ...d, steps: d.steps.filter((_, j) => j !== i) }));
+  const moveStep = (i: number, dir: -1 | 1) =>
+    setDraft((d) => {
+      const j = i + dir;
+      if (j < 0 || j >= d.steps.length) return d;
+      const steps = d.steps.slice();
+      [steps[i], steps[j]] = [steps[j], steps[i]];
+      return { ...d, steps };
+    });
+
+  const togglePick = (name: string) =>
+    setPicked((s) => {
+      const next = new Set(s);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  const insertPicked = () => {
+    const toAdd: StepCalling[] = library
+      .filter((e) => picked.has(e.step))
+      .map((e) => ({ step: e.step, cue: e.cues[0] ?? '', measures: e.measures[0] ?? 4 }));
+    if (toAdd.length) setDraft((d) => ({ ...d, steps: [...d.steps, ...toAdd] }));
+    setPicked(new Set());
+  };
+
+  return (
+    <div className="editor">
+      <header className="topbar">
+        <button className="link" onClick={onCancel}>
+          ‹ Cancel
+        </button>
+        <button className="primary" onClick={() => onSave(draft)} disabled={hasErrors}>
+          Save
+        </button>
+      </header>
+
+      <h2>{initial ? 'Edit routine' : 'New routine'}</h2>
+
+      <div className="editor-fields">
+        <label className="field">
+          <span>Spotify URI</span>
+          <input
+            value={draft.spotifyUri}
+            placeholder="spotify:track:…"
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
+            onChange={(e) => patch({ spotifyUri: e.target.value.trim() })}
+          />
+        </label>
+        <div className="field-row">
+          <label className="field">
+            <span>BPM</span>
+            <input
+              type="number"
+              inputMode="numeric"
+              value={numField(draft.bpm)}
+              placeholder="auto"
+              onChange={(e) => patch({ bpm: parseOptionalNum(e.target.value) })}
+            />
+          </label>
+          <label className="field">
+            <span>First beat (s)</span>
+            <input
+              type="number"
+              inputMode="decimal"
+              step="0.1"
+              value={numField(draft.firstBeatSec)}
+              placeholder="0"
+              onChange={(e) => patch({ firstBeatSec: parseOptionalNum(e.target.value) })}
+            />
+          </label>
+        </div>
+        <label className="field">
+          <span>Title (optional)</span>
+          <input
+            value={draft.title ?? ''}
+            placeholder="fetched from Spotify"
+            onChange={(e) => patch({ title: e.target.value || undefined })}
+          />
+        </label>
+      </div>
+
+      <h3>Steps</h3>
+      <ol className="editor-steps">
+        {draft.steps.map((s, i) => (
+          <li key={i} className="editor-step">
+            <input
+              className="step-name"
+              value={s.step}
+              placeholder="Move"
+              onChange={(e) => setStep(i, { step: e.target.value })}
+            />
+            <input
+              className="step-cue"
+              value={s.cue ?? ''}
+              placeholder="cue"
+              onChange={(e) => setStep(i, { cue: e.target.value })}
+            />
+            <input
+              className="step-measures"
+              type="number"
+              inputMode="decimal"
+              step="0.5"
+              min="0.5"
+              value={s.measures}
+              onChange={(e) => setStep(i, { measures: Number(e.target.value) })}
+            />
+            <div className="step-ops">
+              <button className="icon-btn" onClick={() => moveStep(i, -1)} disabled={i === 0} aria-label="Move up">
+                ↑
+              </button>
+              <button
+                className="icon-btn"
+                onClick={() => moveStep(i, 1)}
+                disabled={i === draft.steps.length - 1}
+                aria-label="Move down"
+              >
+                ↓
+              </button>
+              <button
+                className="icon-btn danger"
+                onClick={() => removeStep(i)}
+                disabled={draft.steps.length === 1}
+                aria-label="Delete step"
+              >
+                ✕
+              </button>
+            </div>
+          </li>
+        ))}
+      </ol>
+      <button className="ghost add-step" onClick={addStep}>
+        + Add step
+      </button>
+
+      {library.length > 0 && (
+        <section className="library">
+          <h3>Insert from library</h3>
+          <div className="lib-chips">
+            {library.map((e) => (
+              <button
+                key={e.step}
+                className={`chip ${picked.has(e.step) ? 'chip-active' : ''}`}
+                onClick={() => togglePick(e.step)}
+              >
+                {e.step} <span className="move-count">{e.count}×</span>
+              </button>
+            ))}
+          </div>
+          <button className="ghost" onClick={insertPicked} disabled={picked.size === 0}>
+            Insert{picked.size > 0 ? ` ${picked.size}` : ''} selected
+          </button>
+        </section>
+      )}
+
+      {issues.length > 0 && (
+        <ul className="issues">
+          {issues.map((iss, i) => (
+            <li key={i} className={iss.level}>
+              <span className="issue-where">{iss.where}</span> — {iss.message}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {onDelete && (
+        <button className="hold-btn danger-btn" onClick={onDelete}>
+          Delete routine
+        </button>
+      )}
+    </div>
+  );
+}

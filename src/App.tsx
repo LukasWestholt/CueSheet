@@ -1,15 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { IS_CONFIGURED } from './config';
 import { handleRedirectCallback, isLoggedIn, logout } from './spotify/auth';
 import { getPlaybackState, getTracksInfo, type TrackInfo } from './spotify/api';
 import { TRACKS, type Track } from './data/tracks';
 import { clearStoredTracks, loadStoredTracks, saveStoredTracks } from './data/tracksStore';
 import { validateTracks } from './data/validateTracks';
+import { collectStepLibrary } from './data/stepLibrary';
 import LoginScreen from './components/LoginScreen';
 import TrackList from './components/TrackList';
 import PlayerScreen from './components/PlayerScreen';
 import DevicePicker from './components/DevicePicker';
 import RoutinesManager from './components/RoutinesManager';
+import TrackEditor from './components/TrackEditor';
 
 /** Use a valid stored override if present, else the code-defined routines. */
 function initialTracks(): { tracks: Track[]; overridden: boolean } {
@@ -18,7 +20,7 @@ function initialTracks(): { tracks: Track[]; overridden: boolean } {
   return { tracks: TRACKS, overridden: false };
 }
 
-type View = 'list' | 'player';
+type View = 'list' | 'player' | 'editor';
 
 export default function App() {
   const [ready, setReady] = useState(false);
@@ -34,6 +36,10 @@ export default function App() {
   const [resumeIndex, setResumeIndex] = useState<number | null>(null);
   // The routine list: a stored override (imported/edited) or the code-defined set.
   const [{ tracks, overridden }, setTrackState] = useState(initialTracks);
+  // When view === 'editor': index of the track being edited, or null for a new one.
+  const [editIndex, setEditIndex] = useState<number | null>(null);
+
+  const stepLibrary = useMemo(() => collectStepLibrary(tracks), [tracks]);
 
   const openTrack = (index: number, asResume = false) => {
     setSelectedIndex(index);
@@ -41,17 +47,32 @@ export default function App() {
     setView('player');
   };
 
-  const importTracks = (next: Track[]) => {
-    saveStoredTracks(next);
-    setTrackState({ tracks: next, overridden: true });
+  const persistTracks = (next: Track[], overrideOff = false) => {
+    if (overrideOff) clearStoredTracks();
+    else saveStoredTracks(next);
+    setTrackState({ tracks: next, overridden: !overrideOff });
     setSelectedIndex(0);
     setResumeIndex(null);
   };
-  const resetTracks = () => {
-    clearStoredTracks();
-    setTrackState({ tracks: TRACKS, overridden: false });
-    setSelectedIndex(0);
-    setResumeIndex(null);
+  const importTracks = (next: Track[]) => persistTracks(next);
+  const resetTracks = () => persistTracks(TRACKS, true);
+
+  const openEditor = (index: number | null) => {
+    setEditIndex(index);
+    setView('editor');
+  };
+  const saveTrack = (track: Track) => {
+    const next =
+      editIndex == null
+        ? [...tracks, track]
+        : tracks.map((t, i) => (i === editIndex ? track : t));
+    persistTracks(next);
+    setView('list');
+  };
+  const deleteTrack = () => {
+    if (editIndex == null) return;
+    persistTracks(tracks.filter((_, i) => i !== editIndex));
+    setView('list');
   };
 
   // Handle the OAuth redirect, then determine login state.
@@ -125,7 +146,15 @@ export default function App() {
 
   return (
     <div className="screen">
-      {view === 'list' ? (
+      {view === 'editor' ? (
+        <TrackEditor
+          initial={editIndex != null ? tracks[editIndex] : null}
+          library={stepLibrary}
+          onSave={saveTrack}
+          onDelete={editIndex != null ? deleteTrack : undefined}
+          onCancel={() => setView('list')}
+        />
+      ) : view === 'list' ? (
         <>
           <header className="topbar">
             <h1>Tracks</h1>
@@ -146,7 +175,15 @@ export default function App() {
           )}
           <DevicePicker selectedDeviceId={deviceId} onSelect={setDeviceId} />
           {infosError && <p className="error">Couldn’t load track info: {infosError}</p>}
-          <TrackList tracks={tracks} infos={trackInfos} onSelect={(i) => openTrack(i)} />
+          <TrackList
+            tracks={tracks}
+            infos={trackInfos}
+            onSelect={(i) => openTrack(i)}
+            onEdit={(i) => openEditor(i)}
+          />
+          <button className="ghost new-routine" onClick={() => openEditor(null)}>
+            + New routine
+          </button>
           <RoutinesManager
             tracks={tracks}
             overridden={overridden}
