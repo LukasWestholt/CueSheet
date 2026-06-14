@@ -155,6 +155,28 @@ describe('usePlayerEngine', () => {
     expect(result.current.phase).toBe('playing');
   });
 
+  it('prev restarts the current track, then jumps back on a quick second press', async () => {
+    const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
+    await startAt(result, 1);
+
+    playTrack.mockClear();
+    await act(async () => {
+      result.current.prev();
+      await vi.advanceTimersByTimeAsync(5);
+    });
+    // First press restarts the current track (index 1).
+    expect(playTrack).toHaveBeenLastCalledWith('spotify:track:b', 'dev', 0);
+    expect(result.current.index).toBe(1);
+
+    await act(async () => {
+      result.current.prev();
+      await vi.advanceTimersByTimeAsync(5);
+    });
+    // Quick second press goes to the previous track (index 0).
+    expect(playTrack).toHaveBeenLastCalledWith('spotify:track:a', 'dev', 0);
+    expect(result.current.index).toBe(0);
+  });
+
   it('holdNow() pauses playback and parks in "held"', async () => {
     const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
     await startAt(result, 0);

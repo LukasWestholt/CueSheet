@@ -22,6 +22,7 @@ export type Phase =
 const POLL_MS = 1000; // how often we ask Spotify for the true position
 const TICK_MS = 100; // how often we re-render the interpolated position
 const END_GUARD_MS = 500; // treat as ended this close to the track's end
+const PREV_TRACK_WINDOW_MS = 3000; // a 2nd "prev" within this jumps to the previous track
 
 export interface PlayerEngine {
   index: number;
@@ -54,7 +55,7 @@ export interface PlayerEngine {
 export function usePlayerEngine(
   tracks: Track[],
   deviceId: string | null,
-  gapSeconds = 20,
+  gapSeconds = 10,
 ): PlayerEngine {
   const [index, setIndex] = useState(0);
   const [phase, setPhase] = useState<Phase>('idle');
@@ -72,6 +73,7 @@ export function usePlayerEngine(
   const snapshotRef = useRef<PlaybackSnapshot | null>(null);
   const gapDeadlineRef = useRef(0);
   const deviceIdRef = useRef(deviceId);
+  const lastPrevAtRef = useRef(0);
 
   indexRef.current = index;
   phaseRef.current = phase;
@@ -229,8 +231,12 @@ export function usePlayerEngine(
   }, [playIndex, tracks.length]);
 
   const prev = useCallback(() => {
-    const i = Math.max(0, indexRef.current - 1);
-    void playIndex(i);
+    // First press restarts the current track; a quick second press (within
+    // PREV_TRACK_WINDOW_MS) jumps to the previous track instead.
+    const now = Date.now();
+    const goPrevious = now - lastPrevAtRef.current < PREV_TRACK_WINDOW_MS && indexRef.current > 0;
+    lastPrevAtRef.current = now;
+    void playIndex(goPrevious ? indexRef.current - 1 : indexRef.current);
   }, [playIndex]);
 
   const seekTo = useCallback((rawPositionMs: number) => {
