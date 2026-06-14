@@ -6,6 +6,7 @@ import { TRACKS, type Track } from './data/tracks';
 import { clearStoredTracks, loadStoredTracks, saveStoredTracks } from './data/tracksStore';
 import { validateTracks } from './data/validateTracks';
 import { collectStepLibrary } from './data/stepLibrary';
+import { loadFavorites, saveFavorites } from './data/favorites';
 import LoginScreen from './components/LoginScreen';
 import TrackList from './components/TrackList';
 import PlayerScreen from './components/PlayerScreen';
@@ -40,6 +41,33 @@ export default function App() {
   const [editIndex, setEditIndex] = useState<number | null>(null);
 
   const stepLibrary = useMemo(() => collectStepLibrary(tracks), [tracks]);
+
+  // Track-list search + favorites.
+  const [query, setQuery] = useState('');
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [favorites, setFavorites] = useState<Set<string>>(loadFavorites);
+  const toggleFavorite = (id: string) =>
+    setFavorites((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      saveFavorites(next);
+      return next;
+    });
+
+  const visibleTracks = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return tracks
+      .map((track, index) => ({ track, index }))
+      .filter(({ track }) => {
+        if (favoritesOnly && !favorites.has(track.id)) return false;
+        if (!q) return true;
+        const info = trackInfos[track.spotifyUri];
+        const title = (track.title ?? info?.title ?? '').toLowerCase();
+        const artist = (track.artist ?? info?.artist ?? '').toLowerCase();
+        return title.includes(q) || artist.includes(q);
+      });
+  }, [tracks, query, favoritesOnly, favorites, trackInfos]);
 
   const openTrack = (index: number, asResume = false) => {
     setSelectedIndex(index);
@@ -183,11 +211,29 @@ export default function App() {
           )}
           <DevicePicker selectedDeviceId={deviceId} onSelect={setDeviceId} />
           {infosError && <p className="error">Couldn’t load track info: {infosError}</p>}
+          <div className="list-toolbar">
+            <input
+              className="search-input"
+              type="search"
+              value={query}
+              placeholder="Search title or artist…"
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            <button
+              className={`chip ${favoritesOnly ? 'chip-active' : ''}`}
+              aria-pressed={favoritesOnly}
+              onClick={() => setFavoritesOnly((v) => !v)}
+            >
+              ★ {favorites.size}
+            </button>
+          </div>
           <TrackList
-            tracks={tracks}
+            items={visibleTracks}
             infos={trackInfos}
+            favorites={favorites}
             onSelect={(i) => openTrack(i)}
             onEdit={(i) => openEditor(i)}
+            onToggleFavorite={toggleFavorite}
           />
           <button className="ghost new-routine" onClick={() => openEditor(null)}>
             + New routine

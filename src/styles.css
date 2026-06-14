@@ -514,7 +514,39 @@ button:active {
   text-align: left;
 }
 
+/* Track list toolbar ----------------------------------------------------- */
+.list-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.search-input {
+  flex: 1;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid #2c3a47;
+  border-radius: var(--radius);
+  padding: 10px 14px;
+}
+.list-toolbar .chip {
+  font-variant-numeric: tabular-nums;
+}
+.empty-list {
+  text-align: center;
+  padding: 24px 0;
+}
+
 /* Track list ------------------------------------------------------------- */
+.track-fav {
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 1.2rem;
+  padding: 0 12px;
+}
+.track-fav.is-fav {
+  color: var(--warn);
+}
 .track-list {
   list-style: none;
   margin: 0;
