@@ -2,8 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import type { Track, StepCalling } from '../data/tracks';
 import type { StepLibraryEntry } from '../data/stepLibrary';
 import { validateTracks } from '../data/validateTracks';
-import { searchTracks, type TrackSearchResult } from '../spotify/api';
+import { getTrackInfo, searchTracks, type TrackSearchResult } from '../spotify/api';
 import { getBpmByIsrc } from '../beatdata/deezer';
+
+const TRACK_URI_RE = /^spotify:track:[A-Za-z0-9]{22}$/;
 
 function fmtDuration(ms: number): string {
   const total = Math.round(ms / 1000);
@@ -84,6 +86,29 @@ export default function TrackEditor({
       active = false;
     };
   }, [results]);
+
+  // Recommend a BPM for the currently-set track (Deezer, by ISRC).
+  // undefined = looking up, null = none found, number = recommendation.
+  const [recBpm, setRecBpm] = useState<number | null | undefined>(null);
+  useEffect(() => {
+    const uri = draft.spotifyUri;
+    if (!TRACK_URI_RE.test(uri)) {
+      setRecBpm(null);
+      return;
+    }
+    let active = true;
+    setRecBpm(undefined);
+    const id = setTimeout(() => {
+      getTrackInfo(uri)
+        .then((info) => (info?.isrc ? getBpmByIsrc(info.isrc) : null))
+        .then((bpm) => active && setRecBpm(bpm))
+        .catch(() => active && setRecBpm(null));
+    }, 400);
+    return () => {
+      active = false;
+      clearTimeout(id);
+    };
+  }, [draft.spotifyUri]);
 
   const chooseResult = (r: TrackSearchResult, bpm?: number) => {
     patch({
@@ -214,6 +239,24 @@ export default function TrackEditor({
             />
           </label>
         </div>
+        {recBpm === undefined ? (
+          <p className="hint">Looking up recommended BPM…</p>
+        ) : typeof recBpm === 'number' ? (
+          <p className="rec-bpm">
+            Recommended BPM: <strong>{recBpm}</strong> (Deezer)
+            {draft.bpm === recBpm ? (
+              <span className="rec-match"> ✓ in use</span>
+            ) : (
+              <button className="link" onClick={() => patch({ bpm: recBpm })}>
+                Use
+              </button>
+            )}
+          </p>
+        ) : (
+          TRACK_URI_RE.test(draft.spotifyUri) && (
+            <p className="hint">No online BPM found for this track.</p>
+          )
+        )}
         <label className="field">
           <span>Title (optional)</span>
           <input
