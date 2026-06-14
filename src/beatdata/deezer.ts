@@ -9,6 +9,8 @@
 // best-effort auto-fill that ranks below authored values and tap calibration.
 // See docs/beat-data.md for the full comparison of free BPM sources.
 
+import { cached } from '../spotify/metaCache';
+
 const ENABLED = true; // flip to false to disable the Deezer lookup entirely
 const JSONP_TIMEOUT_MS = 6000;
 
@@ -59,13 +61,17 @@ interface DeezerTrack {
  */
 export async function getBpmByIsrc(isrc: string | null | undefined): Promise<number | null> {
   if (!ENABLED || !isrc) return null;
-  try {
-    const data = await deezerJsonp<DeezerTrack>(
-      `https://api.deezer.com/track/isrc:${encodeURIComponent(isrc)}`,
-    );
-    if (data.error) return null;
-    return typeof data.bpm === 'number' && data.bpm > 0 ? Math.round(data.bpm) : null;
-  } catch {
-    return null;
-  }
+  // Cache by ISRC (memory + localStorage). Only positive BPMs are cached, so a
+  // track Deezer has no tempo for (or a transient failure) stays retriable.
+  return cached('deezerBpm', isrc, async () => {
+    try {
+      const data = await deezerJsonp<DeezerTrack>(
+        `https://api.deezer.com/track/isrc:${encodeURIComponent(isrc)}`,
+      );
+      if (data.error) return null;
+      return typeof data.bpm === 'number' && data.bpm > 0 ? Math.round(data.bpm) : null;
+    } catch {
+      return null;
+    }
+  });
 }
