@@ -125,6 +125,18 @@ button:active {
   padding: 8px;
 }
 
+/* Offline banner --------------------------------------------------------- */
+.offline-banner {
+  background: var(--surface);
+  border: 1px solid #4a3a1a;
+  border-left: 3px solid var(--warn);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
 /* Top bar ---------------------------------------------------------------- */
 .topbar {
   display: flex;

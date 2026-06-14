@@ -13,6 +13,7 @@ import { clearStoredTracks, loadStoredTracks, saveStoredTracks } from './data/tr
 import { validateTracks } from './data/validateTracks';
 import { collectStepLibrary } from './data/stepLibrary';
 import { loadFavorites, saveFavorites } from './data/favorites';
+import { useOnline } from './hooks/useOnline';
 import LoginScreen from './components/LoginScreen';
 import TrackList from './components/TrackList';
 import PlayerScreen from './components/PlayerScreen';
@@ -31,6 +32,7 @@ function initialTracks(): { tracks: Track[]; overridden: boolean } {
 type View = 'list' | 'player' | 'editor' | 'seed';
 
 export default function App() {
+  const online = useOnline();
   const [ready, setReady] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
   const [view, setView] = useState<View>('list');
@@ -155,20 +157,20 @@ export default function App() {
     return () => window.removeEventListener(AUTH_EXPIRED_EVENT, onExpired);
   }, []);
 
-  // Once logged in, fetch list metadata (titles/durations) in one batch.
+  // Once logged in (and online), fetch list metadata (titles/durations).
   useEffect(() => {
-    if (!loggedIn) return;
+    if (!loggedIn || !online) return;
     getTracksInfo(tracks.map((t) => t.spotifyUri))
       .then((infos) => {
         setTrackInfos(infos);
         setInfosError(null);
       })
       .catch((e) => setInfosError(e instanceof Error ? e.message : String(e)));
-  }, [loggedIn, tracks]);
+  }, [loggedIn, tracks, online]);
 
   // On (re)load, offer to resume if Spotify is already playing one of our tracks.
   useEffect(() => {
-    if (!loggedIn) return;
+    if (!loggedIn || !online) return;
     getPlaybackState()
       .then((snap) => {
         if (!snap?.trackUri) return;
@@ -176,7 +178,7 @@ export default function App() {
         setResumeIndex(idx >= 0 ? idx : null);
       })
       .catch(() => {});
-  }, [loggedIn, tracks]);
+  }, [loggedIn, tracks, online]);
 
   if (!IS_CONFIGURED) {
     return (
@@ -205,11 +207,17 @@ export default function App() {
   }
 
   if (!loggedIn) {
-    return <LoginScreen error={authError} />;
+    return <LoginScreen error={authError} offline={!online} />;
   }
 
   return (
     <div className="screen">
+      {!online && (
+        <div className="offline-banner">
+          Offline — routines are viewable, but Spotify playback, search and login need a
+          connection.
+        </div>
+      )}
       {view === 'editor' ? (
         <TrackEditor
           initial={editIndex != null ? tracks[editIndex] : null}
@@ -244,7 +252,9 @@ export default function App() {
             </button>
           )}
           <DevicePicker selectedDeviceId={deviceId} onSelect={setDeviceId} />
-          {infosError && <p className="error">Couldn’t load track info: {infosError}</p>}
+          {infosError && online && (
+            <p className="error">Couldn’t load track info: {infosError}</p>
+          )}
           <div className="list-toolbar">
             <input
               className="search-input"

@@ -1,6 +1,12 @@
 import { beginLogin } from '../spotify/auth';
 
-export default function LoginScreen({ error }: { error: string | null }) {
+export default function LoginScreen({
+  error,
+  offline = false,
+}: {
+  error: string | null;
+  offline?: boolean;
+}) {
   return (
     <div className="screen center">
       <div className="card login">
@@ -11,7 +17,8 @@ export default function LoginScreen({ error }: { error: string | null }) {
           each jumping-fitness step in time with the music.
         </p>
         {error && <p className="error">{error}</p>}
-        <button className="primary big" onClick={() => beginLogin()}>
+        {offline && <p className="error">You’re offline — connect to log in.</p>}
+        <button className="primary big" onClick={() => beginLogin()} disabled={offline}>
           Log in with Spotify
         </button>
         <p className="hint">Requires Spotify Premium for playback control.</p>

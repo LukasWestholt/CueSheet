@@ -17,7 +17,7 @@ Requires a `.env` (gitignored): `cp .env.example .env` and set `VITE_SPOTIFY_CLI
 
 ## The one architectural idea that explains everything
 
-The app is a **client-only, offline-first PWA** — there is no backend of our own. It builds to static assets in `dist/` (with a generated service worker) deployable to any static host, and should keep working offline wherever it can: the shell, track list, and authored callings must not depend on the network. Only the live Spotify control/position calls require connectivity; degrade gracefully when they're unavailable rather than blocking the UI.
+The app is a **client-only, offline-first PWA** — there is no backend of our own. It builds to static assets in `dist/` (with a generated service worker) deployable to any static host, and should keep working offline wherever it can: the shell, track list, and authored callings must not depend on the network. Only the live Spotify control/position calls require connectivity; degrade gracefully when they're unavailable rather than blocking the UI. In practice: the service-worker precache (shell + JS/CSS + icon/manifest + a navigation fallback) loads the app offline, and routines/favorites/calibration come from `localStorage`, so the list and editor work offline. `useOnline` drives an offline banner, gates the metadata/resume fetches, and suppresses their errors while offline; `LoginScreen` disables login offline.
 
 This PWA is a **Spotify Connect remote — it never plays audio itself.** The iPhone running the PWA sends Web-API commands to Spotify's cloud, which controls a *separate* device (an Android tablet running the Spotify app, Premium) that plays audio to a Bluetooth speaker. This exists because Spotify's Web Playback SDK does not work on iOS Safari, so a PWA cannot stream Spotify directly. Every design constraint below follows from this:
 
@@ -53,7 +53,9 @@ The seconds-based timeline is **derived**, not stored:
 
 No router library. `src/App.tsx` switches views with local state (`list` ⇄ `player`) and special-cases the `/callback` path to complete the OAuth exchange before rendering.
 
-## TODO / Wishlist
+## Functions
+
+Unchecked entries are TODO / Wishlist.
 
 Ideas for features and improvements, grouped by theme. Not committed work — a backlog to pull from.
 
@@ -62,15 +64,16 @@ Ideas for features and improvements, grouped by theme. Not committed work — a 
 - [ ] **Import/export routines as JSON.** Back up and share `tracks.local.ts` content without git; download/upload a file. Mitigates the gitignored-and-only-on-one-device risk.
 - [ ] **Live re-time while authoring.** "Mark step boundary" tap mode during playback that fills `measures` from the music, the way first-beat capture already works.
 - [ ] **Validate routine vs. track length.** Warn when accumulated callings overshoot/undershoot `durationMs` so a mis-typed `measures` is caught before class.
+- [ ] Allow json import files in the public folder from webserver and show them dynamicly as recommendend import targets in the UI. By this we can replace fully the TRACKS object from tracks.ts and tracks.local.ts and just load default.json and default.*.json files on startup.
+- [ ] Allow marking tracks as WORK IN PROGRESS (timings for example are not finished)
 
 ### Class / session flow
 - [ ] **Setlist mode.** Order several tracks into a session and auto-advance through them (the 20s gap already exists per-track; extend to a queue with total session time + remaining estimate).
-- [ ] **Per-track sync offset.** Today the Sync offset is global; Bluetooth latency can vary by device/track. Consider persisting offset per device or per URI.
-- [ ] **Auto-calibrate Bluetooth latency** instead of a manual slider (e.g. a tap-to-the-beat calibration that derives the constant lag).
+- [ ] **Auto-calibrate Bluetooth latency** instead of a manual slider. But how?
 
 ### Coach-facing display
 - [ ] **Stage / big-display mode.** Maximize the current + next cue for visibility across a studio; minimal chrome.
-- [ ] **Haptic / vibration cue** on step change (Vibration API) and optional **TTS voice callout** of the next cue through the iPhone's own speaker (the tablet owns the music, so the phone is free to speak).
+- [ ] **Haptic / vibration cue** on step change (Vibration API).
 - [ ] **Mirror / left-right labeling** for cues so the coach can call mirrored to the class.
 - [ ] **Beat-grid / count visualization** (1-2-3-4-5-6-7-8) ticking with the music, driven by `bpm` + `firstBeatSec`.
 
@@ -78,6 +81,8 @@ Ideas for features and improvements, grouped by theme. Not committed work — a 
 - [ ] **Reconnect / device-lost handling.** Surface when the target Connect device disappears or playback is hijacked by another app, with a one-tap re-target.
 - [ ] **Token-expiry UX.** Graceful re-auth when the refresh fails mid-class rather than a silent stall.
 - [ ] **Install prompt + offline audit.** Verify the shell, track list, and authored callings truly work offline (matches the stated offline-first goal); add a PWA install affordance.
+- [ ] **Fast loading search insert bar.** Hard code some search results and display them opening a search without text for quick access the most popular 20 jumping fitness songs offline.
+- [ ] Can we make the progress bar circle has more units, so that it flows more?
 
 ### Track list UX
 - [ ] **Search / filter / favorites** in `TrackList` as the list grows.
@@ -87,3 +92,8 @@ Ideas for features and improvements, grouped by theme. Not committed work — a 
 - [ ] **Component tests** for `PlayerScreen` gap/held overlays and `CallingDisplay` (currently only business logic is tested).
 - [ ] **Wire up ESLint in CI** (config was added; make it run on PRs).
 - [ ] **Revisit track-end heuristic** (`duration − 500ms`) — make the threshold configurable or smarter to avoid early/late gap entry on tracks with long outros.
+
+### Features
+- [ ] Add a link that can be shared to the crowd for survey next song (15s).
+- [ ] Find an API to parse "First beat (s)" from song. Maybe there is a free pass (10 querys per day we can cache and use over some days to save money)
+- [ ] Add url path for view of song detail page.
