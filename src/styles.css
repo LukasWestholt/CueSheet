@@ -6,6 +6,7 @@
   --muted: #8aa0b3;
   --accent: #1db954;
   --accent-press: #169c46;
+  --warn: #facc15;
   --danger: #ff5a5a;
   --ring-bg: #26323d;
   --radius: 16px;
@@ -81,6 +82,25 @@ button {
 }
 button:active {
   transform: scale(0.98);
+}
+
+/* Visible keyboard focus (light ring stays visible on both dark surfaces and
+   the green primary button). Mouse/touch users don't see it (:focus-visible). */
+:focus-visible {
+  outline: 3px solid var(--text);
+  outline-offset: 2px;
+}
+
+/* Respect reduced-motion: kill the pulse/spinner/transitions for users who ask. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 .primary {
   background: var(--accent);
@@ -345,8 +365,13 @@ button:active {
 
 /* Count-in: emphasise the next move so the coach calls "3, 2, 1, <move>". */
 .calling-display.announcing {
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+}
+/* In a run of short steps, every other count-in turns the frame yellow so two
+   quick switches are easy to tell apart (grüner → gelber Rahmen). */
+.calling-display.announcing-alt {
+  outline-color: var(--warn);
 }
 .next.next-announce {
   opacity: 1;

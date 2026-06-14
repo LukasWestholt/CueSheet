@@ -28,11 +28,32 @@ export default function CallingDisplay({
     deriveCountIn(countsToNext);
   const announcing = next !== null && countAnnouncing;
 
+  // In a run of consecutive short steps, alternate the count-in frame colour
+  // (green → yellow) so two quick switches are easy to tell apart.
+  const SHORT_COUNTS = 16; // a step ≤ ~2 eight-counts is "short"
+  const stepCounts = (i: number): number => {
+    const a = callings[i];
+    const b = callings[i + 1];
+    return a && b && bpm ? ((b.time - a.time) * bpm) / 60 : Infinity;
+  };
+  const curIdx = current ? callings.indexOf(current) : -1;
+  let shortRunBack = 0; // consecutive short steps immediately before curIdx
+  if (curIdx >= 0 && stepCounts(curIdx) <= SHORT_COUNTS) {
+    for (let i = curIdx; i - 1 >= 0 && stepCounts(i - 1) <= SHORT_COUNTS; i--) {
+      shortRunBack++;
+    }
+  }
+  const altFrame = announcing && shortRunBack % 2 === 1;
+
   // Countdown ring fills as we approach the next calling.
   const ringPct = Math.round(segmentProgress * 100);
 
   return (
-    <div className={`calling-display ${announcing ? 'announcing' : ''}`}>
+    <div
+      className={`calling-display ${announcing ? 'announcing' : ''} ${
+        altFrame ? 'announcing-alt' : ''
+      }`}
+    >
       <div className="now">
         <span className="label">NOW</span>
         <span className="step">{current ? current.step : '—'}</span>
