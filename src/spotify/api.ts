@@ -180,6 +180,65 @@ export async function searchTracks(query: string, limit = 8): Promise<TrackSearc
     }));
 }
 
+export interface PlaylistTrack {
+  uri: string;
+  id: string;
+  title: string;
+  artist: string;
+  durationMs: number;
+  isrc: string | null;
+}
+
+/** Extracts a playlist id from a URL, spotify: URI, or a raw 22-char id. */
+export function playlistIdFromInput(input: string): string | null {
+  const s = input.trim();
+  const m = s.match(/playlist[:/]([A-Za-z0-9]{22})/);
+  if (m) return m[1];
+  return /^[A-Za-z0-9]{22}$/.test(s) ? s : null;
+}
+
+interface RawPlaylistItem {
+  track?: {
+    uri?: string;
+    id?: string;
+    type?: string;
+    name?: string;
+    artists?: { name: string }[];
+    duration_ms?: number;
+    external_ids?: { isrc?: string };
+  } | null;
+}
+
+/** Fetches a playlist's tracks (paginated, capped at `max`). */
+export async function getPlaylistTracks(input: string, max = 200): Promise<PlaylistTrack[]> {
+  const id = playlistIdFromInput(input);
+  if (!id) return [];
+  const out: PlaylistTrack[] = [];
+  let path: string | null =
+    `/playlists/${id}/tracks?limit=100` +
+    '&fields=items(track(uri,id,type,name,artists(name),duration_ms,external_ids(isrc))),next';
+  while (path && out.length < max) {
+    const res = await api(path);
+    if (!res.ok) throw new Error(`Playlist load failed (${res.status})`);
+    const data = await res.json();
+    for (const item of (data.items ?? []) as RawPlaylistItem[]) {
+      const t = item.track;
+      if (!t || !t.uri || !t.id || t.type === 'episode') continue;
+      out.push({
+        uri: t.uri,
+        id: t.id,
+        title: t.name ?? '',
+        artist: (t.artists ?? []).map((a) => a.name).join(', '),
+        durationMs: t.duration_ms ?? 0,
+        isrc: t.external_ids?.isrc ?? null,
+      });
+    }
+    const next: string | undefined = data.next;
+    path = next ? next.replace('https://api.spotify.com/v1', '') : null;
+  }
+  return out.slice(0, max);
+}
+
 /**
  * First-beat timestamp (seconds) from audio-analysis (first bar, else first
  * beat). Returns null on failure — this endpoint is deprecated for apps created

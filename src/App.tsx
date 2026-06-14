@@ -13,6 +13,7 @@ import PlayerScreen from './components/PlayerScreen';
 import DevicePicker from './components/DevicePicker';
 import RoutinesManager from './components/RoutinesManager';
 import TrackEditor from './components/TrackEditor';
+import PlaylistSeed from './components/PlaylistSeed';
 
 /** Use a valid stored override if present, else the code-defined routines. */
 function initialTracks(): { tracks: Track[]; overridden: boolean } {
@@ -21,7 +22,7 @@ function initialTracks(): { tracks: Track[]; overridden: boolean } {
   return { tracks: TRACKS, overridden: false };
 }
 
-type View = 'list' | 'player' | 'editor';
+type View = 'list' | 'player' | 'editor' | 'seed';
 
 export default function App() {
   const [ready, setReady] = useState(false);
@@ -110,6 +111,10 @@ export default function App() {
     persistTracks(tracks.filter((_, i) => i !== editIndex));
     setView('list');
   };
+  const seedTracks = (stubs: Track[]) => {
+    persistTracks([...tracks, ...stubs]);
+    setView('list');
+  };
 
   // Handle the OAuth redirect, then determine login state.
   useEffect(() => {
@@ -190,6 +195,12 @@ export default function App() {
           onDelete={editIndex != null ? deleteTrack : undefined}
           onCancel={() => setView('list')}
         />
+      ) : view === 'seed' ? (
+        <PlaylistSeed
+          existingUris={new Set(tracks.map((t) => t.spotifyUri))}
+          onAdd={seedTracks}
+          onCancel={() => setView('list')}
+        />
       ) : view === 'list' ? (
         <>
           <header className="topbar">
@@ -235,9 +246,14 @@ export default function App() {
             onEdit={(i) => openEditor(i)}
             onToggleFavorite={toggleFavorite}
           />
-          <button className="ghost new-routine" onClick={() => openEditor(null)}>
-            + New routine
-          </button>
+          <div className="new-routine-row">
+            <button className="ghost" onClick={() => openEditor(null)}>
+              + New routine
+            </button>
+            <button className="ghost" onClick={() => setView('seed')}>
+              Seed from playlist
+            </button>
+          </div>
           <RoutinesManager
             tracks={tracks}
             overridden={overridden}
