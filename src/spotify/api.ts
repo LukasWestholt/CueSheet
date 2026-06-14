@@ -113,17 +113,19 @@ export async function getTrackInfo(uri: string): Promise<TrackInfo | null> {
   return parseTrackInfo(await res.json());
 }
 
-/** Batch metadata lookup (up to 50 ids), keyed by the input URI. */
+/**
+ * Metadata for several tracks, keyed by URI. Uses parallel single-track
+ * requests rather than the multi-get /tracks?ids endpoint, which Spotify
+ * forbids (403) for many newer development-mode apps.
+ */
 export async function getTracksInfo(uris: string[]): Promise<Record<string, TrackInfo>> {
+  const entries = await Promise.all(
+    uris.map(async (uri) => [uri, await getTrackInfo(uri)] as const),
+  );
   const out: Record<string, TrackInfo> = {};
-  const valid = uris.filter((u) => isValidTrackId(trackIdFromUri(u)));
-  if (valid.length === 0) return out;
-  const res = await api(`/tracks?ids=${valid.map(trackIdFromUri).join(',')}`);
-  if (!res.ok) return out;
-  const data = await res.json();
-  (data.tracks ?? []).forEach((t: unknown, i: number) => {
-    if (t) out[valid[i]] = parseTrackInfo(t as Parameters<typeof parseTrackInfo>[0]);
-  });
+  for (const [uri, info] of entries) {
+    if (info) out[uri] = info;
+  }
   return out;
 }
 

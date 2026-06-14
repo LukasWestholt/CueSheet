@@ -18,6 +18,7 @@ export default function App() {
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [trackInfos, setTrackInfos] = useState<Record<string, TrackInfo>>({});
+  const [infosError, setInfosError] = useState<string | null>(null);
 
   // Handle the OAuth redirect, then determine login state.
   useEffect(() => {
@@ -39,8 +40,11 @@ export default function App() {
   useEffect(() => {
     if (!loggedIn) return;
     getTracksInfo(TRACKS.map((t) => t.spotifyUri))
-      .then(setTrackInfos)
-      .catch(() => {});
+      .then((infos) => {
+        setTrackInfos(infos);
+        setInfosError(null);
+      })
+      .catch((e) => setInfosError(e instanceof Error ? e.message : String(e)));
   }, [loggedIn]);
 
   if (!IS_CONFIGURED) {
@@ -84,6 +88,7 @@ export default function App() {
             </button>
           </header>
           <DevicePicker selectedDeviceId={deviceId} onSelect={setDeviceId} />
+          {infosError && <p className="error">Couldn’t load track info: {infosError}</p>}
           <TrackList
             tracks={TRACKS}
             infos={trackInfos}
