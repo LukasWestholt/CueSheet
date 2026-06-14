@@ -37,12 +37,16 @@ export interface PlayerEngine {
   error: string | null;
 
   start: (index: number) => void;
+  /** Attach to playback already running on Spotify without restarting it. */
+  attach: (index: number) => void;
   togglePlayPause: () => void;
   next: () => void;
   prev: () => void;
   /** Jump to a raw song position (ms, before sync offset). */
   seekTo: (positionMs: number) => void;
   skipGap: () => void;
+  /** Add seconds to the running inter-track gap countdown. */
+  extendGap: (seconds: number) => void;
   holdNow: () => void; // the "pause permanently between tracks" button
   setAutoContinue: (v: boolean) => void;
 }
@@ -101,6 +105,9 @@ export function usePlayerEngine(
   );
 
   const enterGapOrEnd = useCallback(() => {
+    // Stop the finished track ourselves, otherwise Spotify may loop it (repeat)
+    // or roll into autoplay during the gap / after the routine ends.
+    apiPause(deviceIdRef.current ?? undefined).catch(() => {});
     const hasNext = indexRef.current + 1 < tracks.length;
     if (!hasNext) {
       setPhase('ended');
@@ -181,6 +188,16 @@ export function usePlayerEngine(
   // ---- Controls ----------------------------------------------------------
   const start = useCallback((i: number) => void playIndex(i), [playIndex]);
 
+  const attach = useCallback((i: number) => {
+    // Re-attach to a track already playing on Spotify (e.g. after a page
+    // reload) without sending a play command — the poller syncs the position.
+    setIndex(i);
+    indexRef.current = i;
+    setError(null);
+    setPhase('playing');
+    phaseRef.current = 'playing';
+  }, []);
+
   const togglePlayPause = useCallback(() => {
     const p = phaseRef.current;
     if (p === 'playing') {
@@ -238,6 +255,12 @@ export function usePlayerEngine(
     }
   }, [playIndex]);
 
+  const extendGap = useCallback((seconds: number) => {
+    if (phaseRef.current !== 'gap') return;
+    gapDeadlineRef.current += seconds * 1000;
+    setGapRemaining(Math.max(0, Math.ceil((gapDeadlineRef.current - Date.now()) / 1000)));
+  }, []);
+
   const holdNow = useCallback(() => {
     // The easy "pause permanently between tracks" button.
     const p = phaseRef.current;
@@ -269,7 +292,9 @@ export function usePlayerEngine(
     prev,
     seekTo,
     skipGap,
+    extendGap,
     holdNow,
     setAutoContinue,
+    attach,
   };
 }

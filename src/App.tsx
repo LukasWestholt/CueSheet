@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { IS_CONFIGURED } from './config';
 import { handleRedirectCallback, isLoggedIn, logout } from './spotify/auth';
-import { getTracksInfo, type TrackInfo } from './spotify/api';
+import { getPlaybackState, getTracksInfo, type TrackInfo } from './spotify/api';
 import { TRACKS } from './data/tracks';
 import LoginScreen from './components/LoginScreen';
 import TrackList from './components/TrackList';
@@ -15,10 +15,19 @@ export default function App() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [view, setView] = useState<View>('list');
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [resume, setResume] = useState(false);
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [trackInfos, setTrackInfos] = useState<Record<string, TrackInfo>>({});
   const [infosError, setInfosError] = useState<string | null>(null);
+  // Index of one of our tracks that Spotify is already playing (e.g. after a reload).
+  const [resumeIndex, setResumeIndex] = useState<number | null>(null);
+
+  const openTrack = (index: number, asResume = false) => {
+    setSelectedIndex(index);
+    setResume(asResume);
+    setView('player');
+  };
 
   // Handle the OAuth redirect, then determine login state.
   useEffect(() => {
@@ -45,6 +54,18 @@ export default function App() {
         setInfosError(null);
       })
       .catch((e) => setInfosError(e instanceof Error ? e.message : String(e)));
+  }, [loggedIn]);
+
+  // On (re)load, offer to resume if Spotify is already playing one of our tracks.
+  useEffect(() => {
+    if (!loggedIn) return;
+    getPlaybackState()
+      .then((snap) => {
+        if (!snap?.trackUri) return;
+        const idx = TRACKS.findIndex((t) => t.spotifyUri === snap.trackUri);
+        setResumeIndex(idx >= 0 ? idx : null);
+      })
+      .catch(() => {});
   }, [loggedIn]);
 
   if (!IS_CONFIGURED) {
@@ -87,22 +108,27 @@ export default function App() {
               Log out
             </button>
           </header>
+          {resumeIndex != null && (
+            <button
+              className="resume-btn primary big"
+              onClick={() => openTrack(resumeIndex, true)}
+            >
+              ▶ Go back to your last session —{' '}
+              {TRACKS[resumeIndex].title ??
+                trackInfos[TRACKS[resumeIndex].spotifyUri]?.title ??
+                'current track'}
+            </button>
+          )}
           <DevicePicker selectedDeviceId={deviceId} onSelect={setDeviceId} />
           {infosError && <p className="error">Couldn’t load track info: {infosError}</p>}
-          <TrackList
-            tracks={TRACKS}
-            infos={trackInfos}
-            onSelect={(i) => {
-              setSelectedIndex(i);
-              setView('player');
-            }}
-          />
+          <TrackList tracks={TRACKS} infos={trackInfos} onSelect={(i) => openTrack(i)} />
         </>
       ) : (
         <PlayerScreen
           tracks={TRACKS}
           startIndex={selectedIndex}
           deviceId={deviceId}
+          resume={resume}
           onBack={() => setView('list')}
         />
       )}

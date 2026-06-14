@@ -184,6 +184,12 @@ button:active {
   font-weight: 700;
 }
 
+/* Resume session --------------------------------------------------------- */
+.resume-btn {
+  margin-bottom: 16px;
+  text-align: left;
+}
+
 /* Track list ------------------------------------------------------------- */
 .track-list {
   list-style: none;
@@ -566,6 +572,16 @@ button:active {
   font-weight: 800;
   line-height: 1;
   font-variant-numeric: tabular-nums;
+}
+.add-time {
+  background: var(--surface-2);
+  border: 1px solid #2c3a47;
+  font-weight: 700;
+  padding: 10px 22px;
+}
+.add-time:active {
+  background: var(--accent);
+  color: #04210f;
 }
 .overlay-actions {
   display: flex;

@@ -82,6 +82,31 @@ describe('usePlayerEngine', () => {
     expect(result.current.index).toBe(1);
   });
 
+  it('extendGap adds time to the countdown and delays the advance', async () => {
+    reportNearEnd('spotify:track:a');
+    const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
+    await startAt(result, 0);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_200);
+    });
+    expect(result.current.phase).toBe('gap');
+
+    // Two presses of +5s extend the 2s gap well past its original deadline.
+    act(() => {
+      result.current.extendGap(5);
+      result.current.extendGap(5);
+    });
+    expect(result.current.gapRemaining).toBeGreaterThan(2);
+
+    // Past the original 2s deadline it must still be waiting, not advanced.
+    playTrack.mockClear();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_500);
+    });
+    expect(result.current.phase).toBe('gap');
+    expect(playTrack).not.toHaveBeenCalled();
+  });
+
   it('holds permanently between tracks when auto-continue is off', async () => {
     reportNearEnd('spotify:track:a');
     const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
@@ -104,6 +129,8 @@ describe('usePlayerEngine', () => {
       await vi.advanceTimersByTimeAsync(1_200);
     });
     expect(result.current.phase).toBe('ended');
+    // Must stop playback so Spotify doesn't loop/autoplay the finished track.
+    expect(pause).toHaveBeenCalled();
   });
 
   it('togglePlayPause pauses then resumes via the API', async () => {

@@ -22,11 +22,14 @@ export default function PlayerScreen({
   tracks,
   startIndex,
   deviceId,
+  resume = false,
   onBack,
 }: {
   tracks: Track[];
   startIndex: number;
   deviceId: string | null;
+  /** Attach to already-running playback instead of starting from 0. */
+  resume?: boolean;
   onBack: () => void;
 }) {
   const engine = usePlayerEngine(tracks, deviceId);
@@ -40,14 +43,16 @@ export default function PlayerScreen({
     localStorage.setItem(OFFSET_KEY, String(offsetMs));
   }, [offsetMs]);
 
-  // Kick off playback once when the screen opens.
+  // Kick off playback once when the screen opens — or attach to the running
+  // track when resuming a session after a reload.
   const startedRef = useRef(false);
   useEffect(() => {
     if (!startedRef.current) {
       startedRef.current = true;
-      engine.start(startIndex);
+      if (resume) engine.attach(startIndex);
+      else engine.start(startIndex);
     }
-  }, [engine, startIndex]);
+  }, [engine, startIndex, resume]);
 
   const track = engine.track;
 
@@ -65,6 +70,22 @@ export default function PlayerScreen({
   // Prefer the live Spotify duration; fall back to fetched/authored metadata.
   const duration = engine.durationMs || meta.durationMs;
   const progressPct = duration > 0 ? Math.min(100, (engine.positionMs / duration) * 100) : 0;
+
+  // Where the active BPM / first beat come from (authored wins over a tap).
+  const bpmAuthored = track.bpm != null;
+  const firstBeatAuthored = track.firstBeatSec != null;
+  const bpmSource = bpmAuthored
+    ? 'authored'
+    : cal?.bpm != null
+      ? 'tapped'
+      : meta.bpm != null
+        ? 'Spotify'
+        : null;
+  const firstBeatSource = firstBeatAuthored
+    ? 'authored'
+    : cal?.firstBeatSec != null
+      ? 'tapped'
+      : 'default';
 
   // --- Tap tempo + downbeat calibration --------------------------------------
   const tapsRef = useRef<number[]>([]);
@@ -199,8 +220,9 @@ export default function PlayerScreen({
         <div className="sync-head">
           <span>Tempo &amp; first beat</span>
           <span className="muted">
-            {meta.bpm ? `${Math.round(meta.bpm)} BPM` : 'no BPM'} ·{' '}
-            {`1st @ ${meta.firstBeatSec.toFixed(2)}s`}
+            {meta.bpm ? `${Math.round(meta.bpm)} BPM` : 'no BPM'}
+            {bpmSource ? ` (${bpmSource})` : ''} ·{' '}
+            {`1st @ ${meta.firstBeatSec.toFixed(2)}s (${firstBeatSource})`}
           </span>
         </div>
         <div className="calib-actions">
@@ -208,13 +230,20 @@ export default function PlayerScreen({
             Tap tempo
             <span className="tap-bpm">{tapBpm ? `${tapBpm}` : '—'}</span>
           </button>
-          <button className="ghost" onClick={saveTappedBpm} disabled={!tapBpm}>
+          <button
+            className="ghost"
+            onClick={saveTappedBpm}
+            disabled={!tapBpm || bpmAuthored}
+          >
             Save BPM
           </button>
           <button
             className="ghost"
             onClick={markFirstBeat}
-            disabled={engine.phase !== 'playing' && engine.phase !== 'paused'}
+            disabled={
+              firstBeatAuthored ||
+              (engine.phase !== 'playing' && engine.phase !== 'paused')
+            }
           >
             Mark first beat
           </button>
@@ -230,8 +259,9 @@ export default function PlayerScreen({
           )}
         </div>
         <p className="hint">
-          Tap along to the beat a few times, Save, then tap “Mark first beat” on
-          count 1. Saved per track on this device.
+          {bpmAuthored || firstBeatAuthored
+            ? 'Authored in tracks.ts (overrides tapping) — clear it there to calibrate by ear.'
+            : 'Tap along to the beat a few times, Save, then tap “Mark first beat” on count 1. Saved per track on this device.'}
         </p>
       </div>
 
@@ -264,6 +294,9 @@ export default function PlayerScreen({
           <div className="overlay-card">
             <span className="muted">Next track in</span>
             <span className="gap-num">{engine.gapRemaining}</span>
+            <button className="add-time" onClick={() => engine.extendGap(5)}>
+              +5s
+            </button>
             <div className="overlay-actions">
               <button className="ghost" onClick={engine.holdNow}>
                 Hold
