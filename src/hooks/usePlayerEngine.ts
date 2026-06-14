@@ -1,0 +1,250 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { Track } from '../data/tracks';
+import { interpolatePosition } from '../playback/position';
+import {
+  getPlaybackState,
+  pause as apiPause,
+  playTrack,
+  resume as apiResume,
+  type PlaybackSnapshot,
+} from '../spotify/api';
+
+export type Phase =
+  | 'idle' // nothing started yet
+  | 'loading' // sent play command, waiting for first state
+  | 'playing'
+  | 'paused' // paused mid-track by the user
+  | 'gap' // 20s countdown between tracks
+  | 'held' // permanently paused between tracks (auto-continue cancelled)
+  | 'ended'; // last track finished, nothing queued
+
+const POLL_MS = 1000; // how often we ask Spotify for the true position
+const TICK_MS = 100; // how often we re-render the interpolated position
+const END_GUARD_MS = 500; // treat as ended this close to the track's end
+
+export interface PlayerEngine {
+  index: number;
+  track: Track;
+  phase: Phase;
+  /** Interpolated playback position in ms (raw, before any sync offset). */
+  positionMs: number;
+  gapRemaining: number;
+  autoContinue: boolean;
+  deviceName: string | null;
+  error: string | null;
+
+  start: (index: number) => void;
+  togglePlayPause: () => void;
+  next: () => void;
+  prev: () => void;
+  skipGap: () => void;
+  holdNow: () => void; // the "pause permanently between tracks" button
+  setAutoContinue: (v: boolean) => void;
+}
+
+export function usePlayerEngine(
+  tracks: Track[],
+  deviceId: string | null,
+  gapSeconds = 20,
+): PlayerEngine {
+  const [index, setIndex] = useState(0);
+  const [phase, setPhase] = useState<Phase>('idle');
+  const [positionMs, setPositionMs] = useState(0);
+  const [gapRemaining, setGapRemaining] = useState(gapSeconds);
+  const [autoContinue, setAutoContinueState] = useState(true);
+  const [deviceName, setDeviceName] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // Refs mirror state so the timers/poller read fresh values without resetting.
+  const indexRef = useRef(index);
+  const phaseRef = useRef(phase);
+  const autoRef = useRef(autoContinue);
+  const snapshotRef = useRef<PlaybackSnapshot | null>(null);
+  const gapDeadlineRef = useRef(0);
+  const deviceIdRef = useRef(deviceId);
+
+  indexRef.current = index;
+  phaseRef.current = phase;
+  autoRef.current = autoContinue;
+  deviceIdRef.current = deviceId;
+
+  const track = tracks[index];
+
+  const playIndex = useCallback(
+    async (i: number) => {
+      const t = tracks[i];
+      if (!t) return;
+      setIndex(i);
+      indexRef.current = i;
+      setPhase('loading');
+      phaseRef.current = 'loading';
+      setPositionMs(0);
+      snapshotRef.current = null;
+      setError(null);
+      try {
+        await playTrack(t.spotifyUri, deviceIdRef.current ?? undefined, 0);
+        setPhase('playing');
+        phaseRef.current = 'playing';
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+        setPhase('paused');
+        phaseRef.current = 'paused';
+      }
+    },
+    [tracks],
+  );
+
+  const enterGapOrEnd = useCallback(() => {
+    const hasNext = indexRef.current + 1 < tracks.length;
+    if (!hasNext) {
+      setPhase('ended');
+      phaseRef.current = 'ended';
+      return;
+    }
+    if (autoRef.current) {
+      gapDeadlineRef.current = Date.now() + gapSeconds * 1000;
+      setGapRemaining(gapSeconds);
+      setPhase('gap');
+      phaseRef.current = 'gap';
+    } else {
+      setPhase('held');
+      phaseRef.current = 'held';
+    }
+  }, [tracks.length, gapSeconds]);
+
+  // Poll Spotify for the authoritative playback state.
+  useEffect(() => {
+    let cancelled = false;
+    const poll = async () => {
+      const active = ['playing', 'paused'].includes(phaseRef.current);
+      if (!active) return;
+      try {
+        const snap = await getPlaybackState();
+        if (cancelled || !snap) return;
+        snapshotRef.current = snap;
+        setDeviceName(snap.deviceName);
+        // If Spotify reports it stopped near the end, the track finished.
+        if (
+          phaseRef.current === 'playing' &&
+          !snap.isPlaying &&
+          snap.durationMs > 0 &&
+          snap.progressMs >= snap.durationMs - 2000
+        ) {
+          enterGapOrEnd();
+        }
+      } catch {
+        /* transient network error — keep extrapolating */
+      }
+    };
+    const id = setInterval(poll, POLL_MS);
+    poll();
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [enterGapOrEnd]);
+
+  // High-frequency ticker: interpolate position, run the gap countdown.
+  useEffect(() => {
+    const id = setInterval(() => {
+      const p = phaseRef.current;
+
+      if (p === 'playing') {
+        const snap = snapshotRef.current;
+        if (snap) {
+          const pos = interpolatePosition(snap);
+          const duration = snap.durationMs || tracks[indexRef.current]?.durationMs || 0;
+          setPositionMs(pos);
+          if (duration > 0 && pos >= duration - END_GUARD_MS) {
+            enterGapOrEnd();
+          }
+        }
+      } else if (p === 'gap') {
+        const remainingMs = gapDeadlineRef.current - Date.now();
+        const remaining = Math.max(0, Math.ceil(remainingMs / 1000));
+        setGapRemaining(remaining);
+        if (remainingMs <= 0) {
+          void playIndex(indexRef.current + 1);
+        }
+      }
+    }, TICK_MS);
+    return () => clearInterval(id);
+  }, [enterGapOrEnd, playIndex, tracks]);
+
+  // ---- Controls ----------------------------------------------------------
+  const start = useCallback((i: number) => void playIndex(i), [playIndex]);
+
+  const togglePlayPause = useCallback(() => {
+    const p = phaseRef.current;
+    if (p === 'playing') {
+      apiPause(deviceIdRef.current ?? undefined).catch(() => {});
+      // Freeze position at the last known value.
+      const snap = snapshotRef.current;
+      if (snap) {
+        snapshotRef.current = { ...snap, isPlaying: false, fetchedAt: Date.now() };
+      }
+      setPhase('paused');
+      phaseRef.current = 'paused';
+    } else if (p === 'paused') {
+      apiResume(deviceIdRef.current ?? undefined).catch(() => {});
+      const snap = snapshotRef.current;
+      if (snap) {
+        snapshotRef.current = { ...snap, isPlaying: true, fetchedAt: Date.now() };
+      }
+      setPhase('playing');
+      phaseRef.current = 'playing';
+    } else if (p === 'held' || p === 'gap' || p === 'ended') {
+      // Resume the routine from where we paused between tracks.
+      void playIndex(indexRef.current + (p === 'ended' ? 0 : 1));
+    }
+  }, [playIndex]);
+
+  const next = useCallback(() => {
+    const i = Math.min(tracks.length - 1, indexRef.current + 1);
+    void playIndex(i);
+  }, [playIndex, tracks.length]);
+
+  const prev = useCallback(() => {
+    const i = Math.max(0, indexRef.current - 1);
+    void playIndex(i);
+  }, [playIndex]);
+
+  const skipGap = useCallback(() => {
+    if (phaseRef.current === 'gap' || phaseRef.current === 'held') {
+      void playIndex(indexRef.current + 1);
+    }
+  }, [playIndex]);
+
+  const holdNow = useCallback(() => {
+    // The easy "pause permanently between tracks" button.
+    const p = phaseRef.current;
+    if (p === 'gap' || p === 'playing' || p === 'paused') {
+      if (p !== 'gap') apiPause(deviceIdRef.current ?? undefined).catch(() => {});
+      setPhase('held');
+      phaseRef.current = 'held';
+    }
+  }, []);
+
+  const setAutoContinue = useCallback((v: boolean) => {
+    setAutoContinueState(v);
+    autoRef.current = v;
+  }, []);
+
+  return {
+    index,
+    track,
+    phase,
+    positionMs,
+    gapRemaining,
+    autoContinue,
+    deviceName,
+    error,
+    start,
+    togglePlayPause,
+    next,
+    prev,
+    skipGap,
+    holdNow,
+    setAutoContinue,
+  };
+}
