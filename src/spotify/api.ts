@@ -95,13 +95,21 @@ export interface TrackInfo {
   title: string;
   artist: string;
   durationMs: number;
+  /** International Standard Recording Code — used to look up BPM elsewhere. */
+  isrc: string | null;
 }
 
-function parseTrackInfo(t: { name?: string; artists?: { name: string }[]; duration_ms?: number }): TrackInfo {
+function parseTrackInfo(t: {
+  name?: string;
+  artists?: { name: string }[];
+  duration_ms?: number;
+  external_ids?: { isrc?: string };
+}): TrackInfo {
   return {
     title: t.name ?? '',
     artist: (t.artists ?? []).map((a) => a.name).join(', '),
     durationMs: t.duration_ms ?? 0,
+    isrc: t.external_ids?.isrc ?? null,
   };
 }
 
