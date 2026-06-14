@@ -60,9 +60,9 @@ Unchecked entries are TODO / Wishlist.
 Ideas for features and improvements, grouped by theme. Not committed work — a backlog to pull from.
 
 ### Authoring routines (highest leverage — today it's hand-edited TS)
-- [ ] **In-app step editor.** Add/edit/reorder `steps` (step, cue, measures) from the UI instead of `tracks.ts`/`tracks.local.ts`; persist to `localStorage` per URI like calibration does.
-- [ ] **Import/export routines as JSON.** Back up and share `tracks.local.ts` content without git; download/upload a file. Mitigates the gitignored-and-only-on-one-device risk.
-- [ ] **Live re-time while authoring.** "Mark step boundary" tap mode during playback that fills `measures` from the music, the way first-beat capture already works.
+- [x] **In-app step editor.** Add/edit/reorder `steps` (step, cue, measures) from the UI instead of `tracks.ts`/`tracks.local.ts`; persist to `localStorage` per URI like calibration does. (`TrackEditor` + `tracksStore` `tjf.tracks`; plus in-app Spotify search, step-library block-insert, BPM recommendation/guidance.)
+- [x] **Import/export routines as JSON.** Back up and share `tracks.local.ts` content without git; download/upload a file. Mitigates the gitignored-and-only-on-one-device risk. (`RoutinesManager` + `validateTracks`.)
+- [x] **Live re-time while authoring.** "Mark step boundary" tap mode during playback that fills `measures` from the music, the way first-beat capture already works. (`TapToTime` + `tapsToTiming`.)
 - [ ] **Validate routine vs. track length.** Warn when accumulated callings overshoot/undershoot `durationMs` so a mis-typed `measures` is caught before class.
 - [ ] Allow json import files in the public folder from webserver and show them dynamicly as recommendend import targets in the UI. By this we can replace fully the TRACKS object from tracks.ts and tracks.local.ts and just load default.json and default.*.json files on startup.
 - [ ] Allow marking tracks as WORK IN PROGRESS (timings for example are not finished)
@@ -78,19 +78,20 @@ Ideas for features and improvements, grouped by theme. Not committed work — a 
 - [ ] **Beat-grid / count visualization** (1-2-3-4-5-6-7-8) ticking with the music, driven by `bpm` + `firstBeatSec`.
 
 ### Robustness & offline
-- [ ] **Reconnect / device-lost handling.** Surface when the target Connect device disappears or playback is hijacked by another app, with a one-tap re-target.
-- [ ] **Token-expiry UX.** Graceful re-auth when the refresh fails mid-class rather than a silent stall.
-- [ ] **Install prompt + offline audit.** Verify the shell, track list, and authored callings truly work offline (matches the stated offline-first goal); add a PWA install affordance.
+- [x] **Reconnect / device-lost handling.** Surface when the target Connect device disappears or playback is hijacked by another app, with a one-tap re-target. (engine `noDevice` + `recover()`, recovery banner.)
+- [x] **Token-expiry UX.** Graceful re-auth when the refresh fails mid-class rather than a silent stall. (`AUTH_EXPIRED_EVENT` → login screen; plus `startTokenAutoRefresh` proactive background refresh.)
+- [x] **Offline audit.** Verify the shell, track list, and authored callings truly work offline (matches the stated offline-first goal). (`useOnline` banner + gated fetches; precache verified.)
+- [ ] **PWA install prompt / affordance.** (the offline audit half of the old combined item is done; the install prompt remains.)
 - [ ] **Fast loading search insert bar.** Hard code some search results and display them opening a search without text for quick access the most popular 20 jumping fitness songs offline.
 - [ ] Can we make the progress bar circle has more units, so that it flows more?
 
 ### Track list UX
-- [ ] **Search / filter / favorites** in `TrackList` as the list grows.
-- [ ] **Seed tracks from a Spotify playlist** (one call to import URIs, then author steps).
+- [x] **Search / filter / favorites** in `TrackList` as the list grows. (search box + `useOnline`-aware filtering, starred favorites in `tjf.favorites`.)
+- [x] **Seed tracks from a Spotify playlist** (one call to import URIs, then author steps). (`PlaylistSeed` → routine stubs with BPM-if-known.)
 
 ### Engineering / quality
 - [ ] **Component tests** for `PlayerScreen` gap/held overlays and `CallingDisplay` (currently only business logic is tested).
-- [ ] **Wire up ESLint in CI** (config was added; make it run on PRs).
+- [x] **Wire up ESLint in CI** (config was added; make it run on PRs). (`.github/workflows/ci.yml` runs typecheck/lint/test/build on push + PR.)
 - [ ] **Revisit track-end heuristic** (`duration − 500ms`) — make the threshold configurable or smarter to avoid early/late gap entry on tracks with long outros.
 
 ### Features
