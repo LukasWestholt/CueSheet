@@ -373,6 +373,13 @@ button:active {
 .calling-display.announcing-alt {
   outline-color: var(--warn);
 }
+.calling-debug {
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  margin-top: 6px;
+}
 .next.next-announce {
   opacity: 1;
 }
