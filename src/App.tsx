@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { IS_CONFIGURED } from './config';
 import { handleRedirectCallback, isLoggedIn, logout } from './spotify/auth';
+import { getTracksInfo, type TrackInfo } from './spotify/api';
 import { TRACKS } from './data/tracks';
 import LoginScreen from './components/LoginScreen';
 import TrackList from './components/TrackList';
@@ -16,6 +17,7 @@ export default function App() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [trackInfos, setTrackInfos] = useState<Record<string, TrackInfo>>({});
 
   // Handle the OAuth redirect, then determine login state.
   useEffect(() => {
@@ -32,6 +34,14 @@ export default function App() {
       }
     })();
   }, []);
+
+  // Once logged in, fetch list metadata (titles/durations) in one batch.
+  useEffect(() => {
+    if (!loggedIn) return;
+    getTracksInfo(TRACKS.map((t) => t.spotifyUri))
+      .then(setTrackInfos)
+      .catch(() => {});
+  }, [loggedIn]);
 
   if (!IS_CONFIGURED) {
     return (
@@ -76,6 +86,7 @@ export default function App() {
           <DevicePicker selectedDeviceId={deviceId} onSelect={setDeviceId} />
           <TrackList
             tracks={TRACKS}
+            infos={trackInfos}
             onSelect={(i) => {
               setSelectedIndex(i);
               setView('player');

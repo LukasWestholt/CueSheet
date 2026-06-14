@@ -1,4 +1,5 @@
 import type { Track } from '../data/tracks';
+import type { TrackInfo } from '../spotify/api';
 
 function formatDuration(ms: number): string {
   const total = Math.round(ms / 1000);
@@ -9,28 +10,38 @@ function formatDuration(ms: number): string {
 
 export default function TrackList({
   tracks,
+  infos,
   onSelect,
 }: {
   tracks: Track[];
+  infos: Record<string, TrackInfo>;
   onSelect: (index: number) => void;
 }) {
   return (
     <ul className="track-list">
-      {tracks.map((t, i) => (
-        <li key={t.id}>
-          <button className="track-row" onClick={() => onSelect(i)}>
-            <span className="track-index">{i + 1}</span>
-            <span className="track-meta">
-              <span className="track-title">{t.title}</span>
-              <span className="track-artist">{t.artist}</span>
-            </span>
-            <span className="track-aside">
-              <span className="badge">{t.steps.length} steps</span>
-              <span className="track-time">{formatDuration(t.durationMs)}</span>
-            </span>
-          </button>
-        </li>
-      ))}
+      {tracks.map((t, i) => {
+        const info = infos[t.spotifyUri];
+        const title = t.title ?? info?.title ?? 'Unknown track';
+        const artist = t.artist ?? info?.artist ?? '';
+        const durationMs = t.durationMs ?? info?.durationMs;
+        return (
+          <li key={t.id}>
+            <button className="track-row" onClick={() => onSelect(i)}>
+              <span className="track-index">{i + 1}</span>
+              <span className="track-meta">
+                <span className="track-title">{title}</span>
+                <span className="track-artist">{artist}</span>
+              </span>
+              <span className="track-aside">
+                <span className="badge">{t.steps.length} steps</span>
+                {durationMs != null && (
+                  <span className="track-time">{formatDuration(durationMs)}</span>
+                )}
+              </span>
+            </button>
+          </li>
+        );
+      })}
     </ul>
   );
 }

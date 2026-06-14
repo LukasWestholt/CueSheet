@@ -85,6 +85,63 @@ function trackIdFromUri(uri: string): string {
   return uri.split(':').pop() ?? uri;
 }
 
+/** A real Spotify track id is 22 base62 chars (filters out REPLACE_ME stubs). */
+function isValidTrackId(id: string): boolean {
+  return /^[A-Za-z0-9]{22}$/.test(id);
+}
+
+export interface TrackInfo {
+  title: string;
+  artist: string;
+  durationMs: number;
+}
+
+function parseTrackInfo(t: { name?: string; artists?: { name: string }[]; duration_ms?: number }): TrackInfo {
+  return {
+    title: t.name ?? '',
+    artist: (t.artists ?? []).map((a) => a.name).join(', '),
+    durationMs: t.duration_ms ?? 0,
+  };
+}
+
+/** Basic track metadata (title/artist/duration) — always available. */
+export async function getTrackInfo(uri: string): Promise<TrackInfo | null> {
+  const id = trackIdFromUri(uri);
+  if (!isValidTrackId(id)) return null;
+  const res = await api(`/tracks/${id}`);
+  if (!res.ok) return null;
+  return parseTrackInfo(await res.json());
+}
+
+/** Batch metadata lookup (up to 50 ids), keyed by the input URI. */
+export async function getTracksInfo(uris: string[]): Promise<Record<string, TrackInfo>> {
+  const out: Record<string, TrackInfo> = {};
+  const valid = uris.filter((u) => isValidTrackId(trackIdFromUri(u)));
+  if (valid.length === 0) return out;
+  const res = await api(`/tracks?ids=${valid.map(trackIdFromUri).join(',')}`);
+  if (!res.ok) return out;
+  const data = await res.json();
+  (data.tracks ?? []).forEach((t: unknown, i: number) => {
+    if (t) out[valid[i]] = parseTrackInfo(t as Parameters<typeof parseTrackInfo>[0]);
+  });
+  return out;
+}
+
+/**
+ * First-beat timestamp (seconds) from audio-analysis (first bar, else first
+ * beat). Returns null on failure — this endpoint is deprecated for apps created
+ * after Nov 2024 and may 403, so keep a manual `firstBeatSec` as fallback.
+ */
+export async function getFirstBeatSec(uri: string): Promise<number | null> {
+  const id = trackIdFromUri(uri);
+  if (!isValidTrackId(id)) return null;
+  const res = await api(`/audio-analysis/${id}`);
+  if (!res.ok) return null;
+  const data = await res.json();
+  const start = data.bars?.[0]?.start ?? data.beats?.[0]?.start;
+  return typeof start === 'number' ? start : null;
+}
+
 /**
  * Fetches a track's tempo (BPM) from Spotify's audio-features endpoint.
  * Returns null on failure — note this endpoint is deprecated for apps created
