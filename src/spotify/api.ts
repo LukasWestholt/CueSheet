@@ -2,6 +2,7 @@
 // playback on whichever device is active (e.g. an Android tablet on Bluetooth)
 // and report its position — the PWA itself never plays audio.
 import { getAccessToken } from './auth';
+import { cached } from './metaCache';
 
 const BASE = 'https://api.spotify.com/v1';
 
@@ -104,13 +105,19 @@ function parseTrackInfo(t: { name?: string; artists?: { name: string }[]; durati
   };
 }
 
-/** Basic track metadata (title/artist/duration) — always available. */
+/**
+ * Basic track metadata (title/artist/duration) — always available, immutable
+ * per track, so cached by id (memory + localStorage). Only successful fetches
+ * are cached; a failure returns null and is retried next time.
+ */
 export async function getTrackInfo(uri: string): Promise<TrackInfo | null> {
   const id = trackIdFromUri(uri);
   if (!isValidTrackId(id)) return null;
-  const res = await api(`/tracks/${id}`);
-  if (!res.ok) return null;
-  return parseTrackInfo(await res.json());
+  return cached('trackInfo', id, async () => {
+    const res = await api(`/tracks/${id}`);
+    if (!res.ok) return null;
+    return parseTrackInfo(await res.json());
+  });
 }
 
 /**
@@ -137,11 +144,15 @@ export async function getTracksInfo(uris: string[]): Promise<Record<string, Trac
 export async function getFirstBeatSec(uri: string): Promise<number | null> {
   const id = trackIdFromUri(uri);
   if (!isValidTrackId(id)) return null;
-  const res = await api(`/audio-analysis/${id}`);
-  if (!res.ok) return null;
-  const data = await res.json();
-  const start = data.bars?.[0]?.start ?? data.beats?.[0]?.start;
-  return typeof start === 'number' ? start : null;
+  // Cached by id: only a successful numeric result is stored, so the usual 403
+  // (deprecated endpoint) returns null and stays retriable / cheap.
+  return cached('firstBeatSec', id, async () => {
+    const res = await api(`/audio-analysis/${id}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const start = data.bars?.[0]?.start ?? data.beats?.[0]?.start;
+    return typeof start === 'number' ? start : null;
+  });
 }
 
 /**
@@ -150,10 +161,16 @@ export async function getFirstBeatSec(uri: string): Promise<number | null> {
  * after Nov 2024 and may return 403, so always keep a manual `bpm` as fallback.
  */
 export async function getTrackTempo(uri: string): Promise<number | null> {
-  const res = await api(`/audio-features/${trackIdFromUri(uri)}`);
-  if (!res.ok) return null;
-  const data = await res.json();
-  return typeof data.tempo === 'number' && data.tempo > 0 ? data.tempo : null;
+  const id = trackIdFromUri(uri);
+  if (!isValidTrackId(id)) return null;
+  // Cached by id: only a successful tempo is stored, so the usual 403
+  // (deprecated endpoint) returns null and stays retriable / cheap.
+  return cached('trackTempo', id, async () => {
+    const res = await api(`/audio-features/${id}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return typeof data.tempo === 'number' && data.tempo > 0 ? data.tempo : null;
+  });
 }
 
 /** Returns the current playback snapshot, or null when no device is active. */
