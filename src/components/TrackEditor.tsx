@@ -4,6 +4,7 @@ import type { StepLibraryEntry } from '../data/stepLibrary';
 import { validateTracks } from '../data/validateTracks';
 import { getTrackInfo, searchTracks, type TrackSearchResult } from '../spotify/api';
 import { getBpmByIsrc } from '../beatdata/deezer';
+import { bpmAdvice, bpmLevelClass } from '../data/bpmAdvice';
 
 const TRACK_URI_RE = /^spotify:track:[A-Za-z0-9]{22}$/;
 
@@ -155,6 +156,10 @@ export default function TrackEditor({
     setPicked(new Set());
   };
 
+  // BPM the routine will use (authored, else the online recommendation).
+  const effBpm = draft.bpm ?? (typeof recBpm === 'number' ? recBpm : undefined);
+  const advice = effBpm != null ? bpmAdvice(effBpm) : null;
+
   return (
     <div className="editor">
       <header className="topbar">
@@ -193,10 +198,10 @@ export default function TrackEditor({
                     <span className="sr-dur">{fmtDuration(r.durationMs)}</span>
                   </button>
                   <button
-                    className="sr-bpm-btn"
+                    className={`sr-bpm-btn ${bpm != null ? bpmLevelClass(bpmAdvice(bpm).level) : ''}`}
                     onClick={() => bpm != null && chooseResult(r, bpm)}
                     disabled={bpm == null}
-                    title={bpm != null ? 'Use this track and set its BPM' : undefined}
+                    title={bpm != null ? `Use this track + BPM — ${bpmAdvice(bpm).label}` : undefined}
                   >
                     {!known ? '…' : bpm != null ? `${bpm} BPM` : 'no BPM'}
                   </button>
@@ -222,6 +227,7 @@ export default function TrackEditor({
             <input
               type="number"
               inputMode="numeric"
+              className={draft.bpm != null ? bpmLevelClass(bpmAdvice(draft.bpm).level) : undefined}
               value={numField(draft.bpm)}
               placeholder="auto"
               onChange={(e) => patch({ bpm: parseOptionalNum(e.target.value) })}
@@ -239,11 +245,15 @@ export default function TrackEditor({
             />
           </label>
         </div>
+        {advice && (
+          <p className={`bpm-advice ${bpmLevelClass(advice.level)}`}>{advice.label}</p>
+        )}
         {recBpm === undefined ? (
           <p className="hint">Looking up recommended BPM…</p>
         ) : typeof recBpm === 'number' ? (
           <p className="rec-bpm">
-            Recommended BPM: <strong>{recBpm}</strong> (Deezer)
+            Recommended BPM:{' '}
+            <strong className={bpmLevelClass(bpmAdvice(recBpm).level)}>{recBpm}</strong> (Deezer)
             {draft.bpm === recBpm ? (
               <span className="rec-match"> ✓ in use</span>
             ) : (

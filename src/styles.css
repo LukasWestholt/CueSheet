@@ -360,6 +360,30 @@ button:active {
 .rec-match {
   color: var(--accent);
 }
+.bpm-advice {
+  font-size: 0.82rem;
+  margin: 2px 0;
+}
+/* Color-code a BPM value by its jumping-fitness band (scoped to win over the
+   base input/button/text colors). */
+.bpm-advice.bpm-ok,
+.editor input.bpm-ok,
+.rec-bpm strong.bpm-ok,
+.sr-bpm-btn.bpm-ok {
+  color: var(--accent);
+}
+.bpm-advice.bpm-warn,
+.editor input.bpm-warn,
+.rec-bpm strong.bpm-warn,
+.sr-bpm-btn.bpm-warn {
+  color: var(--warn);
+}
+.bpm-advice.bpm-bad,
+.editor input.bpm-bad,
+.rec-bpm strong.bpm-bad,
+.sr-bpm-btn.bpm-bad {
+  color: var(--danger);
+}
 .editor-steps {
   list-style: none;
   margin: 0;
