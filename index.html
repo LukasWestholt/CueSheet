@@ -12,17 +12,91 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>CueSheet</title>
+    <!-- Boot splash styles: the bundled CSS is imported by main.tsx, so it is
+         NOT present during the ~2s before JS loads. These inline rules (allowed
+         by CSP style-src 'unsafe-inline') style the static #root content below;
+         React replaces #root on first render, after which these go unused. -->
+    <style>
+      .boot-splash {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+        text-align: center;
+        padding: 24px calc(env(safe-area-inset-right) + 24px)
+          calc(env(safe-area-inset-bottom) + 24px) calc(env(safe-area-inset-left) + 24px);
+        background: #121821;
+        color: #f8fafc;
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      }
+      .boot-splash__title {
+        margin: 0;
+        font-size: 2.25rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+      .boot-splash__welcome {
+        margin: 0;
+        max-width: 26rem;
+        font-size: 1.05rem;
+        line-height: 1.5;
+      }
+      .boot-splash__made {
+        margin: 0;
+        font-size: 0.8rem;
+        color: #93a4b8;
+      }
+      .boot-splash .site-credit {
+        margin: 0;
+        font-size: 0.8rem;
+        color: #93a4b8;
+      }
+      .boot-splash .site-credit a {
+        color: #93a4b8;
+      }
+      .boot-splash__spinner {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        border: 3px solid #273141;
+        border-top-color: #f97316;
+        animation: boot-spin 0.8s linear infinite;
+      }
+      @keyframes boot-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .boot-splash__spinner {
+          animation: none;
+          border-top-color: #273141;
+        }
+      }
+    </style>
   </head>
   <body>
-    <!-- Attribution backlink kept in the STATIC source HTML so GetSongBPM can
-         verify it by reading the raw page source. It lives INSIDE #root, so once
-         JS loads React replaces it on first render and the visible "BPM data:
-         GetSongBPM" link (LoginScreen) takes over — no duplicate on screen. -->
+    <!-- Static pre-JS content. The GetSongBPM attribution backlink is kept in
+         the STATIC source HTML so GetSongBPM can verify it by reading the raw
+         page source. It lives INSIDE #root, so once JS loads React replaces the
+         whole splash and the visible "BPM data: GetSongBPM" link (LoginScreen)
+         takes over — no duplicate on screen. -->
     <div id="root">
-      <footer class="site-credit">
-        Tempo &amp; BPM data by
-        <a href="https://getsongbpm.com" target="_blank" rel="noreferrer">GetSongBPM</a>
-      </footer>
+      <div class="boot-splash">
+        <h1 class="boot-splash__title">CueSheet 🎶</h1>
+        <p class="boot-splash__welcome">
+          Welcome, coach! 💪🕺 Get your jumping-fitness class moving — loading your routines…
+        </p>
+        <div class="boot-splash__spinner" role="status" aria-label="Loading"></div>
+        <p class="boot-splash__made">Built with ❤️ in Leipzig, Germany 🇩🇪</p>
+        <footer class="site-credit">
+          Tempo &amp; BPM data by
+          <a href="https://getsongbpm.com" target="_blank" rel="noreferrer">GetSongBPM</a>
+        </footer>
+      </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

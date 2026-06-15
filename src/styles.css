@@ -111,6 +111,19 @@ body {
   justify-content: center;
 }
 
+/* Single-card screens (setup / loading) that keep the card centered but pin
+   the SiteFooter to the bottom of the viewport. */
+.screen.center-col {
+  display: flex;
+  flex-direction: column;
+}
+.screen.center-col .center-fill {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 h1 {
   font-size: var(--text-xl);
   margin: 0;
@@ -489,20 +502,19 @@ button:disabled:active {
   color: var(--muted);
   font-size: var(--text-sm);
 }
-.landing-footer .version {
+/* Version + "Built with ❤" share one centered row below the links. */
+.landing-footer .footer-meta {
   flex-basis: 100%;
-  text-align: center;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-2);
   color: var(--muted);
   opacity: 0.7;
   font-size: var(--text-xs);
-  font-variant-numeric: tabular-nums;
 }
-.app-version {
-  text-align: center;
-  color: var(--muted);
-  opacity: 0.7;
-  font-size: var(--text-xs);
-  margin: var(--space-4) 0 var(--space-1);
+.landing-footer .version {
   font-variant-numeric: tabular-nums;
 }
 

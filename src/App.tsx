@@ -19,13 +19,13 @@ import {
 } from './data/recommendedImports';
 import { collectStepLibrary } from './data/stepLibrary';
 import { parsePath, trackPath, listPath } from './nav/routes';
-import { APP_VERSION } from './version';
 import { loadFavorites, saveFavorites } from './data/favorites';
 import { loadSetlist, saveSetlist } from './data/setlistStore';
 import { resolveSetlist } from './data/setlist';
 import { DEFAULT_GAP_SECONDS } from './hooks/usePlayerEngine';
 import { useOnline } from './hooks/useOnline';
 import LoginScreen from './components/LoginScreen';
+import SiteFooter from './components/SiteFooter';
 import TrackList from './components/TrackList';
 import PlayerScreen from './components/PlayerScreen';
 import DevicePicker from './components/DevicePicker';
@@ -312,26 +312,32 @@ export default function App() {
 
   if (!IS_CONFIGURED) {
     return (
-      <div className="screen center">
-        <div className="card notice">
-          <h1>Setup needed</h1>
-          <p>
-            No Spotify Client ID found. Copy <code>.env.example</code> to{' '}
-            <code>.env</code>, paste your Client ID from the{' '}
-            <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noreferrer">
-              Spotify dashboard
-            </a>
-            , and restart the dev server.
-          </p>
+      <div className="screen center-col">
+        <div className="center-fill">
+          <div className="card notice">
+            <h1>Setup needed</h1>
+            <p>
+              No Spotify Client ID found. Copy <code>.env.example</code> to{' '}
+              <code>.env</code>, paste your Client ID from the{' '}
+              <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noreferrer">
+                Spotify dashboard
+              </a>
+              , and restart the dev server.
+            </p>
+          </div>
         </div>
+        <SiteFooter />
       </div>
     );
   }
 
   if (!ready) {
     return (
-      <div className="screen center">
-        <div className="spinner" />
+      <div className="screen center-col">
+        <div className="center-fill">
+          <div className="spinner" />
+        </div>
+        <SiteFooter />
       </div>
     );
   }
@@ -438,7 +444,6 @@ export default function App() {
             onImportFile={importFromFile}
           />
           <Settings />
-          <p className="app-version">CueSheet v{APP_VERSION}</p>
         </>
       ) : (
         <PlayerScreen
@@ -460,6 +465,7 @@ export default function App() {
           onUpdateTrack={updateTrack}
         />
       )}
+      <SiteFooter />
     </div>
   );
 }
