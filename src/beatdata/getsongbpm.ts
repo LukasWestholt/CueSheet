@@ -4,21 +4,24 @@
 // GetSongBPM has good coverage to fill those gaps. See docs/beat-data.md.
 //
 // Two costs to be aware of:
-//  1. **API key** — free, but required. Set `VITE_GETSONGBPM_API_KEY` in `.env`.
-//     Without it this source disables itself (returns null), so the app falls
-//     back to Deezer / manual tap calibration exactly as before.
-//  2. **Mandatory backlink** — GetSongBPM suspends accounts that don't link back
-//     to getsongbpm.com. A visible attribution link must be added to the UI
-//     before this is shipped enabled (e.g. in the LoginScreen footer).
+//  1. **API key** — free, but required. A static site can't hide a secret, so
+//     the key is **per-user**: pasted in Settings (or via a `?getsongbpm_key=`
+//     bookmark) and kept in localStorage (`src/data/getsongbpmKey.ts`), never
+//     in the bundle. Without a key this source disables itself (returns null),
+//     so the app falls back to Deezer / manual tap calibration exactly as before.
+//  2. **Mandatory backlink** — GetSongBPM suspends accounts that don't link
+//     back to getsongbpm.com, and verifies it by reading the *raw source HTML*
+//     (React-rendered nodes don't count). So the backlink is a static <a> in
+//     `index.html` (outside #root); the LoginScreen footer also links out for
+//     humans.
 //
 // Unlike Deezer this matches by **title + artist** (GetSongBPM has no ISRC
 // lookup), so it's fuzzier — we take the first search hit. CORS works, so a
 // plain fetch() is fine (no JSONP needed); CSP connect-src must allow the host.
 
 import { cached } from '../spotify/metaCache';
+import { loadGetsongbpmKey } from '../data/getsongbpmKey';
 
-const API_KEY: string = import.meta.env.VITE_GETSONGBPM_API_KEY ?? '';
-const ENABLED = API_KEY.length > 0;
 const BASE = 'https://api.getsongbpm.com';
 
 interface GsbSong {
@@ -52,11 +55,12 @@ export async function getBpmByTitleArtist(
   title: string | null | undefined,
   artist: string | null | undefined,
 ): Promise<number | null> {
-  if (!ENABLED || !title || !artist) return null;
+  const apiKey = loadGetsongbpmKey();
+  if (!apiKey || !title || !artist) return null;
   return cached('getsongbpmBpm', cacheKey(title, artist), async () => {
     try {
       const lookup = encodeURIComponent(`song:${title} artist:${artist}`);
-      const res = await fetch(`${BASE}/search/?api_key=${API_KEY}&type=both&lookup=${lookup}`);
+      const res = await fetch(`${BASE}/search/?api_key=${apiKey}&type=both&lookup=${lookup}`);
       if (!res.ok) return null;
       const data = (await res.json()) as GsbSearchResponse;
       const list = Array.isArray(data.search) ? data.search : [];
@@ -69,7 +73,7 @@ export async function getBpmByTitleArtist(
       if (direct != null) return direct;
       if (!first.id) return null;
 
-      const detailRes = await fetch(`${BASE}/song/?api_key=${API_KEY}&id=${encodeURIComponent(first.id)}`);
+      const detailRes = await fetch(`${BASE}/song/?api_key=${apiKey}&id=${encodeURIComponent(first.id)}`);
       if (!detailRes.ok) return null;
       const detail = (await detailRes.json()) as GsbSongResponse;
       return parseTempo(detail.song?.tempo);

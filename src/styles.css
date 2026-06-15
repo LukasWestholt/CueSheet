@@ -53,6 +53,17 @@ h1 {
 .muted {
   color: var(--muted);
 }
+/* Static GetSongBPM attribution in index.html (raw-HTML backlink). Kept
+   visible on purpose — must not be hidden, or the backlink check fails. */
+.site-credit {
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--muted);
+  padding: 16px calc(env(safe-area-inset-bottom) + 12px);
+}
+.site-credit a {
+  color: var(--muted);
+}
 .hint {
   color: var(--muted);
   font-size: 0.85rem;

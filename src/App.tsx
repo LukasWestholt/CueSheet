@@ -35,6 +35,11 @@ import TrackEditor from './components/TrackEditor';
 import PlaylistSeed from './components/PlaylistSeed';
 import InstallPrompt from './components/InstallPrompt';
 import SetlistPanel from './components/SetlistPanel';
+import Settings from './components/Settings';
+import { ingestGetsongbpmKeyFromUrl } from './data/getsongbpmKey';
+
+// Apply a `?getsongbpm_key=…` bookmark before React renders (strips the param).
+ingestGetsongbpmKeyFromUrl();
 
 /** Use a valid stored override if present, else the code-defined routines. */
 function initialTracks(): { tracks: Track[]; overridden: boolean } {
@@ -436,6 +441,7 @@ export default function App() {
             recommended={importTargets}
             onImportFile={importFromFile}
           />
+          <Settings />
           <p className="app-version">CueSheet v{APP_VERSION}</p>
         </>
       ) : (

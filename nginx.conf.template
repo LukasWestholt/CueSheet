@@ -19,7 +19,7 @@ server {
     #  - connect-src: Spotify Web API + the PKCE token exchange on accounts,
     #    plus GetSongBPM's CORS fetch (fallback BPM source, opt-in via API key).
     #  - img-src i.scdn.co: Spotify album cover art.
-    add_header Content-Security-Policy "default-src 'self'; script-src 'self' https://api.deezer.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://i.scdn.co; font-src 'self'; connect-src 'self' https://api.spotify.com https://accounts.spotify.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' https://api.deezer.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://i.scdn.co; font-src 'self'; connect-src 'self' https://api.spotify.com https://accounts.spotify.com https://api.getsongbpm.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'" always;
 
     # --- Optional CORS (opt-in via env var) ---------------------------------
     # The app itself needs no CORS here — it serves same-origin static files, and

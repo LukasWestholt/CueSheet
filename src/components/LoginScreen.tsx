@@ -1,5 +1,5 @@
 import { beginLogin } from '../spotify/auth';
-import { REPO_URL, ISSUES_URL, KOFI_URL, GETSONGBPM_URL, GETSONGBPM_ENABLED } from '../links';
+import { REPO_URL, ISSUES_URL, KOFI_URL, GETSONGBPM_URL } from '../links';
 import { APP_VERSION } from '../version';
 
 // The pre-login landing page: what CueSheet does, what it costs, and the login
@@ -99,11 +99,9 @@ export default function LoginScreen({
           <a href={KOFI_URL} target="_blank" rel="noreferrer">
             Ko-fi
           </a>
-          {GETSONGBPM_ENABLED && (
-            <a href={GETSONGBPM_URL} target="_blank" rel="noreferrer">
-              BPM data: GetSongBPM
-            </a>
-          )}
+          <a href={GETSONGBPM_URL} target="_blank" rel="noreferrer">
+            BPM data: GetSongBPM
+          </a>
           <span className="version">v{APP_VERSION}</span>
         </footer>
       </div>
