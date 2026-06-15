@@ -5,6 +5,12 @@ on:
     branches: [main]
   workflow_dispatch:
 
+env:
+  # actions/upload-pages-artifact and actions/deploy-pages still bundle their JS
+  # on Node 20 with no newer major yet; force Node 24 to clear the deprecation
+  # warning. Becomes the default June 16 2026, after which this is a no-op.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 # Permissions the deploy-pages action needs.
 permissions:
   contents: read
