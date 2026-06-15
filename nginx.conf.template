@@ -16,7 +16,8 @@ server {
     # CSP tuned to what the app actually loads:
     #  - script-src: our bundle + registerSW (self) and Deezer's JSONP endpoint.
     #  - style-src 'unsafe-inline': React style attributes (countdown ring, bars).
-    #  - connect-src: Spotify Web API + the PKCE token exchange on accounts.
+    #  - connect-src: Spotify Web API + the PKCE token exchange on accounts,
+    #    plus GetSongBPM's CORS fetch (fallback BPM source, opt-in via API key).
     #  - img-src i.scdn.co: Spotify album cover art.
     add_header Content-Security-Policy "default-src 'self'; script-src 'self' https://api.deezer.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://i.scdn.co; font-src 'self'; connect-src 'self' https://api.spotify.com https://accounts.spotify.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'" always;
 
