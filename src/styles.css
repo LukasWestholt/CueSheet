@@ -94,6 +94,14 @@ button {
 button:active {
   transform: scale(0.98);
 }
+/* Disabled controls must read as non-interactive (not just no-op on tap). */
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+button:disabled:active {
+  transform: none;
+}
 
 /* Visible keyboard focus (light ring stays visible on both dark surfaces and
    the green primary button). Mouse/touch users don't see it (:focus-visible). */
@@ -126,6 +134,14 @@ button:active {
   padding: 16px;
   font-size: 1.1rem;
 }
+/* Center icon + label in CTA buttons that mix an SVG glyph with text. */
+.big,
+.copy-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
 .ghost {
   background: transparent;
   border: 1px solid var(--surface-2);
@@ -134,6 +150,11 @@ button:active {
   background: none;
   color: var(--accent);
   padding: 8px;
+  /* Keep the tap area ≥44px tall even though the text is small. */
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 /* Offline banner --------------------------------------------------------- */
@@ -549,6 +570,9 @@ button:active {
   color: var(--warn);
   font-size: 0.85rem;
   margin: 4px 0 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 /* Routine-length feedback in the editor. */
@@ -795,8 +819,8 @@ button:active {
   gap: 4px;
 }
 .icon-btn {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   background: var(--surface-2);
   border-radius: 8px;
@@ -932,6 +956,9 @@ button:active {
   color: var(--muted);
   font-size: 1.2rem;
   padding: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .track-fav.is-fav {
   color: var(--warn);
@@ -1027,13 +1054,16 @@ button:active {
 /* Setlist / session ------------------------------------------------------ */
 .track-queue {
   flex-shrink: 0;
-  width: 30px;
-  height: 30px;
+  width: 44px;
+  height: 44px;
   border-radius: 8px;
   background: var(--surface-2);
   color: var(--muted);
   font-size: 1.1rem;
   line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .track-queue.is-queued {
   background: color-mix(in srgb, var(--accent) 22%, var(--surface-2));
@@ -1239,8 +1269,12 @@ button:active {
 }
 /* In a run of short steps, every other count-in turns the frame yellow so two
    quick switches are easy to tell apart (grüner → gelber Rahmen). */
+/* The alternating frame also switches to a dashed outline so consecutive short
+   steps are distinguishable without relying on the green→yellow colour change
+   (colour-blind safe). */
 .calling-display.announcing-alt {
   outline-color: var(--warn);
+  outline-style: dashed;
 }
 .next.next-announce {
   opacity: 1;
@@ -1308,6 +1342,10 @@ button:active {
   background: var(--surface-2);
   border: 1px solid #2c3a47;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .toggle-row {
@@ -1407,7 +1445,8 @@ button:active {
   gap: 10px;
   align-items: baseline;
   width: 100%;
-  padding: 8px 10px;
+  /* ≥44px tap height for seek-to-step rows during class. */
+  padding: 12px 10px;
   border-radius: 10px;
   background: none;
   border: none;
