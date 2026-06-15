@@ -1,15 +1,81 @@
+/* Self-hosted display font (offline-first PWA: CSP is font-src 'self', so no
+   Google Fonts CDN). Latin subset covers German umlauts (ä ö ü ß). woff2 is
+   added to the PWA precache globPatterns so big cues render the brand font
+   offline; system-ui handles body text with zero fetch. */
+@font-face {
+  font-family: 'Barlow Condensed';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('./fonts/barlow-condensed-600.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Barlow Condensed';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./fonts/barlow-condensed-700.woff2') format('woff2');
+}
+
 :root {
-  --bg: #0b0f14;
-  --surface: #131a22;
-  --surface-2: #1b2530;
-  --text: #eef3f8;
-  --muted: #8aa0b3;
-  --accent: #1db954;
-  --accent-press: #169c46;
+  /* ---- Color: vibrant rebrand (orange primary, green demoted to success) -- */
+  --bg: #121821;
+  --surface: #1b232e;
+  --surface-2: #273141;
+  --text: #f8fafc;
+  --muted: #93a4b8;
+  --border: #334155;
+
+  /* Brand / primary action (orange). --accent is kept as the primary alias so
+     existing rules pick up the rebrand without a rename. */
+  --primary: #f97316;
+  --primary-press: #ea6a0c;
+  --secondary: #fb923c;
+  --on-primary: #1a1206; /* dark text on orange — white fails contrast on #f97316 */
+  --accent: var(--primary);
+  --accent-press: var(--primary-press);
+
+  /* Functional / semantic */
+  --success: #22c55e; /* green, for "connected / done" states */
+  --on-success: #042111; /* dark text on green */
   --warn: #facc15;
-  --danger: #ff5a5a;
-  --ring-bg: #26323d;
+  --danger: #ef4444;
+  --ring-bg: #273141;
+
+  /* ---- Typography ------------------------------------------------------- */
+  --font-display: 'Barlow Condensed', 'Roboto Condensed', 'Arial Narrow',
+    system-ui, sans-serif;
+  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* Type scale (8 steps, 16px base). Replaces 23 ad-hoc sizes. */
+  --text-xs: 0.75rem; /* 12 — labels, captions */
+  --text-sm: 0.875rem; /* 14 — secondary text */
+  --text-base: 1rem; /* 16 — body (min on mobile, avoids iOS zoom) */
+  --text-lg: 1.125rem; /* 18 — emphasised body */
+  --text-xl: 1.5rem; /* 24 — section / h1 */
+  --text-2xl: 2rem; /* 32 — next move */
+  --text-3xl: 3rem; /* 48 — current move / ring count */
+  --text-display: 4.5rem; /* 72 — stage mode */
+
+  --leading-tight: 1.1;
+  --leading-normal: 1.5;
+
+  /* ---- Spacing: 4 / 8 grid ---------------------------------------------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* ---- Layout (phone-first PWA) ----------------------------------------- */
+  --container: 560px; /* matches .screen; centred on tablet/desktop */
   --radius: 16px;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
+
   color-scheme: dark;
 }
 
@@ -28,7 +94,7 @@ body,
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--font-body);
   overscroll-behavior: none;
 }
 
@@ -36,7 +102,7 @@ body {
   min-height: 100%;
   max-width: 560px;
   margin: 0 auto;
-  padding: env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 16px);
+  padding: env(safe-area-inset-top) var(--space-4) calc(env(safe-area-inset-bottom) + 16px);
 }
 
 .center {
@@ -46,7 +112,7 @@ body {
 }
 
 h1 {
-  font-size: 1.5rem;
+  font-size: var(--text-xl);
   margin: 0;
 }
 
@@ -57,24 +123,24 @@ h1 {
    visible on purpose — must not be hidden, or the backlink check fails. */
 .site-credit {
   text-align: center;
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   color: var(--muted);
-  padding: 16px calc(env(safe-area-inset-bottom) + 12px);
+  padding: var(--space-4) calc(env(safe-area-inset-bottom) + 12px);
 }
 .site-credit a {
   color: var(--muted);
 }
 .hint {
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
 }
 .error {
   color: var(--danger);
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
 }
 code {
   background: var(--surface-2);
-  padding: 1px 6px;
+  padding: 1px var(--space-2);
   border-radius: 6px;
 }
 a {
@@ -89,7 +155,7 @@ button {
   color: var(--text);
   background: var(--surface-2);
   border-radius: var(--radius);
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
 }
 button:active {
   transform: scale(0.98);
@@ -104,7 +170,7 @@ button:disabled:active {
 }
 
 /* Visible keyboard focus (light ring stays visible on both dark surfaces and
-   the green primary button). Mouse/touch users don't see it (:focus-visible). */
+   the orange primary button). Mouse/touch users don't see it (:focus-visible). */
 :focus-visible {
   outline: 3px solid var(--text);
   outline-offset: 2px;
@@ -123,7 +189,7 @@ button:disabled:active {
 }
 .primary {
   background: var(--accent);
-  color: #04210f;
+  color: var(--on-primary);
   font-weight: 700;
 }
 .primary:active {
@@ -131,8 +197,8 @@ button:disabled:active {
 }
 .big {
   width: 100%;
-  padding: 16px;
-  font-size: 1.1rem;
+  padding: var(--space-4);
+  font-size: var(--text-lg);
 }
 /* Center icon + label in CTA buttons that mix an SVG glyph with text. */
 .big,
@@ -140,7 +206,7 @@ button:disabled:active {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .ghost {
   background: transparent;
@@ -149,12 +215,12 @@ button:disabled:active {
 .link {
   background: none;
   color: var(--accent);
-  padding: 8px;
+  padding: var(--space-2);
   /* Keep the tap area ≥44px tall even though the text is small. */
   min-height: 44px;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 /* Offline banner --------------------------------------------------------- */
@@ -163,10 +229,10 @@ button:disabled:active {
   border: 1px solid #4a3a1a;
   border-left: 3px solid var(--warn);
   border-radius: var(--radius);
-  padding: 10px 14px;
-  font-size: 0.85rem;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
   color: var(--text);
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 
 /* Toasts ----------------------------------------------------------------- */
@@ -220,35 +286,35 @@ button:disabled:active {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: var(--space-3);
   flex-wrap: wrap;
   background: var(--surface);
   border: 1px solid var(--surface-2);
   border-left: 3px solid var(--accent);
   border-radius: var(--radius);
-  padding: 10px 14px;
-  margin-bottom: 12px;
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-3);
 }
 .install-text {
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   color: var(--text);
 }
 .install-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 /* Offline quick-pick popular tracks in the editor search. */
 .popular-picks {
-  margin: 4px 0;
+  margin: var(--space-1) 0;
 }
 .popular-picks .muted {
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
 }
 .popular-list {
   list-style: none;
-  margin: 4px 0 0;
+  margin: var(--space-1) 0 0;
   padding: 0;
   /* ~4 rows tall, then scroll, so it stays compact in the editor. */
   max-height: 132px;
@@ -260,16 +326,16 @@ button:disabled:active {
 .popular-pick {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: var(--space-2);
   width: 100%;
   text-align: left;
   background: var(--surface-2);
   border: none;
   border-radius: 6px;
-  padding: 5px 9px;
+  padding: var(--space-1) var(--space-2);
   color: var(--text);
   cursor: pointer;
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
 }
 .popular-pick:hover {
   background: color-mix(in srgb, var(--accent) 16%, var(--surface-2));
@@ -282,7 +348,7 @@ button:disabled:active {
   flex: 1;
   min-width: 0;
   color: var(--muted);
-  font-size: 0.74rem;
+  font-size: var(--text-xs);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -298,13 +364,13 @@ button:disabled:active {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 0;
+  padding: var(--space-3) 0;
 }
 .device-tag {
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   color: var(--muted);
   background: var(--surface);
-  padding: 4px 10px;
+  padding: var(--space-1) var(--space-3);
   border-radius: 999px;
 }
 
@@ -312,20 +378,20 @@ button:disabled:active {
 .card {
   background: var(--surface);
   border-radius: 20px;
-  padding: 28px 24px;
+  padding: var(--space-6) var(--space-5);
   max-width: 440px;
 }
 .login {
   text-align: center;
 }
 .login .logo {
-  font-size: 3rem;
+  font-size: var(--text-3xl);
 }
 .login h1 {
-  margin: 8px 0;
+  margin: var(--space-2) 0;
 }
 .login p {
-  margin: 12px 0 20px;
+  margin: var(--space-3) 0 var(--space-5);
 }
 
 /* Landing / pre-login page ---------------------------------------------- */
@@ -335,38 +401,38 @@ button:disabled:active {
 .landing-inner {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: var(--space-4);
 }
 .landing-hero {
   text-align: center;
 }
 .landing-hero .logo {
-  font-size: 3rem;
+  font-size: var(--text-3xl);
 }
 .landing-hero h1 {
-  margin: 6px 0 8px;
+  margin: var(--space-2) 0 var(--space-2);
 }
 .landing-hero .lead {
   color: var(--muted);
-  margin: 0 auto 18px;
+  margin: 0 auto var(--space-4);
   max-width: 36ch;
 }
 .landing-hero .hint {
-  margin-top: 10px;
+  margin-top: var(--space-3);
 }
 .landing-section {
   background: var(--surface);
   border-radius: var(--radius);
-  padding: 18px 18px 20px;
+  padding: var(--space-4) var(--space-4) var(--space-5);
 }
 .landing-section h2 {
-  font-size: 1.05rem;
-  margin: 0 0 12px;
+  font-size: var(--text-lg);
+  margin: 0 0 var(--space-3);
 }
 .landing-section p {
   color: var(--muted);
-  font-size: 0.9rem;
-  margin: 0 0 10px;
+  font-size: var(--text-sm);
+  margin: 0 0 var(--space-3);
 }
 .landing-section p strong {
   color: var(--text);
@@ -377,7 +443,7 @@ button:disabled:active {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 .feature-list li {
   display: flex;
@@ -389,16 +455,16 @@ button:disabled:active {
 }
 .feature-body {
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
 }
 .cost-list {
-  margin: 0 0 12px;
-  padding-left: 18px;
+  margin: 0 0 var(--space-3);
+  padding-left: var(--space-4);
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
 }
 .cost-list li {
-  margin: 4px 0;
+  margin: var(--space-1) 0;
 }
 .cost-list strong {
   color: var(--text);
@@ -406,37 +472,37 @@ button:disabled:active {
 .kofi-btn {
   display: inline-block;
   background: var(--accent);
-  color: #04150b;
+  color: var(--on-primary);
   font-weight: 700;
   text-decoration: none;
-  padding: 10px 16px;
+  padding: var(--space-3) var(--space-4);
   border-radius: 999px;
 }
 .landing-footer {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 8px 18px;
-  padding: 4px 0 8px;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-1) 0 var(--space-2);
 }
 .landing-footer a {
   color: var(--muted);
-  font-size: 0.88rem;
+  font-size: var(--text-sm);
 }
 .landing-footer .version {
   flex-basis: 100%;
   text-align: center;
   color: var(--muted);
   opacity: 0.7;
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   font-variant-numeric: tabular-nums;
 }
 .app-version {
   text-align: center;
   color: var(--muted);
   opacity: 0.7;
-  font-size: 0.78rem;
-  margin: 14px 0 4px;
+  font-size: var(--text-xs);
+  margin: var(--space-4) 0 var(--space-1);
   font-variant-numeric: tabular-nums;
 }
 
@@ -458,8 +524,8 @@ button:disabled:active {
 .device-picker {
   background: var(--surface);
   border-radius: var(--radius);
-  padding: 12px 14px;
-  margin-bottom: 16px;
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
 }
 .device-head {
   display: flex;
@@ -469,18 +535,18 @@ button:disabled:active {
 .device-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 8px;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
 }
 .chip {
   background: var(--surface-2);
-  padding: 8px 14px;
+  padding: var(--space-2) var(--space-4);
   border-radius: 999px;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
 }
 .chip-active {
-  background: var(--accent);
-  color: #04210f;
+  background: var(--success);
+  color: var(--on-success);
   font-weight: 700;
 }
 
@@ -488,54 +554,54 @@ button:disabled:active {
 .routines {
   background: var(--surface);
   border-radius: var(--radius);
-  padding: 12px 14px;
-  margin-top: 16px;
+  padding: var(--space-3) var(--space-4);
+  margin-top: var(--space-4);
 }
 .routines-head {
   display: flex;
   justify-content: space-between;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
 }
 .routines-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
-  margin: 10px 0 4px;
+  margin: var(--space-3) 0 var(--space-1);
 }
 .routines-actions .ghost {
   flex: 1;
   min-width: 80px;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
 }
 .routines-result {
-  margin: 6px 0;
+  margin: var(--space-2) 0;
 }
 .ok-note {
-  color: var(--accent);
-  font-size: 0.9rem;
+  color: var(--success);
+  font-size: var(--text-sm);
 }
 
 /* Recommended import targets (from the server's public folder). */
 .recommended {
-  margin: 8px 0 4px;
+  margin: var(--space-2) 0 var(--space-1);
 }
 .recommended-list {
   list-style: none;
-  margin: 6px 0 0;
+  margin: var(--space-2) 0 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 .recommended-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: var(--space-3);
   background: var(--surface-2);
   border-radius: 8px;
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-3);
 }
 .rec-meta {
   display: flex;
@@ -544,10 +610,10 @@ button:disabled:active {
 }
 .rec-label {
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
 }
 .rec-desc {
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   color: var(--muted);
 }
 .recommended-row .ghost {
@@ -555,8 +621,8 @@ button:disabled:active {
 }
 .rec-loaded {
   flex: 0 0 auto;
-  background: color-mix(in srgb, var(--accent) 22%, var(--surface-2));
-  color: var(--accent);
+  background: color-mix(in srgb, var(--success) 22%, var(--surface-2));
+  color: var(--success);
   font-weight: 700;
 }
 
@@ -568,16 +634,16 @@ button:disabled:active {
 }
 .wip-note {
   color: var(--warn);
-  font-size: 0.85rem;
-  margin: 4px 0 0;
+  font-size: var(--text-sm);
+  margin: var(--space-1) 0 0;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 /* Routine-length feedback in the editor. */
 .length-note {
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
   margin: 2px 0;
 }
 .length-note.warning {
@@ -591,7 +657,7 @@ button:disabled:active {
 .checkbox-field {
   flex-direction: row;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .checkbox-field input {
   width: auto;
@@ -599,17 +665,17 @@ button:disabled:active {
 }
 .issues {
   list-style: none;
-  margin: 6px 0;
+  margin: var(--space-2) 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   max-height: 180px;
   overflow-y: auto;
 }
 .issues li {
-  font-size: 0.82rem;
-  padding: 6px 8px;
+  font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-2);
   border-radius: 8px;
   background: var(--surface-2);
 }
@@ -627,20 +693,20 @@ button:disabled:active {
 }
 .moves-list {
   list-style: none;
-  margin: 4px 0;
+  margin: var(--space-1) 0;
   padding: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--space-2);
 }
 .moves-list li {
   display: inline-flex;
-  gap: 6px;
+  gap: var(--space-2);
   align-items: baseline;
   background: var(--surface-2);
-  padding: 4px 10px;
+  padding: var(--space-1) var(--space-3);
   border-radius: 999px;
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
 }
 .move-count {
   color: var(--muted);
@@ -651,7 +717,7 @@ button:disabled:active {
 .track-li {
   display: flex;
   align-items: stretch;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .track-li .track-row {
   flex: 1;
@@ -659,13 +725,13 @@ button:disabled:active {
 .track-edit {
   background: var(--surface);
   color: var(--muted);
-  font-size: 0.85rem;
-  padding: 0 14px;
+  font-size: var(--text-sm);
+  padding: 0 var(--space-4);
 }
 .new-routine-row {
   display: flex;
-  gap: 8px;
-  margin-top: 10px;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
 }
 .new-routine-row .ghost {
   flex: 1;
@@ -674,27 +740,27 @@ button:disabled:active {
 /* Playlist seed ---------------------------------------------------------- */
 .seed-list {
   list-style: none;
-  margin: 4px 0;
+  margin: var(--space-1) 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   overflow-y: auto;
 }
 .seed-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   background: var(--surface-2);
   border-radius: 10px;
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
 }
 .seed-pick {
   flex: 1;
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   cursor: pointer;
 }
 .seed-pick input[type='checkbox'] {
@@ -705,11 +771,11 @@ button:disabled:active {
 }
 .seed-already {
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
 }
 .sr-bpm-static {
   flex-shrink: 0;
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   color: var(--muted);
@@ -719,14 +785,14 @@ button:disabled:active {
 .editor {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
 }
 .editor h2 {
   margin: 0;
 }
 .editor h3 {
-  margin: 4px 0 0;
-  font-size: 0.95rem;
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-base);
   color: var(--muted);
 }
 .editor input {
@@ -735,34 +801,34 @@ button:disabled:active {
   background: var(--surface-2);
   border: 1px solid #2c3a47;
   border-radius: 10px;
-  padding: 10px 12px;
+  padding: var(--space-3) var(--space-3);
   width: 100%;
 }
 .editor-fields {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
 }
 .field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   flex: 1;
 }
 .field > span {
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   color: var(--muted);
 }
 .field-row {
   display: flex;
-  gap: 10px;
+  gap: var(--space-3);
 }
 .rec-bpm {
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   color: var(--muted);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .rec-bpm strong {
   color: var(--accent);
@@ -771,7 +837,7 @@ button:disabled:active {
   color: var(--accent);
 }
 .bpm-advice {
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
   margin: 2px 0;
 }
 /* Color-code a BPM value by its jumping-fitness band (scoped to win over the
@@ -781,7 +847,7 @@ button:disabled:active {
 .rec-bpm strong.bpm-ok,
 .pp-bpm.bpm-ok,
 .sr-bpm-btn.bpm-ok {
-  color: var(--accent);
+  color: var(--success);
 }
 .bpm-advice.bpm-warn,
 .editor input.bpm-warn,
@@ -803,12 +869,12 @@ button:disabled:active {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .editor-step {
   display: grid;
   grid-template-columns: 1fr 1fr 64px auto;
-  gap: 6px;
+  gap: var(--space-2);
   align-items: center;
 }
 .step-measures {
@@ -816,7 +882,7 @@ button:disabled:active {
 }
 .step-ops {
   display: flex;
-  gap: 4px;
+  gap: var(--space-1);
 }
 .icon-btn {
   width: 44px;
@@ -824,7 +890,7 @@ button:disabled:active {
   padding: 0;
   background: var(--surface-2);
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: var(--text-base);
 }
 .icon-btn:disabled {
   opacity: 0.4;
@@ -838,8 +904,8 @@ button:disabled:active {
 .library .lib-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin: 8px 0;
+  gap: var(--space-2);
+  margin: var(--space-2) 0;
 }
 
 /* Editor: Spotify search results ----------------------------------------- */
@@ -849,18 +915,18 @@ button:disabled:active {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
   max-height: 260px;
   overflow-y: auto;
 }
 .sr-status {
   color: var(--muted);
-  font-size: 0.85rem;
-  padding: 4px 2px;
+  font-size: var(--text-sm);
+  padding: var(--space-1) 2px;
 }
 .sr-row {
   display: flex;
-  gap: 6px;
+  gap: var(--space-2);
 }
 .sr-pick {
   flex: 1;
@@ -868,10 +934,10 @@ button:disabled:active {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: var(--space-3);
   text-align: left;
   background: var(--surface-2);
-  padding: 10px 12px;
+  padding: var(--space-3) var(--space-3);
 }
 .sr-meta {
   display: flex;
@@ -886,14 +952,14 @@ button:disabled:active {
 }
 .sr-artist {
   color: var(--muted);
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .sr-dur {
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
 }
@@ -903,14 +969,14 @@ button:disabled:active {
   min-width: 84px;
   background: var(--surface-2);
   color: var(--accent);
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  padding: 0 10px;
+  padding: 0 var(--space-3);
 }
 .sr-bpm-btn:not(:disabled):active {
   background: var(--accent);
-  color: #04210f;
+  color: var(--on-primary);
 }
 .sr-bpm-btn:disabled {
   color: var(--muted);
@@ -923,15 +989,15 @@ button:disabled:active {
 
 /* Resume session --------------------------------------------------------- */
 .resume-btn {
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
   text-align: left;
 }
 
 /* Track list toolbar ----------------------------------------------------- */
 .list-toolbar {
   display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
 }
 .search-input {
   flex: 1;
@@ -940,22 +1006,22 @@ button:disabled:active {
   background: var(--surface);
   border: 1px solid #2c3a47;
   border-radius: var(--radius);
-  padding: 10px 14px;
+  padding: var(--space-3) var(--space-4);
 }
 .list-toolbar .chip {
   font-variant-numeric: tabular-nums;
 }
 .empty-list {
   text-align: center;
-  padding: 24px 0;
+  padding: var(--space-5) 0;
 }
 
 /* Track list ------------------------------------------------------------- */
 .track-fav {
   background: var(--surface);
   color: var(--muted);
-  font-size: 1.2rem;
-  padding: 0 12px;
+  font-size: var(--text-lg);
+  padding: 0 var(--space-3);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -969,16 +1035,16 @@ button:disabled:active {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
 }
 .track-row {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: var(--space-4);
   background: var(--surface);
   text-align: left;
-  padding: 14px 16px;
+  padding: var(--space-4) var(--space-4);
 }
 .track-index {
   color: var(--muted);
@@ -992,29 +1058,29 @@ button:disabled:active {
 }
 .track-title {
   font-weight: 600;
-  font-size: 1.05rem;
+  font-size: var(--text-lg);
 }
 .track-artist {
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
 }
 .track-aside {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 4px;
+  gap: var(--space-1);
 }
 .badge {
   background: var(--surface-2);
   color: var(--muted);
-  font-size: 0.72rem;
-  padding: 2px 8px;
+  font-size: var(--text-xs);
+  padding: 2px var(--space-2);
   border-radius: 999px;
 }
 .track-time {
   font-variant-numeric: tabular-nums;
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
 }
 
 /* Album art -------------------------------------------------------------- */
@@ -1031,7 +1097,7 @@ button:disabled:active {
   align-items: center;
   justify-content: center;
   color: var(--muted);
-  font-size: 1.2rem;
+  font-size: var(--text-lg);
 }
 .sr-art {
   width: 36px;
@@ -1047,7 +1113,7 @@ button:disabled:active {
   border-radius: 12px;
   object-fit: cover;
   display: block;
-  margin: 0 auto 8px;
+  margin: 0 auto var(--space-2);
   background: var(--surface-2);
 }
 
@@ -1059,42 +1125,42 @@ button:disabled:active {
   border-radius: 8px;
   background: var(--surface-2);
   color: var(--muted);
-  font-size: 1.1rem;
+  font-size: var(--text-lg);
   line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .track-queue.is-queued {
-  background: color-mix(in srgb, var(--accent) 22%, var(--surface-2));
-  color: var(--accent);
+  background: color-mix(in srgb, var(--success) 22%, var(--surface-2));
+  color: var(--success);
 }
 .setlist {
   background: var(--surface);
   border-radius: var(--radius);
-  padding: 12px 14px;
-  margin-top: 12px;
+  padding: var(--space-3) var(--space-4);
+  margin-top: var(--space-3);
 }
 .setlist-head {
   display: flex;
   justify-content: space-between;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
 }
 .setlist-list {
   list-style: none;
-  margin: 8px 0;
+  margin: var(--space-2) 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
 }
 .setlist-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   background: var(--surface-2);
   border-radius: 8px;
-  padding: 6px 8px;
+  padding: var(--space-2) var(--space-2);
 }
 .sl-pos {
   color: var(--muted);
@@ -1108,11 +1174,11 @@ button:disabled:active {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
 }
 .sl-dur {
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   font-variant-numeric: tabular-nums;
 }
 .sl-ops {
@@ -1123,19 +1189,19 @@ button:disabled:active {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .session-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: var(--space-3);
   flex-wrap: wrap;
   background: var(--surface-2);
   border-left: 3px solid var(--accent);
   border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 0.85rem;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
 }
 .session-pos {
   font-weight: 600;
@@ -1145,7 +1211,7 @@ button:disabled:active {
 .player {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: var(--space-4);
   position: relative;
 }
 .track-head {
@@ -1153,7 +1219,7 @@ button:disabled:active {
 }
 .track-head h2 {
   margin: 0;
-  font-size: 1.3rem;
+  font-size: var(--text-xl);
 }
 
 /* Device-lost recovery banner -------------------------------------------- */
@@ -1162,15 +1228,15 @@ button:disabled:active {
   border: 1px solid #4a3a1a;
   border-left: 3px solid var(--warn);
   border-radius: var(--radius);
-  padding: 12px 14px;
-  font-size: 0.9rem;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-3);
 }
 .device-lost-actions {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .device-lost-actions button {
   flex: 1;
@@ -1180,13 +1246,13 @@ button:disabled:active {
 .calling-display {
   background: var(--surface);
   border-radius: 20px;
-  padding: 20px;
+  padding: var(--space-5);
   display: grid;
   grid-template-columns: 1fr auto;
   grid-template-areas:
     'now ring'
     'next ring';
-  gap: 8px 16px;
+  gap: var(--space-2) var(--space-4);
   align-items: center;
 }
 .calling-display .now {
@@ -1204,22 +1270,28 @@ button:disabled:active {
   grid-area: ring;
 }
 .label {
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
   letter-spacing: 0.12em;
   color: var(--muted);
 }
 .step {
-  font-size: 2.2rem;
-  font-weight: 800;
-  line-height: 1.05;
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  line-height: var(--leading-tight);
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
 }
 .step-next {
-  font-size: 1.25rem;
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
   font-weight: 600;
+  line-height: var(--leading-tight);
+  text-transform: uppercase;
 }
 .cue {
   color: var(--accent);
-  font-size: 0.95rem;
+  font-size: var(--text-base);
 }
 
 .ring {
@@ -1243,8 +1315,9 @@ button:disabled:active {
   line-height: 1;
 }
 .ring-num {
-  font-size: 2.4rem;
-  font-weight: 800;
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
@@ -1258,7 +1331,7 @@ button:disabled:active {
   animation: pulse 1s ease-in-out infinite;
 }
 .ring-num.count {
-  font-size: 3.2rem;
+  font-size: var(--text-display);
   color: var(--accent);
 }
 
@@ -1283,9 +1356,9 @@ button:disabled:active {
   color: var(--accent);
 }
 .next-announce .step-next {
-  font-size: 2.6rem;
-  font-weight: 800;
-  line-height: 1.05;
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  line-height: var(--leading-tight);
   color: var(--accent);
 }
 @keyframes pulse {
@@ -1309,10 +1382,10 @@ button:disabled:active {
 .progress-times {
   display: flex;
   justify-content: space-between;
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   color: var(--muted);
   font-variant-numeric: tabular-nums;
-  margin-top: 4px;
+  margin-top: var(--space-1);
 }
 
 /* Controls --------------------------------------------------------------- */
@@ -1320,13 +1393,13 @@ button:disabled:active {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 18px;
+  gap: var(--space-4);
 }
 .round {
   border-radius: 50%;
   width: 60px;
   height: 60px;
-  font-size: 1.3rem;
+  font-size: var(--text-xl);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1334,7 +1407,7 @@ button:disabled:active {
 .round.xl {
   width: 96px;
   height: 96px;
-  font-size: 1.05rem;
+  font-size: var(--text-lg);
 }
 
 .hold-btn {
@@ -1345,7 +1418,7 @@ button:disabled:active {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .toggle-row {
@@ -1353,7 +1426,7 @@ button:disabled:active {
   align-items: center;
   justify-content: space-between;
   background: var(--surface);
-  padding: 14px 16px;
+  padding: var(--space-4) var(--space-4);
   border-radius: var(--radius);
 }
 .toggle-row input {
@@ -1365,7 +1438,7 @@ button:disabled:active {
 /* Sync ------------------------------------------------------------------- */
 .sync-row {
   background: var(--surface);
-  padding: 14px 16px;
+  padding: var(--space-4) var(--space-4);
   border-radius: var(--radius);
 }
 .sync-head {
@@ -1374,20 +1447,20 @@ button:disabled:active {
 }
 .sync-row input[type='range'] {
   width: 100%;
-  margin: 10px 0 4px;
+  margin: var(--space-3) 0 var(--space-1);
   accent-color: var(--accent);
 }
 
 /* Calibration ------------------------------------------------------------ */
 .calib-row {
   background: var(--surface);
-  padding: 14px 16px;
+  padding: var(--space-4) var(--space-4);
   border-radius: var(--radius);
 }
 .calib-actions {
   display: flex;
-  gap: 8px;
-  margin: 10px 0 8px;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 var(--space-2);
 }
 .tap-btn {
   flex: 1;
@@ -1398,19 +1471,19 @@ button:disabled:active {
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  padding: 10px;
+  padding: var(--space-3);
 }
 .tap-btn:active {
   background: var(--accent);
-  color: #04210f;
+  color: var(--on-primary);
 }
 .tap-bpm {
-  font-size: 1.4rem;
+  font-size: var(--text-xl);
   font-variant-numeric: tabular-nums;
 }
 .calib-actions .ghost {
   flex: 1;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
 }
 .calib-foot {
   display: flex;
@@ -1420,12 +1493,12 @@ button:disabled:active {
 /* Timeline --------------------------------------------------------------- */
 .timeline {
   background: var(--surface);
-  padding: 14px 16px;
+  padding: var(--space-4) var(--space-4);
   border-radius: var(--radius);
 }
 .timeline h3 {
-  margin: 0 0 10px;
-  font-size: 0.95rem;
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-base);
   color: var(--muted);
 }
 .timeline ol {
@@ -1442,11 +1515,11 @@ button:disabled:active {
 .row-jump {
   display: grid;
   grid-template-columns: 52px 1fr auto;
-  gap: 10px;
+  gap: var(--space-3);
   align-items: baseline;
   width: 100%;
   /* ≥44px tap height for seek-to-step rows during class. */
-  padding: 12px 10px;
+  padding: var(--space-3) var(--space-3);
   border-radius: 10px;
   background: none;
   border: none;
@@ -1468,14 +1541,14 @@ button:disabled:active {
 .row-time {
   color: var(--muted);
   font-variant-numeric: tabular-nums;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
 }
 .row-step {
   font-weight: 600;
 }
 .row-cue {
   color: var(--accent);
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
 }
 .row-jump.row-active .row-step {
   color: var(--accent);
@@ -1490,22 +1563,23 @@ button:disabled:active {
   align-items: center;
   justify-content: center;
   z-index: 10;
-  padding: 24px;
+  padding: var(--space-5);
 }
 .overlay-card {
   background: var(--surface);
   border-radius: 24px;
-  padding: 32px 28px;
+  padding: var(--space-6) var(--space-6);
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
+  gap: var(--space-4);
   min-width: 240px;
 }
 .gap-num {
-  font-size: 5rem;
-  font-weight: 800;
+  font-family: var(--font-display);
+  font-size: var(--text-display);
+  font-weight: 700;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
@@ -1520,7 +1594,7 @@ button:disabled:active {
 .tap-head {
   display: flex;
   justify-content: space-between;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
 }
 .tap-steps {
   list-style: none;
@@ -1535,7 +1609,7 @@ button:disabled:active {
 .tap-steps li {
   display: flex;
   justify-content: space-between;
-  padding: 6px 10px;
+  padding: var(--space-2) var(--space-3);
   border-radius: 8px;
 }
 .tap-steps li.tap-target {
@@ -1551,49 +1625,49 @@ button:disabled:active {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: var(--space-3);
   width: 100%;
-  padding: 20px 18px;
-  font-size: 1.2rem;
+  padding: var(--space-5) var(--space-4);
+  font-size: var(--text-lg);
 }
 .tap-progress {
   font-variant-numeric: tabular-nums;
   opacity: 0.7;
-  font-size: 0.95rem;
+  font-size: var(--text-base);
 }
 .tap-actions {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .tap-actions .ghost {
   flex: 1;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
 }
 .add-time {
   background: var(--surface-2);
   border: 1px solid #2c3a47;
   font-weight: 700;
-  padding: 10px 22px;
+  padding: var(--space-3) var(--space-5);
 }
 .add-time:active {
   background: var(--accent);
-  color: #04210f;
+  color: var(--on-primary);
 }
 .overlay-actions {
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .debug {
   text-align: center;
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
   color: var(--muted);
   font-variant-numeric: tabular-nums;
-  padding-top: 4px;
+  padding-top: var(--space-1);
 }
 
 .notice h1 {
-  margin-bottom: 10px;
+  margin-bottom: var(--space-3);
 }
 
 /* Inline text button that looks like a link (used in body copy). */
@@ -1614,7 +1688,7 @@ button:disabled:active {
   border-radius: var(--radius);
   background: var(--surface);
   color: var(--text);
-  padding: 18px;
+  padding: var(--space-4);
 }
 .modal::backdrop {
   background: rgba(0, 0, 0, 0.6);
@@ -1623,33 +1697,33 @@ button:disabled:active {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 8px;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
 }
 .modal-head .link {
-  padding: 4px 8px;
+  padding: var(--space-1) var(--space-2);
 }
 .modal-steps {
-  margin: 12px 0;
-  padding-left: 22px;
-  font-size: 0.9rem;
+  margin: var(--space-3) 0;
+  padding-left: var(--space-5);
+  font-size: var(--text-sm);
   line-height: 1.5;
 }
 .modal-steps li {
-  margin-bottom: 10px;
+  margin-bottom: var(--space-3);
 }
 .modal-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
-  margin-top: 8px;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
 }
 .code-block {
   background: var(--surface-2);
   border-radius: 6px;
-  padding: 8px 10px;
-  margin: 6px 0;
-  font-size: 0.8rem;
+  padding: var(--space-2) var(--space-3);
+  margin: var(--space-2) 0;
+  font-size: var(--text-xs);
   white-space: pre;
   overflow-x: auto;
 }
