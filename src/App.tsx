@@ -22,6 +22,9 @@ import { collectStepLibrary } from './data/stepLibrary';
 import { parsePath, trackPath, listPath } from './nav/routes';
 import { APP_VERSION } from './version';
 import { loadFavorites, saveFavorites } from './data/favorites';
+import { loadSetlist, saveSetlist } from './data/setlistStore';
+import { resolveSetlist } from './data/setlist';
+import { DEFAULT_GAP_SECONDS } from './hooks/usePlayerEngine';
 import { useOnline } from './hooks/useOnline';
 import LoginScreen from './components/LoginScreen';
 import TrackList from './components/TrackList';
@@ -31,6 +34,7 @@ import RoutinesManager from './components/RoutinesManager';
 import TrackEditor from './components/TrackEditor';
 import PlaylistSeed from './components/PlaylistSeed';
 import InstallPrompt from './components/InstallPrompt';
+import SetlistPanel from './components/SetlistPanel';
 
 /** Use a valid stored override if present, else the code-defined routines. */
 function initialTracks(): { tracks: Track[]; overridden: boolean } {
@@ -82,6 +86,34 @@ export default function App() {
       return next;
     });
 
+  // Setlist (session queue): an ordered list of track ids, persisted.
+  const [setlist, setSetlist] = useState<string[]>(loadSetlist);
+  const [sessionActive, setSessionActive] = useState(false);
+  const persistSetlist = (next: string[]) => {
+    saveSetlist(next);
+    setSetlist(next);
+  };
+  const toggleSetlist = (id: string) =>
+    persistSetlist(setlist.includes(id) ? setlist.filter((x) => x !== id) : [...setlist, id]);
+  const moveSetlist = (index: number, dir: -1 | 1) => {
+    const j = index + dir;
+    if (j < 0 || j >= setlist.length) return;
+    const next = setlist.slice();
+    [next[index], next[j]] = [next[j], next[index]];
+    persistSetlist(next);
+  };
+  const removeSetlist = (id: string) => persistSetlist(setlist.filter((x) => x !== id));
+  const clearSetlist = () => persistSetlist([]);
+  // Drop ids that no longer exist (e.g. after a routine reset/import).
+  const setlistSet = useMemo(() => new Set(setlist), [setlist]);
+  const sessionTracks = useMemo(() => resolveSetlist(setlist, tracks), [setlist, tracks]);
+  const startSession = () => {
+    if (sessionTracks.length === 0) return;
+    setSessionActive(true);
+    setView('player');
+    window.history.pushState({}, '', listPath(BASE)); // a session has no per-track URL
+  };
+
   const visibleTracks = useMemo(() => {
     const q = query.trim().toLowerCase();
     return tracks
@@ -97,6 +129,7 @@ export default function App() {
   }, [tracks, query, favoritesOnly, favorites, trackInfos]);
 
   const openTrack = (index: number, asResume = false) => {
+    setSessionActive(false);
     setSelectedIndex(index);
     setPlayerMode(asResume ? 'resume' : 'start');
     setView('player');
@@ -105,6 +138,7 @@ export default function App() {
   };
   // Back to the list, keeping the URL in sync.
   const goList = () => {
+    setSessionActive(false);
     setView('list');
     window.history.pushState({}, '', listPath(BASE));
   };
@@ -128,10 +162,10 @@ export default function App() {
     });
   };
 
-  // Update a single track in place (tap-to-time) without resetting the player's
-  // selection — keeps the same Spotify track playing with the new timing.
-  const updateTrack = (index: number, updated: Track) => {
-    const next = tracks.map((t, i) => (i === index ? updated : t));
+  // Update a single track in place (tap-to-time). Matched by id, not index, so it
+  // works whether the player is showing the full list or a setlist session.
+  const updateTrack = (_index: number, updated: Track) => {
+    const next = tracks.map((t) => (t.id === updated.id ? updated : t));
     saveStoredTracks(next);
     setTrackState({ tracks: next, overridden: true });
   };
@@ -259,6 +293,7 @@ export default function App() {
   // Keep the view in sync with browser back/forward (no pushState here).
   useEffect(() => {
     const onPop = () => {
+      setSessionActive(false);
       const r = parsePath(window.location.pathname, BASE);
       if (r.name === 'track') {
         const i = tracks.findIndex((t) => t.id === r.id);
@@ -371,9 +406,19 @@ export default function App() {
             items={visibleTracks}
             infos={trackInfos}
             favorites={favorites}
+            setlist={setlistSet}
             onSelect={(i) => openTrack(i)}
             onEdit={(i) => openEditor(i)}
             onToggleFavorite={toggleFavorite}
+            onToggleSetlist={toggleSetlist}
+          />
+          <SetlistPanel
+            tracks={sessionTracks}
+            infos={trackInfos}
+            onMove={moveSetlist}
+            onRemove={removeSetlist}
+            onClear={clearSetlist}
+            onStart={startSession}
           />
           <div className="new-routine-row">
             <button className="ghost" onClick={() => openEditor(null)}>
@@ -395,10 +440,20 @@ export default function App() {
         </>
       ) : (
         <PlayerScreen
-          tracks={tracks}
-          startIndex={selectedIndex}
+          tracks={sessionActive ? sessionTracks : tracks}
+          startIndex={sessionActive ? 0 : selectedIndex}
           deviceId={deviceId}
-          mode={playerMode}
+          mode={sessionActive ? 'start' : playerMode}
+          session={
+            sessionActive
+              ? {
+                  durationsMs: sessionTracks.map(
+                    (t) => t.durationMs ?? trackInfos[t.spotifyUri]?.durationMs ?? 0,
+                  ),
+                  gapSeconds: DEFAULT_GAP_SECONDS,
+                }
+              : undefined
+          }
           onBack={goList}
           onUpdateTrack={updateTrack}
         />

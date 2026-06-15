@@ -18,16 +18,21 @@ export default function TrackList({
   items,
   infos,
   favorites,
+  setlist,
   onSelect,
   onEdit,
   onToggleFavorite,
+  onToggleSetlist,
 }: {
   items: TrackItem[];
   infos: Record<string, TrackInfo>;
   favorites: Set<string>;
+  /** Ids currently in the session setlist (for the queue toggle). */
+  setlist?: Set<string>;
   onSelect: (index: number) => void;
   onEdit?: (index: number) => void;
   onToggleFavorite?: (id: string) => void;
+  onToggleSetlist?: (id: string) => void;
 }) {
   if (items.length === 0) {
     return <p className="hint empty-list">No tracks match.</p>;
@@ -40,6 +45,7 @@ export default function TrackList({
         const artist = t.artist ?? info?.artist ?? '';
         const durationMs = t.durationMs ?? info?.durationMs;
         const fav = favorites.has(t.id);
+        const queued = setlist?.has(t.id) ?? false;
         return (
           <li key={t.id} className="track-li">
             {onToggleFavorite && (
@@ -73,6 +79,17 @@ export default function TrackList({
                 )}
               </span>
             </button>
+            {onToggleSetlist && (
+              <button
+                className={`track-queue ${queued ? 'is-queued' : ''}`}
+                aria-pressed={queued}
+                aria-label={queued ? 'Remove from setlist' : 'Add to setlist'}
+                title={queued ? 'In setlist' : 'Add to setlist'}
+                onClick={() => onToggleSetlist(t.id)}
+              >
+                {queued ? '✓' : '+'}
+              </button>
+            )}
             {onEdit && (
               <button className="track-edit" onClick={() => onEdit(i)}>
                 Edit

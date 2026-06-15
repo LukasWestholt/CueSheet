@@ -961,6 +961,93 @@ button:active {
   background: var(--surface-2);
 }
 
+/* Setlist / session ------------------------------------------------------ */
+.track-queue {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 1.1rem;
+  line-height: 1;
+}
+.track-queue.is-queued {
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface-2));
+  color: var(--accent);
+}
+.setlist {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-top: 12px;
+}
+.setlist-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+}
+.setlist-list {
+  list-style: none;
+  margin: 8px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.setlist-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-2);
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+.sl-pos {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  width: 18px;
+  text-align: right;
+}
+.sl-title {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.9rem;
+}
+.sl-dur {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+.sl-ops {
+  display: flex;
+  gap: 2px;
+}
+.setlist-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.session-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  background: var(--surface-2);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+}
+.session-pos {
+  font-weight: 600;
+}
+
 /* Player ----------------------------------------------------------------- */
 .player {
   display: flex;

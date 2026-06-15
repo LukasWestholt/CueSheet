@@ -9,6 +9,7 @@ import { useWakeLock } from '../hooks/useWakeLock';
 import CallingDisplay from './CallingDisplay';
 import TapToTime from './TapToTime';
 import { trackPath } from '../nav/routes';
+import { sessionEstimate } from '../data/setlist';
 
 const OFFSET_KEY = 'tjf.syncOffsetMs';
 const TAP_RESET_MS = 2000; // start a fresh tap series after this gap
@@ -20,17 +21,30 @@ function fmt(ms: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+/** Like fmt but with an hours field for long session totals (H:MM:SS). */
+function fmtLong(ms: number): string {
+  const total = Math.max(0, Math.round(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  const mm = h > 0 ? String(m).padStart(2, '0') : String(m);
+  return `${h > 0 ? `${h}:` : ''}${mm}:${s.toString().padStart(2, '0')}`;
+}
+
 export default function PlayerScreen({
   tracks,
   startIndex,
   deviceId,
   mode = 'start',
+  session,
   onBack,
   onUpdateTrack,
 }: {
   tracks: Track[];
   startIndex: number;
   deviceId: string | null;
+  /** Present when launched as a setlist session: per-track durations + the gap. */
+  session?: { durationsMs: number[]; gapSeconds: number };
   /**
    * How to open: 'start' plays from the top (list click), 'resume' attaches to
    * already-running playback (session resume), 'view' shows the track quietly
@@ -91,6 +105,16 @@ export default function PlayerScreen({
     });
     setTapping(false);
   };
+  // Session (setlist) progress estimate. Refine the current track's duration
+  // with the live value from Spotify when we have it.
+  const sessionView = (() => {
+    if (!session) return null;
+    const durs = session.durationsMs.slice();
+    if (engine.durationMs > 0 && engine.index < durs.length) durs[engine.index] = engine.durationMs;
+    const est = sessionEstimate(durs, engine.index, engine.positionMs, session.gapSeconds);
+    return { ...est, count: session.durationsMs.length };
+  })();
+
   // Prefer the live Spotify duration; fall back to fetched/authored metadata.
   const duration = engine.durationMs || meta.durationMs;
   const progressPct = duration > 0 ? Math.min(100, (engine.positionMs / duration) * 100) : 0;
@@ -178,6 +202,17 @@ export default function PlayerScreen({
         </button>
         <span className="device-tag">{engine.deviceName ?? 'No device'}</span>
       </header>
+
+      {sessionView && (
+        <div className="session-bar">
+          <span className="session-pos">
+            Setlist · {engine.index + 1}/{sessionView.count}
+          </span>
+          <span className="muted">
+            ~{fmtLong(sessionView.remainingMs)} left · {fmtLong(sessionView.totalMs)} total
+          </span>
+        </div>
+      )}
 
       <div className="track-head">
         {meta.imageUrl && (

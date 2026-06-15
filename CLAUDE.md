@@ -66,7 +66,7 @@ Grouped by theme; unchecked entries are backlog. **Checked = built, type-checked
 - [x] **Mark tracks as WORK IN PROGRESS.** Flag a routine whose timings aren't finished. (`Track.wip`; editor checkbox, `WIP` badge in `TrackList`, a banner in `PlayerScreen`, suppresses the length warning, validated as a boolean.)
 
 ### Class / session flow
-- [ ] **Setlist mode.** Order several tracks into a session and auto-advance through them (the 20s gap already exists per-track; extend to a queue with total session time + remaining estimate).
+- [x] **Setlist mode.** Order several tracks into a session and auto-advance through them (the 20s gap already exists per-track; extend to a queue with total session time + remaining estimate). (The engine already auto-advances through its `tracks` array, so a session just launches the player with an ordered subset. `tjf.setlist` (ids, `setlistStore`) + queue toggle in `TrackList` + `SetlistPanel` (reorder/remove/total) + `App` `sessionActive` swaps the player's `tracks` to `resolveSetlist(...)`. Pure `src/data/setlist.ts#sessionEstimate` drives the total/remaining; `PlayerScreen` shows a `session` bar. `onUpdateTrack` now matches by id (not index) so tap-to-time still works on the subset.)
 - [ ] **Auto-calibrate Bluetooth latency** instead of a manual slider. But how?
 
 ### Coach-facing display

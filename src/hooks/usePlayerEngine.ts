@@ -25,6 +25,9 @@ const TICK_MS = 100; // how often we re-render the interpolated position
 const END_GUARD_MS = 500; // treat as ended this close to the track's end
 const NO_DEVICE_NULLS = 2; // consecutive empty polls before declaring the device lost
 const HIJACK_POLLS = 3; // consecutive wrong-track polls before declaring a hijack
+
+/** Default inter-track gap (seconds). Exported so session estimates stay in sync. */
+export const DEFAULT_GAP_SECONDS = 10;
 const PREV_TRACK_WINDOW_MS = 3000; // a 2nd "prev" within this jumps to the previous track
 
 export interface PlayerEngine {
@@ -66,7 +69,7 @@ export interface PlayerEngine {
 export function usePlayerEngine(
   tracks: Track[],
   deviceId: string | null,
-  gapSeconds = 10,
+  gapSeconds = DEFAULT_GAP_SECONDS,
 ): PlayerEngine {
   const [index, setIndex] = useState(0);
   const [phase, setPhase] = useState<Phase>('idle');
