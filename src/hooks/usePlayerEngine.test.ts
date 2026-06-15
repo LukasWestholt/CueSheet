@@ -284,4 +284,39 @@ describe('usePlayerEngine', () => {
     expect(playTrack).toHaveBeenCalledWith('spotify:track:a', 'tablet', expect.any(Number));
     expect(result.current.hijacked).toBe(false);
   });
+
+  it('treats an end-of-track auto-advance as the gap, not a hijack', async () => {
+    // Our track 'a' near the end (8s of 10s: past the 3s auto-advance window's
+    // start, but not within the 500ms end-guard, so the ticker won't fire). Each
+    // poll re-reports 8s, keeping the interpolated ticker below the end-guard.
+    let uri = 'spotify:track:a';
+    getPlaybackState.mockImplementation(async () => ({
+      isPlaying: true,
+      progressMs: 8_000,
+      durationMs: 10_000,
+      trackUri: uri,
+      deviceId: 'd',
+      deviceName: 'Tablet',
+      fetchedAt: Date.now(),
+    }));
+    const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
+    await startAt(result, 0);
+
+    // One poll establishes the near-end snapshot for our track.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+    expect(result.current.phase).toBe('playing');
+
+    // Spotify auto-advances to a different track at the end.
+    uri = 'spotify:track:autoplayed';
+    pause.mockClear();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+    // Recovered into the normal gap (track 0 has a next), not flagged as a hijack.
+    expect(result.current.phase).toBe('gap');
+    expect(result.current.hijacked).toBe(false);
+    expect(pause).toHaveBeenCalled(); // enterGapOrEnd stopped the autoplayed track
+  });
 });

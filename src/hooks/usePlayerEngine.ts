@@ -25,6 +25,7 @@ const TICK_MS = 100; // how often we re-render the interpolated position
 const END_GUARD_MS = 500; // treat as ended this close to the track's end
 const NO_DEVICE_NULLS = 2; // consecutive empty polls before declaring the device lost
 const HIJACK_POLLS = 3; // consecutive wrong-track polls before declaring a hijack
+const END_AUTOPLAY_WINDOW_MS = 3000; // a wrong track this close to the end = Spotify auto-advancing, not a hijack
 
 /** Default inter-track gap (seconds). Exported so session estimates stay in sync. */
 export const DEFAULT_GAP_SECONDS = 10;
@@ -180,6 +181,20 @@ export function usePlayerEngine(
           expectedUri &&
           snap.trackUri !== expectedUri
         ) {
+          // A *different* track while we were near the end of ours = Spotify
+          // auto-advancing at the track's end (we lost the ~500ms pre-empt race),
+          // not a hijack. Treat it as the normal end: enterGapOrEnd() pauses the
+          // autoplayed track and runs our gap / ends the routine.
+          const last = snapshotRef.current;
+          const nearEnd =
+            last != null &&
+            last.durationMs > 0 &&
+            interpolatePosition(last) >= last.durationMs - END_AUTOPLAY_WINDOW_MS;
+          if (nearEnd) {
+            wrongTrackPollsRef.current = 0;
+            enterGapOrEnd();
+            return;
+          }
           wrongTrackPollsRef.current += 1;
           if (wrongTrackPollsRef.current >= HIJACK_POLLS && !hijackedRef.current) {
             setHijacked(true);

@@ -30,7 +30,7 @@ This PWA is a **Spotify Connect remote — it never plays audio itself.** The iP
 This hook is the core and the trickiest file. It runs a phase state machine: `idle → loading → playing → (paused | gap | held | ended)`.
 
 - **Two timers:** a 1s **poller** fetches authoritative state from Spotify; a 100ms **ticker** interpolates the displayed position and runs the gap countdown. Both read mutable **refs** (`phaseRef`, `indexRef`, `autoRef`, `snapshotRef`) so they always see fresh values without being torn down and recreated on every state change — when editing, keep each `setX` paired with its `xRef.current = ` update.
-- **Track-end detection** is heuristic (no native "ended" event): the ticker triggers when interpolated position reaches `duration − 500ms`; the poller also triggers if Spotify reports `!isPlaying` within 2s of the end.
+- **Track-end detection** is heuristic (no native "ended" event): the ticker triggers when interpolated position reaches `duration − 500ms`; the poller also triggers if Spotify reports `!isPlaying` within 2s of the end. If we lose that ~500ms pre-empt race and the device **auto-advances to a different track** while we were within `END_AUTOPLAY_WINDOW_MS` (3s) of the end, the poller treats that as the normal end (`enterGapOrEnd`), not a hijack. We deliberately **don't** change the device's repeat/shuffle.
 - **20s gap + permanent pause** are both here: on track end, if `autoContinue` is on it enters `gap` (countdown then auto-advance); otherwise `held`. `holdNow()` is the "pause permanently between tracks" button. UI overlays for `gap`/`held` live in `PlayerScreen`.
 
 ## Calling data (the routines)
@@ -90,7 +90,7 @@ Grouped by theme; unchecked entries are backlog. **Checked = built, type-checked
 ### Engineering / quality
 - [ ] **Component tests** for `PlayerScreen` gap/held overlays and `CallingDisplay` (currently only business logic is tested).
 - [x] **Wire up ESLint in CI** (config was added; make it run on PRs). (`.github/workflows/ci.yml` runs typecheck/lint/test/build on push + PR.)
-- [ ] **Revisit track-end heuristic** (`duration − 500ms`) — make the threshold configurable or smarter to avoid early/late gap entry on tracks with long outros.
+- [x] **Revisit track-end heuristic** (`duration − 500ms`) — reframed from "configurable" to *stability*: kept the 500ms (it's a needed pre-empt lead, not a tuning knob) and left repeat/shuffle untouched; hardened the one real gap by treating an end-of-track auto-advance (a foreign track within 3s of the end) as the normal gap instead of a false "hijack" banner. (`END_AUTOPLAY_WINDOW_MS` in `usePlayerEngine`.) Residual: `repeat = track` looping on a missed pre-empt (same URI) is left as a possible follow-up.
 
 ### Features
 - [ ] Add a link that can be shared to the crowd for survey next song (15s).
