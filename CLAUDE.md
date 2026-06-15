@@ -103,3 +103,5 @@ Grouped by theme; unchecked entries are backlog. **Checked = built, type-checked
 - [ ] performance / caching used?
 - [ ] monetarization? ko-fe link?
 - [x] Real landing page for new user with function list and cost explaination (ko-fe). Link to source code too! Issues too. (`LoginScreen` is now the landing page: feature list, "what it costs" (free/open-source, Premium needed, Ko-fi support), and footer links to source/issues/Ko-fi. URLs in `src/links.ts`.)
+- [ ] Add a better html landing page as just "BPM Data getsongbpm credits". It is shown for 2 seconds before javascript is loaded so i matters.
+ 

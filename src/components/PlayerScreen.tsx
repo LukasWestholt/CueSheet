@@ -195,6 +195,17 @@ export default function PlayerScreen({
     else break;
   }
 
+  // Keep the active step centered in the scrollable "Prepared steps" list.
+  const stepListRef = useRef<HTMLOListElement | null>(null);
+  const activeRowRef = useRef<HTMLLIElement | null>(null);
+  useEffect(() => {
+    const li = activeRowRef.current;
+    const ol = stepListRef.current;
+    if (!li || !ol) return;
+    const target = li.offsetTop - (ol.clientHeight - li.offsetHeight) / 2;
+    ol.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
+  }, [activeRow]);
+
   return (
     <div className="player">
       <header className="topbar">
@@ -301,19 +312,43 @@ export default function PlayerScreen({
         </button>
       </div>
 
-      {/* The easy permanent-pause button */}
-      <button className="hold-btn" onClick={engine.holdNow}>
-        <Pause size={18} /> Pause permanently between tracks
-      </button>
+      {/* Coach view: the full prepared order of steps — tap a step to jump there */}
+      <section className="timeline">
+        <h3>Prepared steps</h3>
+        <ol ref={stepListRef}>
+          {callings.map((c, i) => (
+            <li key={i} ref={i === activeRow ? activeRowRef : null}>
+              <button
+                type="button"
+                className={`row-jump${i === activeRow ? ' row-active' : ''}`}
+                // Seek so this step becomes the audible "now": the sync offset is
+                // subtracted because positionSeconds = (rawPosition + offset).
+                onClick={() => engine.seekTo(c.time * 1000 - offsetMs)}
+                disabled={engine.phase !== 'playing' && engine.phase !== 'paused'}
+              >
+                <span className="row-time">{fmt(c.time * 1000)}</span>
+                <span className="row-step">{c.step}</span>
+                {c.cue && <span className="row-cue">{c.cue}</span>}
+              </button>
+            </li>
+          ))}
+        </ol>
+      </section>
 
-      <label className="toggle-row">
-        <span>Auto-continue (20s gap between tracks)</span>
-        <input
-          type="checkbox"
-          checked={engine.autoContinue}
-          onChange={(e) => engine.setAutoContinue(e.target.checked)}
-        />
-      </label>
+      <div className="continue-row">
+        <label className="toggle-row">
+          <span>Auto-continue (20s gap)</span>
+          <input
+            type="checkbox"
+            checked={engine.autoContinue}
+            onChange={(e) => engine.setAutoContinue(e.target.checked)}
+          />
+        </label>
+        {/* End the current song now and hold before the next track */}
+        <button className="hold-btn" onClick={engine.holdNow}>
+          <Pause size={18} /> End track &amp; hold
+        </button>
+      </div>
 
       <div className="sync-row">
         <div className="sync-head">
@@ -391,29 +426,6 @@ export default function PlayerScreen({
           Tap-to-time the steps
         </button>
       )}
-
-      {/* Coach view: the full prepared order of steps — tap a step to jump there */}
-      <section className="timeline">
-        <h3>Prepared steps</h3>
-        <ol>
-          {callings.map((c, i) => (
-            <li key={i}>
-              <button
-                type="button"
-                className={`row-jump${i === activeRow ? ' row-active' : ''}`}
-                // Seek so this step becomes the audible "now": the sync offset is
-                // subtracted because positionSeconds = (rawPosition + offset).
-                onClick={() => engine.seekTo(c.time * 1000 - offsetMs)}
-                disabled={engine.phase !== 'playing' && engine.phase !== 'paused'}
-              >
-                <span className="row-time">{fmt(c.time * 1000)}</span>
-                <span className="row-step">{c.step}</span>
-                {c.cue && <span className="row-cue">{c.cue}</span>}
-              </button>
-            </li>
-          ))}
-        </ol>
-      </section>
 
       {/* Gap / held overlays */}
       {engine.phase === 'gap' && (
