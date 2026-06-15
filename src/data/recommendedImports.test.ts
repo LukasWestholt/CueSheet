@@ -146,6 +146,22 @@ describe('loadDefaultRoutines', () => {
     expect(await loadDefaultRoutines()).toEqual([]);
   });
 
+  it('resolves the manifest + routine files under a sub-path deploy base', async () => {
+    const seen: string[] = [];
+    mockFetch((url) => {
+      seen.push(url);
+      if (url.includes('routines.json')) {
+        return { ok: true, json: async () => ({ routines: [{ file: '/playbook.json', default: true }] }) };
+      }
+      return { ok: true, json: async () => [sampleTrack('a')] };
+    });
+    const tracks = await loadDefaultRoutines('routines.json', '/CueSheet/');
+    expect(tracks.map((t) => t.id)).toEqual(['a']);
+    // Both the manifest and the (leading-slash) routine file resolve under the base.
+    expect(seen).toContain('/CueSheet/routines.json');
+    expect(seen).toContain('/CueSheet/playbook.json');
+  });
+
   it('skips a default file that fails validation', async () => {
     mockFetch((url) => {
       if (url.includes('routines.json')) {

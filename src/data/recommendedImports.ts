@@ -17,9 +17,22 @@ export interface RecommendedRoutine {
   default?: boolean;
 }
 
-/** Normalize a manifest-listed file to a root-absolute URL. */
-function toUrl(file: string): string {
-  return /^https?:\/\//.test(file) || file.startsWith('/') ? file : `/${file}`;
+/**
+ * The deploy base path (e.g. '/' in dev / Docker, '/CueSheet/' on GitHub Pages).
+ * Manifest + routine fetches must resolve under it, or a sub-path deploy 404s
+ * the JSON and silently falls back to the built-in tracks.
+ */
+const BASE_URL: string = import.meta.env.BASE_URL;
+
+/**
+ * Resolve a manifest-listed file (or the manifest itself) to a URL under the
+ * deploy base. Absolute http(s) URLs are left untouched; everything else is
+ * joined onto `base`, treating a leading '/' as base-relative (not site-root).
+ */
+function toUrl(file: string, base = BASE_URL): string {
+  if (/^https?:\/\//.test(file)) return file;
+  const b = base.endsWith('/') ? base : `${base}/`;
+  return b + file.replace(/^\//, '');
 }
 
 /**
@@ -28,10 +41,11 @@ function toUrl(file: string): string {
  * is purely additive and never blocks startup (works offline once cached).
  */
 export async function loadRecommendedRoutines(
-  manifestUrl = '/routines.json',
+  manifestUrl = 'routines.json',
+  base = BASE_URL,
 ): Promise<RecommendedRoutine[]> {
   try {
-    const res = await fetch(manifestUrl, { cache: 'no-cache' });
+    const res = await fetch(toUrl(manifestUrl, base), { cache: 'no-cache' });
     if (!res.ok) return [];
     const data: unknown = await res.json();
     const list = Array.isArray(data)
@@ -60,8 +74,8 @@ export async function loadRecommendedRoutines(
 }
 
 /** Fetches and JSON-parses a routine file named by the manifest. Throws on failure. */
-export async function fetchRoutineFile(file: string): Promise<unknown> {
-  const res = await fetch(toUrl(file), { cache: 'no-cache' });
+export async function fetchRoutineFile(file: string, base = BASE_URL): Promise<unknown> {
+  const res = await fetch(toUrl(file, base), { cache: 'no-cache' });
   if (!res.ok) throw new Error(`Couldn't load ${file} (HTTP ${res.status}).`);
   return res.json();
 }
@@ -84,13 +98,16 @@ export function isDefaultRoutine(entry: RecommendedRoutine): boolean {
  * files / all invalid, so the caller can fall back to its built-in tracks. Never
  * throws.
  */
-export async function loadDefaultRoutines(manifestUrl = '/routines.json'): Promise<Track[]> {
-  const defaults = (await loadRecommendedRoutines(manifestUrl)).filter(isDefaultRoutine);
+export async function loadDefaultRoutines(
+  manifestUrl = 'routines.json',
+  base = BASE_URL,
+): Promise<Track[]> {
+  const defaults = (await loadRecommendedRoutines(manifestUrl, base)).filter(isDefaultRoutine);
   const out: Track[] = [];
   const seen = new Set<string>();
   for (const e of defaults) {
     try {
-      const data = await fetchRoutineFile(e.file);
+      const data = await fetchRoutineFile(e.file, base);
       if (!validateTracks(data).ok) continue;
       for (const t of data as Track[]) {
         if (seen.has(t.id)) continue;
