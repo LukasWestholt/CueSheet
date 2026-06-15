@@ -1,5 +1,6 @@
 import { beginLogin } from '../spotify/auth';
 import { REPO_URL, ISSUES_URL, KOFI_URL } from '../links';
+import { APP_VERSION } from '../version';
 
 // The pre-login landing page: what CueSheet does, what it costs, and the login
 // call-to-action. Shown whenever the user isn't logged in.
@@ -98,6 +99,7 @@ export default function LoginScreen({
           <a href={KOFI_URL} target="_blank" rel="noreferrer">
             Ko-fi
           </a>
+          <span className="version">v{APP_VERSION}</span>
         </footer>
       </div>
     </div>

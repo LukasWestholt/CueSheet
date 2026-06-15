@@ -8,6 +8,11 @@ declare const process: { env: Record<string, string | undefined> };
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Inline the package.json version (set by npm when running scripts) as a build
+  // constant — surfaced in the UI. See src/version.ts + the global in vite-env.d.ts.
+  define: {
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version || '0.0.0'),
+  },
   // Public base path. Defaults to '/' (dev, the Docker/nginx image, tests); the
   // GitHub Pages project deploy overrides it via BASE_PATH=/CueSheet/. Vite
   // normalizes a trailing slash, and import.meta.env.BASE_URL reflects it at

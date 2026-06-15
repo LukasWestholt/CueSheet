@@ -20,6 +20,7 @@ import {
 } from './data/recommendedImports';
 import { collectStepLibrary } from './data/stepLibrary';
 import { parsePath, trackPath, listPath } from './nav/routes';
+import { APP_VERSION } from './version';
 import { loadFavorites, saveFavorites } from './data/favorites';
 import { useOnline } from './hooks/useOnline';
 import LoginScreen from './components/LoginScreen';
@@ -390,6 +391,7 @@ export default function App() {
             recommended={importTargets}
             onImportFile={importFromFile}
           />
+          <p className="app-version">CueSheet v{APP_VERSION}</p>
         </>
       ) : (
         <PlayerScreen
