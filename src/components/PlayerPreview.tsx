@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { TRACKS } from '../data/tracks';
 import { buildCallings } from '../data/beats';
 import CallingDisplay from './CallingDisplay';
-import { Play } from './icons';
+import { Play, Check } from './icons';
 
 /**
  * Design preview of the player UI with NO Spotify auth and NO engine.
@@ -89,11 +89,11 @@ export default function PlayerPreview() {
         <CallingDisplay callings={callings} positionSeconds={pos} bpm={bpm} />
 
         {/* Preview-only controls (not part of the shipped player). */}
-        <div className="offline-banner" style={{ marginTop: 16 }}>
+        <div className="offline-banner" style={{ marginTop: 'var(--space-4)' }}>
           No-auth design preview — drive it below to check colours, the Barlow
           Condensed cues, the ring sweep and the gap overlay.
         </div>
-        <div className="install-actions" style={{ flexWrap: 'wrap', gap: 8 }}>
+        <div className="install-actions" style={{ flexWrap: 'wrap', gap: 'var(--space-2)' }}>
           <button className="primary" onClick={() => setPlaying((p) => !p)}>
             {playing ? 'Pause' : 'Play'}
           </button>
@@ -114,30 +114,30 @@ export default function PlayerPreview() {
           step={0.1}
           value={pos}
           onChange={(e) => setPos(Number(e.target.value))}
-          style={{ width: '100%', marginTop: 12 }}
+          style={{ width: '100%', marginTop: 'var(--space-3)' }}
           aria-label="Scrub preview position"
         />
 
         {/* Green = "connected / done" success states. These live behind auth on
             the list/settings screens, so they're shown here only as swatches to
             eyeball green-vs-orange on the phone. Real classes, static content. */}
-        <p className="muted" style={{ marginTop: 20, marginBottom: 8 }}>
+        <p className="muted" style={{ marginTop: 'var(--space-5)', marginBottom: 'var(--space-2)' }}>
           Success states (green):
         </p>
         <div
           className="install-actions"
-          style={{ flexWrap: 'wrap', gap: 8, alignItems: 'center' }}
+          style={{ flexWrap: 'wrap', gap: 'var(--space-2)', alignItems: 'center' }}
         >
           <span className="chip chip-active">Tablet · Connected</span>
           <span className="badge rec-loaded" title="Auto-loaded on startup">
             loaded
           </span>
           <button className="track-queue is-queued" aria-pressed="true">
-            ✓
+            <Check size={20} />
           </button>
           <button className="sr-bpm-btn bpm-ok">128 BPM</button>
         </div>
-        <p className="ok-note" style={{ marginTop: 8 }}>
+        <p className="ok-note" style={{ marginTop: 'var(--space-2)' }}>
           ✓ 30 routines, no issues.
         </p>
       </div>

@@ -6,6 +6,7 @@ import {
 } from '../data/getsongbpmKey';
 import { testGetsongbpmKey } from '../beatdata/getsongbpm';
 import { GETSONGBPM_URL, REPO_URL } from '../links';
+import { X } from './icons';
 
 // App-wide settings. Currently just the optional GetSongBPM API key, which is
 // per-user (a static site can't ship a shared secret) and lives in localStorage.
@@ -47,7 +48,7 @@ export default function Settings() {
         <span className="muted">BPM auto-fill {savedKey ? '· on' : '· off'}</span>
       </summary>
 
-      <div className="field" style={{ marginTop: 10 }}>
+      <div className="field" style={{ marginTop: 'var(--space-3)' }}>
         <span>
           GetSongBPM API key (optional) — auto-fills BPM when Deezer has none.{' '}
           <a href={`${GETSONGBPM_URL}/api`} target="_blank" rel="noreferrer">
@@ -145,7 +146,7 @@ function ApiKeyHelp({ open, onClose }: { open: boolean; onClose: () => void }) {
       <div className="modal-head">
         <strong>Get a free GetSongBPM key</strong>
         <button type="button" className="link" onClick={onClose} aria-label="Close">
-          ✕
+          <X size={20} />
         </button>
       </div>
 

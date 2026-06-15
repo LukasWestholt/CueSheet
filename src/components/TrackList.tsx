@@ -1,6 +1,6 @@
 import type { Track } from '../data/tracks';
 import type { TrackInfo } from '../spotify/api';
-import { Star, Music } from './icons';
+import { Star, Music, Check, Plus } from './icons';
 
 function formatDuration(ms: number): string {
   const total = Math.round(ms / 1000);
@@ -88,7 +88,7 @@ export default function TrackList({
                 title={queued ? 'In setlist' : 'Add to setlist'}
                 onClick={() => onToggleSetlist(t.id)}
               >
-                {queued ? '✓' : '+'}
+                {queued ? <Check size={20} /> : <Plus size={20} />}
               </button>
             )}
             {onEdit && (

@@ -2,6 +2,7 @@ import type { Track } from '../data/tracks';
 import type { TrackInfo } from '../spotify/api';
 import { sessionEstimate } from '../data/setlist';
 import { DEFAULT_GAP_SECONDS } from '../hooks/usePlayerEngine';
+import { ArrowUp, ArrowDown, X, Play } from './icons';
 
 function fmtClock(ms: number): string {
   const total = Math.max(0, Math.round(ms / 1000));
@@ -59,7 +60,7 @@ export default function SetlistPanel({
               {dur > 0 && <span className="sl-dur">{fmtClock(dur)}</span>}
               <span className="sl-ops">
                 <button className="icon-btn" onClick={() => onMove(i, -1)} disabled={i === 0} aria-label="Move up">
-                  ↑
+                  <ArrowUp size={18} />
                 </button>
                 <button
                   className="icon-btn"
@@ -67,10 +68,10 @@ export default function SetlistPanel({
                   disabled={i === tracks.length - 1}
                   aria-label="Move down"
                 >
-                  ↓
+                  <ArrowDown size={18} />
                 </button>
                 <button className="icon-btn danger" onClick={() => onRemove(t.id)} aria-label="Remove from setlist">
-                  ✕
+                  <X size={18} />
                 </button>
               </span>
             </li>
@@ -82,7 +83,7 @@ export default function SetlistPanel({
           Clear
         </button>
         <button className="primary" onClick={onStart}>
-          Start session ▶
+          Start session <Play size={16} />
         </button>
       </div>
     </section>

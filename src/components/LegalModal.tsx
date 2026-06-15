@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { IMPRINT, SPOTIFY_PRIVACY_URL } from '../legal';
+import { X } from './icons';
 
 // Impressum + privacy page, shown as a native <dialog> modal (showModal gives
 // the backdrop, Esc-to-close and focus trapping for free) — same pattern as
@@ -20,7 +21,7 @@ export default function LegalModal({ open, onClose }: { open: boolean; onClose: 
       <div className="modal-head">
         <strong>Impressum &amp; privacy</strong>
         <button type="button" className="link" onClick={onClose} aria-label="Close">
-          ✕
+          <X size={20} />
         </button>
       </div>
 

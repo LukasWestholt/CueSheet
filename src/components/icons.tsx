@@ -101,3 +101,47 @@ export function AlertTriangle(p: IconProps) {
     </Svg>
   );
 }
+
+export function ArrowUp(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M12 19V5" />
+      <path d="m5 12 7-7 7 7" />
+    </Svg>
+  );
+}
+
+export function ArrowDown(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M12 5v14" />
+      <path d="m19 12-7 7-7-7" />
+    </Svg>
+  );
+}
+
+export function X(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </Svg>
+  );
+}
+
+export function Plus(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
+    </Svg>
+  );
+}
+
+export function Check(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M20 6 9 17l-5-5" />
+    </Svg>
+  );
+}

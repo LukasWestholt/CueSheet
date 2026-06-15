@@ -7,6 +7,7 @@ import { getBpmByIsrc } from '../beatdata/deezer';
 import { bpmAdvice, bpmLevelClass } from '../data/bpmAdvice';
 import { checkRoutineLength, lengthWarning } from '../data/routineLength';
 import { POPULAR_TRACKS, type PopularTrack } from '../data/popularTracks';
+import { ArrowUp, ArrowDown, X } from './icons';
 
 const TRACK_URI_RE = /^spotify:track:[A-Za-z0-9]{22}$/;
 
@@ -390,7 +391,7 @@ export default function TrackEditor({
             />
             <div className="step-ops">
               <button className="icon-btn" onClick={() => moveStep(i, -1)} disabled={i === 0} aria-label="Move up">
-                ↑
+                <ArrowUp size={18} />
               </button>
               <button
                 className="icon-btn"
@@ -398,7 +399,7 @@ export default function TrackEditor({
                 disabled={i === draft.steps.length - 1}
                 aria-label="Move down"
               >
-                ↓
+                <ArrowDown size={18} />
               </button>
               <button
                 className="icon-btn danger"
@@ -406,7 +407,7 @@ export default function TrackEditor({
                 disabled={draft.steps.length === 1}
                 aria-label="Delete step"
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
           </li>

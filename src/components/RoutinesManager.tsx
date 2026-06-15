@@ -5,6 +5,7 @@ import { validateTracks, type ValidationResult } from '../data/validateTracks';
 import { collectStepLibrary } from '../data/stepLibrary';
 import { isDefaultRoutine, type RecommendedRoutine } from '../data/recommendedImports';
 import { REPO_URL } from '../links';
+import { X } from './icons';
 
 export default function RoutinesManager({
   tracks,
@@ -208,7 +209,7 @@ function ContributeHelp({ open, onClose }: { open: boolean; onClose: () => void 
       <div className="modal-head">
         <strong>Contribute a routine</strong>
         <button type="button" className="link" onClick={onClose} aria-label="Close">
-          ✕
+          <X size={20} />
         </button>
       </div>
 

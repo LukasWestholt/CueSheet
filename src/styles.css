@@ -25,6 +25,9 @@
   --text: #f8fafc;
   --muted: #93a4b8;
   --border: #334155;
+  /* Tinted borders for warn/danger surfaces (banners, destructive controls). */
+  --border-warn: #4a3a1a;
+  --border-danger: #3a2730;
 
   /* Brand / primary action (orange). --accent is kept as the primary alias so
      existing rules pick up the rebrand without a rename. */
@@ -61,6 +64,7 @@
   --leading-normal: 1.5;
 
   /* ---- Spacing: 4 / 8 grid ---------------------------------------------- */
+  --space-05: 2px; /* sub-grid: tight icon/row gaps, intentionally < --space-1 */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -72,6 +76,10 @@
 
   /* ---- Layout (phone-first PWA) ----------------------------------------- */
   --container: 560px; /* matches .screen; centred on tablet/desktop */
+  --container-narrow: 440px; /* cards, modals, toasts */
+  /* Radius scale: snap small surfaces to sm/md so corners read consistently. */
+  --radius-sm: 8px;
+  --radius-md: 12px;
   --radius: 16px;
   --radius-lg: 20px;
   --radius-pill: 999px;
@@ -100,7 +108,7 @@ body {
 
 .screen {
   min-height: 100%;
-  max-width: 560px;
+  max-width: var(--container);
   margin: 0 auto;
   padding: env(safe-area-inset-top) var(--space-4) calc(env(safe-area-inset-bottom) + 16px);
 }
@@ -154,7 +162,7 @@ h1 {
 code {
   background: var(--surface-2);
   padding: 1px var(--space-2);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 a {
   color: var(--accent);
@@ -239,7 +247,7 @@ button:disabled:active {
 /* Offline banner --------------------------------------------------------- */
 .offline-banner {
   background: var(--surface);
-  border: 1px solid #4a3a1a;
+  border: 1px solid var(--border-warn);
   border-left: 3px solid var(--warn);
   border-radius: var(--radius);
   padding: var(--space-3) var(--space-4);
@@ -257,8 +265,8 @@ button:disabled:active {
   z-index: 1000;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  width: min(440px, calc(100vw - 24px));
+  gap: var(--space-2);
+  width: min(var(--container-narrow), calc(100vw - 24px));
   pointer-events: none;
 }
 .toast {
@@ -266,13 +274,13 @@ button:disabled:active {
   width: 100%;
   text-align: left;
   font: inherit;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   color: var(--text);
   background: var(--surface-2);
   border: 1px solid var(--ring-bg);
   border-left: 3px solid var(--muted);
   border-radius: var(--radius);
-  padding: 12px 14px;
+  padding: var(--space-3) var(--space-3);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   cursor: pointer;
   animation: toast-in 0.18s ease-out;
@@ -334,7 +342,7 @@ button:disabled:active {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-05);
 }
 .popular-pick {
   display: flex;
@@ -344,7 +352,7 @@ button:disabled:active {
   text-align: left;
   background: var(--surface-2);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: var(--space-1) var(--space-2);
   color: var(--text);
   cursor: pointer;
@@ -384,15 +392,15 @@ button:disabled:active {
   color: var(--muted);
   background: var(--surface);
   padding: var(--space-1) var(--space-3);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 /* Cards ------------------------------------------------------------------ */
 .card {
   background: var(--surface);
-  border-radius: 20px;
+  border-radius: var(--radius-lg);
   padding: var(--space-6) var(--space-5);
-  max-width: 440px;
+  max-width: var(--container-narrow);
 }
 .login {
   text-align: center;
@@ -461,7 +469,7 @@ button:disabled:active {
 .feature-list li {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-05);
 }
 .feature-title {
   font-weight: 600;
@@ -489,7 +497,7 @@ button:disabled:active {
   font-weight: 700;
   text-decoration: none;
   padding: var(--space-3) var(--space-4);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 .landing-footer {
   display: flex;
@@ -562,7 +570,7 @@ button:disabled:active {
 .chip {
   background: var(--surface-2);
   padding: var(--space-2) var(--space-4);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: var(--text-sm);
 }
 .chip-active {
@@ -621,7 +629,7 @@ button:disabled:active {
   justify-content: space-between;
   gap: var(--space-3);
   background: var(--surface-2);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: var(--space-2) var(--space-3);
 }
 .rec-meta {
@@ -665,7 +673,7 @@ button:disabled:active {
 /* Routine-length feedback in the editor. */
 .length-note {
   font-size: var(--text-sm);
-  margin: 2px 0;
+  margin: var(--space-05) 0;
 }
 .length-note.warning {
   color: var(--warn);
@@ -697,7 +705,7 @@ button:disabled:active {
 .issues li {
   font-size: var(--text-sm);
   padding: var(--space-2) var(--space-2);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--surface-2);
 }
 .issues li.error {
@@ -726,7 +734,7 @@ button:disabled:active {
   align-items: baseline;
   background: var(--surface-2);
   padding: var(--space-1) var(--space-3);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: var(--text-sm);
 }
 .move-count {
@@ -773,7 +781,7 @@ button:disabled:active {
   align-items: center;
   gap: var(--space-3);
   background: var(--surface-2);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   padding: var(--space-2) var(--space-3);
 }
 .seed-pick {
@@ -820,8 +828,8 @@ button:disabled:active {
   font: inherit;
   color: var(--text);
   background: var(--surface-2);
-  border: 1px solid #2c3a47;
-  border-radius: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
   padding: var(--space-3) var(--space-3);
   width: 100%;
 }
@@ -859,7 +867,7 @@ button:disabled:active {
 }
 .bpm-advice {
   font-size: var(--text-sm);
-  margin: 2px 0;
+  margin: var(--space-05) 0;
 }
 /* Color-code a BPM value by its jumping-fitness band (scoped to win over the
    base input/button/text colors). */
@@ -910,8 +918,11 @@ button:disabled:active {
   height: 44px;
   padding: 0;
   background: var(--surface-2);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: var(--text-base);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .icon-btn:disabled {
   opacity: 0.4;
@@ -1005,7 +1016,7 @@ button:disabled:active {
 }
 .danger-btn {
   color: var(--danger);
-  border-color: #3a2730;
+  border-color: var(--border-danger);
 }
 
 /* Resume session --------------------------------------------------------- */
@@ -1025,7 +1036,7 @@ button:disabled:active {
   font: inherit;
   color: var(--text);
   background: var(--surface);
-  border: 1px solid #2c3a47;
+  border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: var(--space-3) var(--space-4);
 }
@@ -1096,7 +1107,7 @@ button:disabled:active {
   color: var(--muted);
   font-size: var(--text-xs);
   padding: 2px var(--space-2);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 .track-time {
   font-variant-numeric: tabular-nums;
@@ -1108,7 +1119,7 @@ button:disabled:active {
 .track-art {
   width: 44px;
   height: 44px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   object-fit: cover;
   flex-shrink: 0;
   background: var(--surface-2);
@@ -1123,7 +1134,7 @@ button:disabled:active {
 .sr-art {
   width: 36px;
   height: 36px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   object-fit: cover;
   flex-shrink: 0;
   background: var(--surface-2);
@@ -1131,7 +1142,7 @@ button:disabled:active {
 .player-art {
   width: 132px;
   height: 132px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   object-fit: cover;
   display: block;
   margin: 0 auto var(--space-2);
@@ -1143,7 +1154,7 @@ button:disabled:active {
   flex-shrink: 0;
   width: 44px;
   height: 44px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--surface-2);
   color: var(--muted);
   font-size: var(--text-lg);
@@ -1180,7 +1191,7 @@ button:disabled:active {
   align-items: center;
   gap: var(--space-2);
   background: var(--surface-2);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: var(--space-2) var(--space-2);
 }
 .sl-pos {
@@ -1204,12 +1215,17 @@ button:disabled:active {
 }
 .sl-ops {
   display: flex;
-  gap: 2px;
+  gap: var(--space-05);
 }
 .setlist-actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--space-2);
+}
+.setlist-actions .primary {
+  display: inline-flex;
+  align-items: center;
   gap: var(--space-2);
 }
 .session-bar {
@@ -1220,7 +1236,7 @@ button:disabled:active {
   flex-wrap: wrap;
   background: var(--surface-2);
   border-left: 3px solid var(--accent);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: var(--space-2) var(--space-3);
   font-size: var(--text-sm);
 }
@@ -1246,7 +1262,7 @@ button:disabled:active {
 /* Device-lost recovery banner -------------------------------------------- */
 .device-lost {
   background: var(--surface);
-  border: 1px solid #4a3a1a;
+  border: 1px solid var(--border-warn);
   border-left: 3px solid var(--warn);
   border-radius: var(--radius);
   padding: var(--space-3) var(--space-4);
@@ -1266,7 +1282,7 @@ button:disabled:active {
 /* Calling display -------------------------------------------------------- */
 .calling-display {
   background: var(--surface);
-  border-radius: 20px;
+  border-radius: var(--radius-lg);
   padding: var(--space-5);
   display: grid;
   grid-template-columns: 1fr auto;
@@ -1332,7 +1348,7 @@ button:disabled:active {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: var(--space-05);
   line-height: 1;
 }
 .ring-num {
@@ -1392,7 +1408,7 @@ button:disabled:active {
 .progress-bar {
   height: 6px;
   background: var(--surface-2);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   overflow: hidden;
 }
 .progress-fill {
@@ -1434,7 +1450,7 @@ button:disabled:active {
 .hold-btn {
   width: 100%;
   background: var(--surface-2);
-  border: 1px solid #2c3a47;
+  border: 1px solid var(--border);
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -1501,12 +1517,12 @@ button:disabled:active {
 .tap-btn {
   flex: 1;
   background: var(--surface-2);
-  border: 1px solid #2c3a47;
+  border: 1px solid var(--border);
   font-weight: 700;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: var(--space-05);
   padding: var(--space-3);
 }
 .tap-btn:active {
@@ -1543,7 +1559,7 @@ button:disabled:active {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-05);
   /* Show ~5 rows, then scroll; the active row is auto-centered (see
      PlayerScreen). position:relative makes li.offsetTop relative to this box. */
   position: relative;
@@ -1561,7 +1577,7 @@ button:disabled:active {
   width: 100%;
   /* ≥44px tap height for seek-to-step rows during class. */
   padding: var(--space-3) var(--space-3);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background: none;
   border: none;
   color: inherit;
@@ -1608,7 +1624,7 @@ button:disabled:active {
 }
 .overlay-card {
   background: var(--surface);
-  border-radius: 24px;
+  border-radius: var(--radius-lg);
   padding: var(--space-6) var(--space-6);
   text-align: center;
   display: flex;
@@ -1629,7 +1645,7 @@ button:disabled:active {
 .tap-card {
   align-items: stretch;
   text-align: left;
-  width: min(440px, 92vw);
+  width: min(var(--container-narrow), 92vw);
   max-height: 88vh;
 }
 .tap-head {
@@ -1643,7 +1659,7 @@ button:disabled:active {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-05);
   overflow-y: auto;
   max-height: 38vh;
 }
@@ -1651,7 +1667,7 @@ button:disabled:active {
   display: flex;
   justify-content: space-between;
   padding: var(--space-2) var(--space-3);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 .tap-steps li.tap-target {
   background: var(--surface-2);
@@ -1686,7 +1702,7 @@ button:disabled:active {
 }
 .add-time {
   background: var(--surface-2);
-  border: 1px solid #2c3a47;
+  border: 1px solid var(--border);
   font-weight: 700;
   padding: var(--space-3) var(--space-5);
 }
@@ -1724,7 +1740,7 @@ button:disabled:active {
 
 /* Instruction modal (native <dialog>) ----------------------------------- */
 .modal {
-  width: min(440px, calc(100vw - 32px));
+  width: min(var(--container-narrow), calc(100vw - 32px));
   border: 1px solid var(--surface-2);
   border-radius: var(--radius);
   background: var(--surface);
@@ -1748,7 +1764,7 @@ button:disabled:active {
   margin: var(--space-3) 0;
   padding-left: var(--space-5);
   font-size: var(--text-sm);
-  line-height: 1.5;
+  line-height: var(--leading-normal);
 }
 .modal-steps li {
   margin-bottom: var(--space-3);
@@ -1761,7 +1777,7 @@ button:disabled:active {
 }
 .code-block {
   background: var(--surface-2);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: var(--space-2) var(--space-3);
   margin: var(--space-2) 0;
   font-size: var(--text-xs);
