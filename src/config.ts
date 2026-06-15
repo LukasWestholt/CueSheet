@@ -3,8 +3,10 @@
 export const SPOTIFY_CLIENT_ID: string = import.meta.env.VITE_SPOTIFY_CLIENT_ID ?? '';
 
 // Must exactly match a Redirect URI registered in the Spotify dashboard.
-// We derive it from the current origin so dev (127.0.0.1) and prod both work.
-export const REDIRECT_URI: string = `${window.location.origin}/callback`;
+// We derive it from the current origin + Vite base path so dev (127.0.0.1, base
+// '/') and the GitHub Pages project deploy (base '/CueSheet/') both work.
+// BASE_URL always has a trailing slash, so there's no separator before 'callback'.
+export const REDIRECT_URI: string = `${window.location.origin}${import.meta.env.BASE_URL}callback`;
 
 export const SCOPES: string[] = [
   'user-read-playback-state',

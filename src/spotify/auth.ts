@@ -113,8 +113,8 @@ export async function handleRedirectCallback(): Promise<boolean> {
 
   storeTokens(await res.json());
   localStorage.removeItem(VERIFIER_KEY);
-  // Drop ?code=... from the address bar.
-  window.history.replaceState({}, '', '/');
+  // Drop ?code=... from the address bar, back to the app root (Vite base path).
+  window.history.replaceState({}, '', import.meta.env.BASE_URL);
   return true;
 }
 
