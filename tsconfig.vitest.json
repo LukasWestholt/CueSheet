@@ -1,0 +1,15 @@
+{
+  // Test files are excluded from tsconfig.app.json and are type-checked by
+  // Vitest, not `tsc -b` (see CLAUDE.md). This standalone project gives the
+  // editor's TypeScript server a project that covers the *.test.ts(x) files so
+  // they get the right lib (ES2021 → Set/Map/etc.) and vitest globals. It is
+  // intentionally NOT added to the root tsconfig references, so `tsc -b` keeps
+  // skipping tests.
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "types": ["vite/client", "vite-plugin-pwa/client", "vitest/globals"],
+    "noEmit": true
+  },
+  "include": ["src/**/*.test.ts", "src/**/*.test.tsx"],
+  "exclude": []
+}

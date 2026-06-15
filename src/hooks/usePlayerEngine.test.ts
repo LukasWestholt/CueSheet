@@ -16,8 +16,8 @@ vi.mock('../spotify/api', () => ({ playTrack, pause, resume, getPlaybackState, g
 import { usePlayerEngine } from './usePlayerEngine';
 
 const tracks: Track[] = [
-  { id: 'a', title: 'A', artist: 'x', spotifyUri: 'spotify:track:a', durationMs: 10_000, callings: [{ time: 0, step: 'S1' }] },
-  { id: 'b', title: 'B', artist: 'x', spotifyUri: 'spotify:track:b', durationMs: 10_000, callings: [{ time: 0, step: 'S2' }] },
+  { id: 'a', title: 'A', artist: 'x', spotifyUri: 'spotify:track:a', durationMs: 10_000, steps: [] },
+  { id: 'b', title: 'B', artist: 'x', spotifyUri: 'spotify:track:b', durationMs: 10_000, steps: [] },
 ];
 
 /** getPlaybackState mock that reports a track effectively at its end. */
