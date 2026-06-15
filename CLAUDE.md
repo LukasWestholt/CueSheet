@@ -98,7 +98,7 @@ Grouped by theme; unchecked entries are backlog. **Checked = built, type-checked
 - [x] Add url path for view of song detail page. (`/track/:id` via `src/nav/routes.ts` + `pushState`/`popstate` in `App`; opens the player in `'view'` mode via `engine.select`, with a "Copy link" button. Base-path aware. See the Navigation section.)
 
 ### Production ready
-- [ ] Is the nginx container image CORS etc. ready?
+- [x] Is the nginx container image CORS etc. ready? (CORS is N/A — the image serves only same-origin static files; Spotify/Deezer enforce their own. Hardened `nginx.conf` instead: CSP tuned to the app's real loads (self scripts, Deezer JSONP, inline-style ring, Spotify connect-src), `X-Content-Type-Options`/`Referrer-Policy`/`X-Frame-Options`/`Permissions-Policy`, and `application/manifest+json` for the manifest. Headers verified inherited across `/`, deep links, sw.js, manifest and assets via a podman `curl -I` smoke test.)
 - [ ] performance / caching used?
 - [ ] monetarization? ko-fe link?
 - [x] Real landing page for new user with function list and cost explaination (ko-fe). Link to source code too! Issues too. (`LoginScreen` is now the landing page: feature list, "what it costs" (free/open-source, Premium needed, Ko-fi support), and footer links to source/issues/Ko-fi. URLs in `src/links.ts`.)
