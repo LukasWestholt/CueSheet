@@ -26,15 +26,15 @@ export default defineConfig({
       // Precache the routine JSON too so the default set (and import targets)
       // load offline — they're the app's data, not just static assets.
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,json}'],
+        globPatterns: ['**/*.{js,css,html,svg,json,woff2}'],
       },
       manifest: {
         name: 'CueSheet',
         short_name: 'CueSheet',
         description:
           'CueSheet turns your Spotify playlist into a timed cue sheet, calling each jumping-fitness step in time with the music.',
-        theme_color: '#0b0f14',
-        background_color: '#0b0f14',
+        theme_color: '#121821',
+        background_color: '#121821',
         display: 'standalone',
         orientation: 'portrait',
         icons: [
