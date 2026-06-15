@@ -172,7 +172,8 @@ button:active {
   list-style: none;
   margin: 4px 0 0;
   padding: 0;
-  max-height: 210px;
+  /* ~4 rows tall, then scroll, so it stays compact in the editor. */
+  max-height: 132px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
