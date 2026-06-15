@@ -9,6 +9,11 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg'],
+      // Precache the routine JSON too so the default set (and import targets)
+      // load offline — they're the app's data, not just static assets.
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,svg,json}'],
+      },
       manifest: {
         name: 'CueSheet',
         short_name: 'CueSheet',

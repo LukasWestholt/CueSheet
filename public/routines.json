@@ -1,0 +1,14 @@
+{
+  "routines": [
+    {
+      "file": "/default.json",
+      "label": "Default sample routines",
+      "description": "default*.json is loaded automatically on startup as the base set."
+    },
+    {
+      "file": "/example.json",
+      "label": "Example extra routine",
+      "description": "A non-default file — click to import it on top of the defaults."
+    }
+  ]
+}

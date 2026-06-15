@@ -166,6 +166,9 @@ export default function PlayerScreen({
           {meta.artist}
           {meta.bpm ? ` · ${Math.round(meta.bpm)} BPM` : ' · detecting tempo…'}
         </span>
+        {track?.wip && (
+          <p className="wip-note">⚠ Work in progress — timings may be off.</p>
+        )}
       </div>
 
       {engine.error && <p className="error">{engine.error}</p>}

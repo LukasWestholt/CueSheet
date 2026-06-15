@@ -1,4 +1,5 @@
-import type { Track } from './tracks';
+import type { StepCalling, Track } from './tracks';
+import { checkRoutineLength, lengthWarning } from './routineLength';
 
 export type IssueLevel = 'error' | 'warning';
 
@@ -93,6 +94,21 @@ export function validateTracks(data: unknown): ValidationResult {
     }
     if (t.title != null && typeof t.title !== 'string') add('error', where, '"title" must be a string.');
     if (t.artist != null && typeof t.artist !== 'string') add('error', where, '"artist" must be a string.');
+    if (t.wip != null && typeof t.wip !== 'boolean') add('error', where, '"wip" must be a boolean.');
+
+    // Routine-vs-track length: only when both BPM and duration are authored and
+    // every step has a valid measure (so we don't pile on top of step errors).
+    const cleanSteps =
+      Array.isArray(t.steps) &&
+      t.steps.length > 0 &&
+      t.steps.every((s) => typeof (s as Record<string, unknown>)?.measures === 'number' && (s as { measures: number }).measures > 0);
+    if (typeof t.bpm === 'number' && t.bpm > 0 && typeof t.durationMs === 'number' && t.durationMs > 0 && cleanSteps) {
+      const firstBeat = typeof t.firstBeatSec === 'number' ? t.firstBeatSec : 0;
+      const warn = lengthWarning(
+        checkRoutineLength(t.steps as StepCalling[], firstBeat, t.bpm, t.durationMs),
+      );
+      if (warn && t.wip !== true) add('warning', where, warn);
+    }
   });
 
   for (const [id, n] of idCounts) {

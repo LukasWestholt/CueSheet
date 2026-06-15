@@ -39,7 +39,7 @@ Steps are authored **musically, not in seconds**. In `src/data/tracks.ts` each t
 
 **Private track lists:** `tracks.ts` exports `TRACKS` via an `import.meta.glob` loader — if a **gitignored** `src/data/tracks.local.ts` exists (exporting `TRACKS: Track[]`, see `tracks.local.example.ts`) it fully replaces the committed `DEFAULT_TRACKS`; otherwise (CI, Docker, fresh clone) the defaults are used. So coaches keep real routines uncommitted; the glob means a missing file never breaks the build.
 
-At **runtime**, a localStorage override (`tjf.tracks`, `src/data/tracksStore.ts`) takes precedence over the code-defined `TRACKS`: `App` lifts the routine list into state seeded from the store (guarded by `validateTracks`), and the **Routines panel** (`RoutinesManager`) imports/exports the list as JSON and resets back to the code-defined set. `validateTracks` (`src/data/validateTracks.ts`) gates imports (dup ids = error, dup URIs = warning); `collectStepLibrary` (`src/data/stepLibrary.ts`) derives the distinct-move palette for the upcoming step editor.
+At **runtime** the routine list resolves in priority order: a localStorage override (`tjf.tracks`, `src/data/tracksStore.ts`) wins; otherwise the **public-folder defaults** (`default*.json`, loaded async on startup via `src/data/recommendedImports.ts#loadDefaultRoutines`) replace the code-defined `TRACKS`; otherwise (no server / offline first-load) the code `DEFAULT_TRACKS` are the fallback. `App` seeds state synchronously from the store/code, then swaps in the public defaults once fetched (when there's no override). The **Routines panel** (`RoutinesManager`) imports/exports the list as JSON, lists non-default `public/routines.json` files as one-tap import targets, and **Reset** reloads the public defaults. `validateTracks` (`src/data/validateTracks.ts`) gates imports (dup ids = error, dup URIs = warning, plus a routine-length warning); `collectStepLibrary` (`src/data/stepLibrary.ts`) derives the distinct-move palette for the step editor.
 
 The seconds-based timeline is **derived**, not stored:
 
@@ -61,9 +61,9 @@ Grouped by theme; unchecked entries are backlog. **Checked = built, type-checked
 - [x] **In-app step editor.** Add/edit/reorder `steps` (step, cue, measures) from the UI instead of `tracks.ts`/`tracks.local.ts`; persist to `localStorage`. (`TrackEditor` + `tracksStore`; stored as one `tjf.tracks` list override — not per-URI; plus in-app Spotify search, step-library block-insert, BPM guidance.)
 - [x] **Import/export routines as JSON.** Back up and share `tracks.local.ts` content without git; download/upload a file. Mitigates the gitignored-and-only-on-one-device risk. (`RoutinesManager` + `validateTracks`.)
 - [x] **Live re-time while authoring.** "Mark step boundary" tap mode during playback that fills `measures` from the music, the way first-beat capture already works. (`TapToTime` + `tapsToTiming`.)
-- [ ] **Validate routine vs. track length.** Warn when accumulated callings overshoot/undershoot `durationMs` so a mis-typed `measures` is caught before class.
-- [ ] Allow json import files in the public folder from webserver and show them dynamicly as recommendend import targets in the UI. By this we can replace fully the TRACKS object from tracks.ts and tracks.local.ts and just load default.json and default.*.json files on startup.
-- [ ] Allow marking tracks as WORK IN PROGRESS (timings for example are not finished)
+- [x] **Validate routine vs. track length.** Warn when accumulated callings overshoot/undershoot `durationMs` so a mis-typed `measures` is caught before class. (pure `src/data/routineLength.ts#checkRoutineLength`: overshoot >1s = warn eagerly, undershoot >12s = warn; surfaced live in `TrackEditor` (uses fetched duration) and folded into `validateTracks` for the import/Validate path. Skipped for `wip` tracks.)
+- [x] **Public-folder routine files (`default*.json`).** Drop routine JSON in the web server's public folder; `default.json`/`default.*.json` are **auto-loaded on startup** as the base set (replacing the code-defined `TRACKS` when present), and any other manifest-listed files appear as one-tap **import targets** in `RoutinesManager`. (`src/data/recommendedImports.ts` + `public/routines.json` manifest; precached for offline via the PWA `globPatterns`. `tracks.ts`'s `DEFAULT_TRACKS` is kept only as the no-server/offline fallback — the `Track` *type* still lives there.)
+- [x] **Mark tracks as WORK IN PROGRESS.** Flag a routine whose timings aren't finished. (`Track.wip`; editor checkbox, `WIP` badge in `TrackList`, a banner in `PlayerScreen`, suppresses the length warning, validated as a boolean.)
 
 ### Class / session flow
 - [ ] **Setlist mode.** Order several tracks into a session and auto-advance through them (the 20s gap already exists per-track; extend to a queue with total session time + remaining estimate).
@@ -96,3 +96,9 @@ Grouped by theme; unchecked entries are backlog. **Checked = built, type-checked
 - [ ] Add a link that can be shared to the crowd for survey next song (15s).
 - [ ] Find an API to parse "First beat (s)" from song. Maybe there is a free pass (10 querys per day we can cache and use over some days to save money)
 - [ ] Add url path for view of song detail page.
+
+### Production ready
+- [ ] Is the nginx container image CORS etc. ready?
+- [ ] performance / caching used?
+- [ ] monetarization? ko-fe link?
+- [ ] Real landing page for new user with function list and cost explaination (ko-fe). Link to source code too! Issues too.

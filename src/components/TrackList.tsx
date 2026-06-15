@@ -59,6 +59,7 @@ export default function TrackList({
                 <span className="track-artist">{artist}</span>
               </span>
               <span className="track-aside">
+                {t.wip && <span className="badge badge-wip">WIP</span>}
                 <span className="badge">{t.steps.length} steps</span>
                 {durationMs != null && (
                   <span className="track-time">{formatDuration(durationMs)}</span>

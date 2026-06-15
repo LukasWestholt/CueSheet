@@ -3,23 +3,50 @@ import type { Track } from '../data/tracks';
 import { serializeTracks } from '../data/tracksStore';
 import { validateTracks, type ValidationResult } from '../data/validateTracks';
 import { collectStepLibrary } from '../data/stepLibrary';
+import type { RecommendedRoutine } from '../data/recommendedImports';
 
 export default function RoutinesManager({
   tracks,
   overridden,
   onImport,
   onReset,
+  recommended = [],
+  onImportFile,
 }: {
   tracks: Track[];
   /** True when the in-app list is an imported/edited override (not code-defined). */
   overridden: boolean;
   onImport: (tracks: Track[]) => void;
   onReset: () => void;
+  /** Routine files served from the public folder, offered as import targets. */
+  recommended?: RecommendedRoutine[];
+  onImportFile?: (file: string) => Promise<ValidationResult>;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [result, setResult] = useState<ValidationResult | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [showMoves, setShowMoves] = useState(false);
+  const [busyFile, setBusyFile] = useState<string | null>(null);
+
+  const importFile = async (entry: RecommendedRoutine) => {
+    if (!onImportFile) return;
+    setNote(null);
+    setResult(null);
+    setBusyFile(entry.file);
+    try {
+      const res = await onImportFile(entry.file);
+      setResult(res);
+      if (res.ok) setNote(`Imported ${res.trackCount} routines from “${entry.label}”.`);
+    } catch (e) {
+      setResult({
+        ok: false,
+        trackCount: 0,
+        issues: [{ level: 'error', where: entry.file, message: e instanceof Error ? e.message : String(e) }],
+      });
+    } finally {
+      setBusyFile(null);
+    }
+  };
 
   const library = useMemo(() => collectStepLibrary(tracks), [tracks]);
 
@@ -82,6 +109,29 @@ export default function RoutinesManager({
         )}
         <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={onFile} />
       </div>
+
+      {recommended.length > 0 && onImportFile && (
+        <div className="recommended">
+          <span className="muted">Recommended (from this server)</span>
+          <ul className="recommended-list">
+            {recommended.map((r) => (
+              <li key={r.file} className="recommended-row">
+                <span className="rec-meta">
+                  <span className="rec-label">{r.label}</span>
+                  {r.description && <span className="rec-desc">{r.description}</span>}
+                </span>
+                <button
+                  className="ghost"
+                  onClick={() => importFile(r)}
+                  disabled={busyFile != null}
+                >
+                  {busyFile === r.file ? 'Importing…' : 'Import'}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {note && <p className="hint">{note}</p>}
 

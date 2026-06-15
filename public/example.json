@@ -1,0 +1,17 @@
+[
+  {
+    "id": "example-1",
+    "title": "Example Routine",
+    "artist": "Demo",
+    "spotifyUri": "spotify:track:1111111111111111111111",
+    "bpm": 132,
+    "firstBeatSec": 0.5,
+    "wip": true,
+    "steps": [
+      { "step": "Jogging", "cue": "warm-up", "measures": 4 },
+      { "step": "Basic", "cue": "", "measures": 4 },
+      { "step": "Kick", "cue": "", "measures": 4 },
+      { "step": "Tip Toe", "cue": "", "measures": 4 }
+    ]
+  }
+]

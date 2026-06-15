@@ -36,6 +36,8 @@ export interface Track {
   firstBeatSec?: number;
   /** Beats per minute (else from audio-features; both may be deprecated/403). */
   bpm?: number;
+  /** Mark the routine as a work in progress (timings not finished/verified). */
+  wip?: boolean;
 }
 
 /**

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { IS_CONFIGURED } from './config';
 import {
   AUTH_EXPIRED_EVENT,
@@ -10,7 +10,14 @@ import {
 import { getPlaybackState, getTracksInfo, type TrackInfo } from './spotify/api';
 import { TRACKS, type Track } from './data/tracks';
 import { clearStoredTracks, loadStoredTracks, saveStoredTracks } from './data/tracksStore';
-import { validateTracks } from './data/validateTracks';
+import { validateTracks, type ValidationResult } from './data/validateTracks';
+import {
+  loadRecommendedRoutines,
+  loadDefaultRoutines,
+  fetchRoutineFile,
+  isDefaultRoutineFile,
+  type RecommendedRoutine,
+} from './data/recommendedImports';
 import { collectStepLibrary } from './data/stepLibrary';
 import { loadFavorites, saveFavorites } from './data/favorites';
 import { useOnline } from './hooks/useOnline';
@@ -92,7 +99,16 @@ export default function App() {
     setResumeIndex(null);
   };
   const importTracks = (next: Track[]) => persistTracks(next);
-  const resetTracks = () => persistTracks(TRACKS, true);
+  // Reset drops the user override and reloads the public-folder defaults
+  // (default*.json), falling back to the built-in code tracks if none load.
+  const resetTracks = () => {
+    clearStoredTracks();
+    loadDefaultRoutines().then((defs) => {
+      setTrackState({ tracks: defs.length ? defs : TRACKS, overridden: false });
+      setSelectedIndex(0);
+      setResumeIndex(null);
+    });
+  };
 
   // Update a single track in place (tap-to-time) without resetting the player's
   // selection — keeps the same Spotify track playing with the new timing.
@@ -122,6 +138,35 @@ export default function App() {
   const seedTracks = (stubs: Track[]) => {
     persistTracks([...tracks, ...stubs]);
     setView('list');
+  };
+
+  // Routine files shipped in the web server's public folder (see public/routines.json).
+  const [recommended, setRecommended] = useState<RecommendedRoutine[]>([]);
+  const overriddenAtMount = useRef(overridden);
+  useEffect(() => {
+    loadRecommendedRoutines().then(setRecommended).catch(() => {});
+    // Without a user override, the public-folder default*.json files become the
+    // base routine set (replacing the built-in code tracks) when present.
+    if (!overriddenAtMount.current) {
+      loadDefaultRoutines().then((defs) => {
+        if (defs.length) {
+          setTrackState({ tracks: defs, overridden: false });
+          setSelectedIndex(0);
+          setResumeIndex(null);
+        }
+      });
+    }
+  }, []);
+  // Non-default manifest files are the one-tap import targets.
+  const importTargets = useMemo(
+    () => recommended.filter((r) => !isDefaultRoutineFile(r.file)),
+    [recommended],
+  );
+  const importFromFile = async (file: string): Promise<ValidationResult> => {
+    const data = await fetchRoutineFile(file);
+    const res = validateTracks(data);
+    if (res.ok) importTracks(data as Track[]);
+    return res;
   };
 
   // Handle the OAuth redirect, then determine login state.
@@ -292,6 +337,8 @@ export default function App() {
             overridden={overridden}
             onImport={importTracks}
             onReset={resetTracks}
+            recommended={importTargets}
+            onImportFile={importFromFile}
           />
         </>
       ) : (

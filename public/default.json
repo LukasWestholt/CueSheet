@@ -1,0 +1,60 @@
+[
+  {
+    "id": "main-1-0",
+    "title": "Low",
+    "artist": "Flo Rida",
+    "spotifyUri": "spotify:track:0t2w4jQazlBggyZS4axpnw",
+    "durationMs": 220000,
+    "firstBeatSec": 1,
+    "bpm": 128,
+    "steps": [
+      { "step": "Jogging", "cue": "intro", "measures": 4 },
+      { "step": "Basic", "cue": "chorus", "measures": 3 },
+      { "step": "Low", "cue": "chorus", "measures": 1 },
+      { "step": "Basic", "cue": "chorus", "measures": 3 },
+      { "step": "Low", "cue": "chorus", "measures": 1 },
+      { "step": "Jogging", "cue": "verse", "measures": 4 },
+      { "step": "Kick", "cue": "verse", "measures": 4 },
+      { "step": "Basic", "cue": "chorus", "measures": 3 },
+      { "step": "Low", "cue": "chorus", "measures": 1 },
+      { "step": "Basic", "cue": "chorus", "measures": 3 },
+      { "step": "Low", "cue": "chorus", "measures": 1 },
+      { "step": "Jogging", "cue": "verse", "measures": 4 },
+      { "step": "Kick", "cue": "verse", "measures": 4 }
+    ]
+  },
+  {
+    "id": "main-1-1",
+    "spotifyUri": "spotify:track:3CeCwYWvdfXbZLXFhBrbnf",
+    "firstBeatSec": 1,
+    "bpm": 119,
+    "steps": [
+      { "step": "Tip Toe", "cue": "", "measures": 4 },
+      { "step": "Bounce Balance", "cue": "", "measures": 8 },
+      { "step": "Jogging", "cue": "", "measures": 4 },
+      { "step": "Pony", "cue": "", "measures": 4 },
+      { "step": "Bounce Balance", "cue": "", "measures": 4 },
+      { "step": "Jogging", "cue": "", "measures": 4 },
+      { "step": "Pony", "cue": "", "measures": 8 },
+      { "step": "Jogging", "cue": "", "measures": 4 },
+      { "step": "Tip Toe", "cue": "", "measures": 4 }
+    ]
+  },
+  {
+    "id": "main-1-2",
+    "spotifyUri": "spotify:track:4zPVMv84MMHehLNZYIS1Zv",
+    "firstBeatSec": 1,
+    "bpm": 130,
+    "wip": true,
+    "steps": [
+      { "step": "Jogging", "cue": "", "measures": 4 },
+      { "step": "Tip Toe", "cue": "", "measures": 4.5 },
+      { "step": "Jogging", "cue": "", "measures": 4 },
+      { "step": "Kick", "cue": "", "measures": 4 },
+      { "step": "Kick Double", "cue": "", "measures": 4 },
+      { "step": "Tip Toe", "cue": "", "measures": 4 },
+      { "step": "Bounce Balance", "cue": "", "measures": 4 },
+      { "step": "Jogging", "cue": "", "measures": 4 }
+    ]
+  }
+]

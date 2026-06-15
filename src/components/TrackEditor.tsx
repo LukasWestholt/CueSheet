@@ -5,6 +5,7 @@ import { validateTracks } from '../data/validateTracks';
 import { getTrackInfo, searchTracks, type TrackSearchResult } from '../spotify/api';
 import { getBpmByIsrc } from '../beatdata/deezer';
 import { bpmAdvice, bpmLevelClass } from '../data/bpmAdvice';
+import { checkRoutineLength, lengthWarning } from '../data/routineLength';
 
 const TRACK_URI_RE = /^spotify:track:[A-Za-z0-9]{22}$/;
 
@@ -91,19 +92,30 @@ export default function TrackEditor({
   // Recommend a BPM for the currently-set track (Deezer, by ISRC).
   // undefined = looking up, null = none found, number = recommendation.
   const [recBpm, setRecBpm] = useState<number | null | undefined>(null);
+  // Track duration from Spotify, used for the routine-length check below.
+  const [fetchedDurationMs, setFetchedDurationMs] = useState<number | null>(null);
   useEffect(() => {
     const uri = draft.spotifyUri;
     if (!TRACK_URI_RE.test(uri)) {
       setRecBpm(null);
+      setFetchedDurationMs(null);
       return;
     }
     let active = true;
     setRecBpm(undefined);
     const id = setTimeout(() => {
       getTrackInfo(uri)
-        .then((info) => (info?.isrc ? getBpmByIsrc(info.isrc) : null))
+        .then((info) => {
+          if (active) setFetchedDurationMs(info?.durationMs ?? null);
+          return info?.isrc ? getBpmByIsrc(info.isrc) : null;
+        })
         .then((bpm) => active && setRecBpm(bpm))
-        .catch(() => active && setRecBpm(null));
+        .catch(() => {
+          if (active) {
+            setRecBpm(null);
+            setFetchedDurationMs(null);
+          }
+        });
     }, 400);
     return () => {
       active = false;
@@ -159,6 +171,20 @@ export default function TrackEditor({
   // BPM the routine will use (authored, else the online recommendation).
   const effBpm = draft.bpm ?? (typeof recBpm === 'number' ? recBpm : undefined);
   const advice = effBpm != null ? bpmAdvice(effBpm) : null;
+
+  // Routine-vs-track length: does the timeline fit the song? Uses the best
+  // available duration (authored, else fetched from Spotify).
+  const effDurationMs = draft.durationMs ?? fetchedDurationMs ?? null;
+  const lengthCheck = useMemo(
+    () => checkRoutineLength(draft.steps, draft.firstBeatSec ?? 0, effBpm ?? null, effDurationMs),
+    [draft.steps, draft.firstBeatSec, effBpm, effDurationMs],
+  );
+  // validateTracks already flags over/undershoot in the issues list when BOTH
+  // bpm and duration are authored; only show the inline line otherwise (or to
+  // give positive "fits" feedback).
+  const lengthInIssues =
+    draft.bpm != null && draft.durationMs != null && lengthCheck.status !== 'ok';
+  const showLength = !draft.wip && lengthCheck.status !== 'unknown' && !lengthInIssues;
 
   return (
     <div className="editor">
@@ -267,6 +293,15 @@ export default function TrackEditor({
             <p className="hint">No online BPM found for this track.</p>
           )
         )}
+        {showLength &&
+          (lengthCheck.status === 'ok' ? (
+            <p className="length-note ok-note">
+              ✓ Routine ≈ {fmtDuration(lengthCheck.routineEndSec * 1000)} of{' '}
+              {fmtDuration(lengthCheck.trackDurationSec * 1000)}
+            </p>
+          ) : (
+            <p className="length-note warning">⚠ {lengthWarning(lengthCheck)}</p>
+          ))}
         <label className="field">
           <span>Title (optional)</span>
           <input
@@ -274,6 +309,14 @@ export default function TrackEditor({
             placeholder="fetched from Spotify"
             onChange={(e) => patch({ title: e.target.value || undefined })}
           />
+        </label>
+        <label className="field checkbox-field">
+          <input
+            type="checkbox"
+            checked={draft.wip ?? false}
+            onChange={(e) => patch({ wip: e.target.checked || undefined })}
+          />
+          <span>Work in progress (timings not finished)</span>
         </label>
       </div>
 

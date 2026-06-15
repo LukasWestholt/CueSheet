@@ -247,6 +247,79 @@ button:active {
   color: var(--accent);
   font-size: 0.9rem;
 }
+
+/* Recommended import targets (from the server's public folder). */
+.recommended {
+  margin: 8px 0 4px;
+}
+.recommended-list {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.recommended-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--surface-2);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.rec-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.rec-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.rec-desc {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.recommended-row .ghost {
+  flex: 0 0 auto;
+}
+
+/* Work-in-progress markers. */
+.badge-wip {
+  background: color-mix(in srgb, var(--warn) 22%, var(--surface-2));
+  color: var(--warn);
+  font-weight: 700;
+}
+.wip-note {
+  color: var(--warn);
+  font-size: 0.85rem;
+  margin: 4px 0 0;
+}
+
+/* Routine-length feedback in the editor. */
+.length-note {
+  font-size: 0.82rem;
+  margin: 2px 0;
+}
+.length-note.warning {
+  color: var(--warn);
+  border: none;
+  background: none;
+  padding: 0;
+}
+
+/* Inline checkbox field (e.g. the work-in-progress toggle). */
+.checkbox-field {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+.checkbox-field input {
+  width: auto;
+  margin: 0;
+}
 .issues {
   list-style: none;
   margin: 6px 0;
