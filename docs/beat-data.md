@@ -15,7 +15,7 @@ source must be callable from the browser — i.e. it must support **CORS** or
 | Source | Free? | Auth | Browser-callable? | Coverage / accuracy | Notes |
 |---|---|---|---|---|---|
 | **Deezer** | ✅ | none | ⚠️ no CORS, but **JSONP works** | BPM present but **`0` for many tracks** | Lookup by **ISRC** (`/track/isrc:<ISRC>`) or id; returns a `bpm` field. **Chosen.** |
-| **GetSongBPM** | ✅ | API key | ✅ CORS | Good | **Mandatory backlink** to getsongbpm.com or the account is suspended; needs a key. Attribution UX cost. |
+| **GetSongBPM** | ✅ | API key | ✅ CORS | Good | **Fallback behind Deezer** (fills `bpm:0` gaps). **Mandatory backlink** to getsongbpm.com or the account is suspended; needs a key. Attribution UX cost. |
 | **AcousticBrainz** | ✅ | none | n/a | n/a | **Dead** — project ended 2022/23 (data-quality issues); no replacement. |
 | **TuneBat** | — | — | ❌ | Good | No official public API (scraping only — against ToS). |
 | **AcoustID / Chromaprint** | ✅ | key | n/a | n/a | Matches by **audio fingerprint** — we never have the raw audio, so N/A. |
@@ -42,10 +42,15 @@ source must be callable from the browser — i.e. it must support **CORS** or
   returns a rounded positive BPM or `null`. Self-contained; fails gracefully.
   An `ENABLED` constant lets you turn it off.
 - `src/spotify/api.ts` — `getTrackInfo`/`TrackInfo` now also return `isrc`.
+- `src/beatdata/getsongbpm.ts` — `getBpmByTitleArtist(title, artist)`, a
+  **fallback** behind Deezer for the tracks Deezer reports as `bpm:0`. Plain
+  CORS `fetch` (no JSONP), matched by title/artist. **Opt-in:** disabled unless
+  `VITE_GETSONGBPM_API_KEY` is set, and GetSongBPM **requires a visible backlink
+  to getsongbpm.com** — add one to the UI before shipping it enabled.
 - `src/hooks/useTrackMeta.ts` — after fetching track info, if BPM isn't authored
-  it calls `getBpmByIsrc(info.isrc)` and fills `fetched.bpm` **only if not
-  already set**. Final priority stays **authored > tap calibration > Deezer /
-  Spotify fetch > default**.
+  it tries `getBpmByIsrc(info.isrc)` then `getBpmByTitleArtist(...)`, filling
+  `fetched.bpm` **only if not already set**. Final priority stays **authored >
+  tap calibration > Deezer → GetSongBPM / Spotify fetch > default**.
 
 ## Tradeoffs of JSONP
 
