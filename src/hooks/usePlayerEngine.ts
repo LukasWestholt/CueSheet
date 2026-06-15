@@ -24,6 +24,7 @@ const POLL_MS = 1000; // how often we ask Spotify for the true position
 const TICK_MS = 100; // how often we re-render the interpolated position
 const END_GUARD_MS = 500; // treat as ended this close to the track's end
 const NO_DEVICE_NULLS = 2; // consecutive empty polls before declaring the device lost
+const HIJACK_POLLS = 3; // consecutive wrong-track polls before declaring a hijack
 const PREV_TRACK_WINDOW_MS = 3000; // a 2nd "prev" within this jumps to the previous track
 
 export interface PlayerEngine {
@@ -39,6 +40,8 @@ export interface PlayerEngine {
   deviceName: string | null;
   /** True when Spotify has no active device (the tablet dropped off Connect). */
   noDevice: boolean;
+  /** True when another app/user took over the device and a different track is playing. */
+  hijacked: boolean;
   error: string | null;
 
   start: (index: number) => void;
@@ -71,6 +74,7 @@ export function usePlayerEngine(
   const [autoContinue, setAutoContinueState] = useState(true);
   const [deviceName, setDeviceName] = useState<string | null>(null);
   const [noDevice, setNoDevice] = useState(false);
+  const [hijacked, setHijacked] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Refs mirror state so the timers/poller read fresh values without resetting.
@@ -83,12 +87,15 @@ export function usePlayerEngine(
   const lastPrevAtRef = useRef(0);
   const noDeviceRef = useRef(noDevice);
   const nullPollsRef = useRef(0);
+  const hijackedRef = useRef(hijacked);
+  const wrongTrackPollsRef = useRef(0);
 
   indexRef.current = index;
   phaseRef.current = phase;
   autoRef.current = autoContinue;
   deviceIdRef.current = deviceId;
   noDeviceRef.current = noDevice;
+  hijackedRef.current = hijacked;
 
   const track = tracks[index];
 
@@ -156,6 +163,29 @@ export function usePlayerEngine(
         }
         nullPollsRef.current = 0;
         if (noDeviceRef.current) setNoDevice(false);
+
+        // Hijack guard: while we expect our track to be playing, Spotify reports a
+        // *different* track — another app/user grabbed this Connect device. Confirm
+        // across a few polls so the brief lag during our own track change isn't
+        // mistaken for one.
+        const expectedUri = tracks[indexRef.current]?.spotifyUri;
+        if (
+          phaseRef.current === 'playing' &&
+          snap.trackUri &&
+          expectedUri &&
+          snap.trackUri !== expectedUri
+        ) {
+          wrongTrackPollsRef.current += 1;
+          if (wrongTrackPollsRef.current >= HIJACK_POLLS && !hijackedRef.current) {
+            setHijacked(true);
+          }
+          // Keep the last good snapshot so the display freezes instead of tracking
+          // the hijacker's track position.
+          return;
+        }
+        wrongTrackPollsRef.current = 0;
+        if (hijackedRef.current) setHijacked(false);
+
         snapshotRef.current = snap;
         setDeviceName(snap.deviceName);
         // If Spotify reports it stopped near the end, the track finished.
@@ -177,7 +207,7 @@ export function usePlayerEngine(
       cancelled = true;
       clearInterval(id);
     };
-  }, [enterGapOrEnd]);
+  }, [enterGapOrEnd, tracks]);
 
   // High-frequency ticker: interpolate position, run the gap countdown.
   useEffect(() => {
@@ -186,8 +216,9 @@ export function usePlayerEngine(
 
       if (p === 'playing') {
         const snap = snapshotRef.current;
-        // Freeze the position while the device is lost (nothing is playing).
-        if (snap && !noDeviceRef.current) {
+        // Freeze the position while the device is lost or hijacked (our track
+        // isn't the one playing).
+        if (snap && !noDeviceRef.current && !hijackedRef.current) {
           const pos = interpolatePosition(snap);
           const duration = snap.durationMs || tracks[indexRef.current]?.durationMs || 0;
           setPositionMs(pos);
@@ -318,7 +349,9 @@ export function usePlayerEngine(
           Math.max(0, Math.round(pos)),
         );
         nullPollsRef.current = 0;
+        wrongTrackPollsRef.current = 0;
         setNoDevice(false);
+        setHijacked(false);
         setError(null);
         setPhase('playing');
         phaseRef.current = 'playing';
@@ -338,6 +371,7 @@ export function usePlayerEngine(
     autoContinue,
     deviceName,
     noDevice,
+    hijacked,
     error,
     start,
     togglePlayPause,

@@ -187,6 +187,20 @@ export default function PlayerScreen({
         </div>
       )}
 
+      {engine.hijacked && !engine.noDevice && (
+        <div className="device-lost">
+          <span>
+            Another app took over playback — a different track is playing. Take back
+            control of this device:
+          </span>
+          <div className="device-lost-actions">
+            <button className="primary" onClick={engine.recover}>
+              Take back control
+            </button>
+          </div>
+        </div>
+      )}
+
       <CallingDisplay
         callings={callings}
         positionSeconds={positionSeconds}

@@ -225,4 +225,63 @@ describe('usePlayerEngine', () => {
     expect(playTrack).toHaveBeenCalledWith('spotify:track:a', 'tablet', 0);
     expect(result.current.noDevice).toBe(false);
   });
+
+  it('flags a hijack when the device plays a different track than ours', async () => {
+    // Spotify reports a foreign track while we expect spotify:track:a.
+    getPlaybackState.mockResolvedValue({
+      isPlaying: true,
+      progressMs: 5_000,
+      durationMs: 10_000,
+      trackUri: 'spotify:track:intruder',
+      deviceId: 'd',
+      deviceName: 'Tablet',
+      fetchedAt: Date.now(),
+    });
+    const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
+    await startAt(result, 0);
+    expect(result.current.hijacked).toBe(false);
+
+    // Needs a few consecutive wrong-track polls before it's declared.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3_500);
+    });
+    expect(result.current.hijacked).toBe(true);
+    expect(result.current.noDevice).toBe(false);
+  });
+
+  it('recover() takes back control and clears a hijack', async () => {
+    getPlaybackState.mockResolvedValue({
+      isPlaying: true,
+      progressMs: 5_000,
+      durationMs: 10_000,
+      trackUri: 'spotify:track:intruder',
+      deviceId: 'd',
+      deviceName: 'Tablet',
+      fetchedAt: Date.now(),
+    });
+    const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
+    await startAt(result, 0);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3_500);
+    });
+    expect(result.current.hijacked).toBe(true);
+
+    getDevices.mockResolvedValue([{ id: 'tablet', name: 'Tablet', is_active: true }]);
+    getPlaybackState.mockResolvedValue({
+      isPlaying: true,
+      progressMs: 0,
+      durationMs: 10_000,
+      trackUri: 'spotify:track:a',
+      deviceId: 'tablet',
+      deviceName: 'Tablet',
+      fetchedAt: Date.now(),
+    });
+    playTrack.mockClear();
+    await act(async () => {
+      result.current.recover();
+      await vi.advanceTimersByTimeAsync(20);
+    });
+    expect(playTrack).toHaveBeenCalledWith('spotify:track:a', 'tablet', expect.any(Number));
+    expect(result.current.hijacked).toBe(false);
+  });
 });

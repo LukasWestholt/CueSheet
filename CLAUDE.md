@@ -76,7 +76,7 @@ Grouped by theme; unchecked entries are backlog. **Checked = built, type-checked
 - [ ] **Beat-grid / count visualization** (1-2-3-4-5-6-7-8) ticking with the music, driven by `bpm` + `firstBeatSec`.
 
 ### Robustness & offline
-- [~] **Reconnect / device-lost handling.** Surface when the target Connect device disappears or playback is hijacked by another app, with a one-tap re-target. (engine `noDevice` + `recover()`, recovery banner — handles the device *disappearing*; does **not** yet detect another app *hijacking* the session. Unit-tested with mocks, not against a live device.)
+- [x] **Reconnect / device-lost handling.** Surface when the target Connect device disappears or playback is hijacked by another app, with a one-tap re-target. (engine `noDevice` + `hijacked` + `recover()`, two recovery banners — detects both the device *disappearing* (empty polls) and another app *hijacking* the session (a foreign track plays for `HIJACK_POLLS` polls). Unit-tested with mocks, not against a live device.)
 - [x] **Token-expiry UX.** Graceful re-auth when the refresh fails mid-class rather than a silent stall. (`AUTH_EXPIRED_EVENT` → login screen; plus `startTokenAutoRefresh` proactive background refresh.)
 - [x] **Offline audit.** Verify the shell, track list, and authored callings truly work offline (matches the stated offline-first goal). (`useOnline` banner + gated fetches; precache manifest **inspected** — not yet confirmed in a live offline browser session.)
 - [ ] **PWA install prompt / affordance.** (the offline audit half of the old combined item is done; the install prompt remains.)
