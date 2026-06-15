@@ -35,6 +35,8 @@ jobs:
       - name: Build
         run: npm run build
         env:
+          # Served from a project page, so assets live under /<repo>/.
+          BASE_PATH: /${{ github.event.repository.name }}/
           # Public Client ID (not a secret). Set it as a repository *variable*
           # under Settings -> Secrets and variables -> Actions -> Variables.
           VITE_SPOTIFY_CLIENT_ID: ${{ vars.VITE_SPOTIFY_CLIENT_ID }}

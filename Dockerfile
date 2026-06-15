@@ -17,6 +17,12 @@ RUN npm ci
 ARG VITE_SPOTIFY_CLIENT_ID=""
 ENV VITE_SPOTIFY_CLIENT_ID=$VITE_SPOTIFY_CLIENT_ID
 
+# Public base path for the built assets. Defaults to root (this nginx image
+# serves at '/'); override for a sub-path deploy, e.g.:
+#   docker build --build-arg BASE_PATH=/CueSheet/ -t cuesheet .
+ARG BASE_PATH="/"
+ENV BASE_PATH=$BASE_PATH
+
 COPY . .
 RUN npm run build
 

@@ -2,11 +2,17 @@ import { configDefaults, defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
+// vite.config.ts runs in Node; declare the one global we read here so tsc -b
+// doesn't need @types/node just for this.
+declare const process: { env: Record<string, string | undefined> };
+
 // https://vite.dev/config/
-export default defineConfig(({ command }) => ({
-  // Served from https://<user>.github.io/CueSheet/ in production; root in dev
-  // (so the 127.0.0.1 Spotify loopback redirect keeps working). Test/serve use root.
-  base: command === 'build' ? '/CueSheet/' : '/',
+export default defineConfig({
+  // Public base path. Defaults to '/' (dev, the Docker/nginx image, tests); the
+  // GitHub Pages project deploy overrides it via BASE_PATH=/CueSheet/. Vite
+  // normalizes a trailing slash, and import.meta.env.BASE_URL reflects it at
+  // runtime (used by the /callback redirect URI — see src/config.ts).
+  base: process.env.BASE_PATH || '/',
   plugins: [
     react(),
     VitePWA({
@@ -38,4 +44,4 @@ export default defineConfig(({ command }) => ({
     // Don't run duplicated tests from git worktrees created under .claude/.
     exclude: [...configDefaults.exclude, '.claude/**'],
   },
-}));
+});
