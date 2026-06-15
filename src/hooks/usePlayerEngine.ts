@@ -47,6 +47,8 @@ export interface PlayerEngine {
   start: (index: number) => void;
   /** Attach to playback already running on Spotify without restarting it. */
   attach: (index: number) => void;
+  /** Position on a track without playing it (for a deep-linked detail view). */
+  select: (index: number) => void;
   togglePlayPause: () => void;
   next: () => void;
   prev: () => void;
@@ -252,6 +254,17 @@ export function usePlayerEngine(
     phaseRef.current = 'playing';
   }, []);
 
+  const select = useCallback((i: number) => {
+    // Point the engine at a track without playing it: idle keeps both timers
+    // inactive, so a deep-linked detail page shows the routine quietly until the
+    // user presses Play.
+    setIndex(i);
+    indexRef.current = i;
+    setError(null);
+    setPhase('idle');
+    phaseRef.current = 'idle';
+  }, []);
+
   const togglePlayPause = useCallback(() => {
     const p = phaseRef.current;
     if (p === 'playing') {
@@ -383,6 +396,7 @@ export function usePlayerEngine(
     holdNow,
     setAutoContinue,
     attach,
+    select,
     recover,
   };
 }

@@ -8,6 +8,7 @@ import { useCalibration } from '../hooks/useCalibration';
 import { useWakeLock } from '../hooks/useWakeLock';
 import CallingDisplay from './CallingDisplay';
 import TapToTime from './TapToTime';
+import { trackPath } from '../nav/routes';
 
 const OFFSET_KEY = 'tjf.syncOffsetMs';
 const TAP_RESET_MS = 2000; // start a fresh tap series after this gap
@@ -23,15 +24,19 @@ export default function PlayerScreen({
   tracks,
   startIndex,
   deviceId,
-  resume = false,
+  mode = 'start',
   onBack,
   onUpdateTrack,
 }: {
   tracks: Track[];
   startIndex: number;
   deviceId: string | null;
-  /** Attach to already-running playback instead of starting from 0. */
-  resume?: boolean;
+  /**
+   * How to open: 'start' plays from the top (list click), 'resume' attaches to
+   * already-running playback (session resume), 'view' shows the track quietly
+   * without playing (a deep-linked detail page — user presses Play).
+   */
+  mode?: 'start' | 'resume' | 'view';
   onBack: () => void;
   /** Persist edits to a track (used by tap-to-time). */
   onUpdateTrack?: (index: number, track: Track) => void;
@@ -55,10 +60,11 @@ export default function PlayerScreen({
   useEffect(() => {
     if (!startedRef.current) {
       startedRef.current = true;
-      if (resume) engine.attach(startIndex);
+      if (mode === 'resume') engine.attach(startIndex);
+      else if (mode === 'view') engine.select(startIndex);
       else engine.start(startIndex);
     }
-  }, [engine, startIndex, resume]);
+  }, [engine, startIndex, mode]);
 
   const track = engine.track;
 
@@ -109,6 +115,19 @@ export default function PlayerScreen({
   const tapsRef = useRef<number[]>([]);
   const [tapBpm, setTapBpm] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  // Copy a shareable deep link to this track's detail page.
+  const copyLink = async () => {
+    const url = window.location.origin + trackPath(track.id, import.meta.env.BASE_URL);
+    try {
+      await navigator.clipboard.writeText(url);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 1500);
+    } catch {
+      /* clipboard may be unavailable */
+    }
+  };
 
   const onTap = () => {
     const now = performance.now();
@@ -169,6 +188,9 @@ export default function PlayerScreen({
         {track?.wip && (
           <p className="wip-note">⚠ Work in progress — timings may be off.</p>
         )}
+        <button className="link copy-link" onClick={copyLink}>
+          {linkCopied ? 'Link copied!' : '🔗 Copy link to this track'}
+        </button>
       </div>
 
       {engine.error && <p className="error">{engine.error}</p>}
@@ -224,7 +246,12 @@ export default function PlayerScreen({
         <button className="round" onClick={engine.prev} aria-label="Previous track">
           ⏮
         </button>
-        <button className="round primary xl" onClick={engine.togglePlayPause}>
+        <button
+          className="round primary xl"
+          onClick={
+            engine.phase === 'idle' ? () => engine.start(engine.index) : engine.togglePlayPause
+          }
+        >
           {playLabel}
         </button>
         <button className="round" onClick={engine.next} aria-label="Next track">

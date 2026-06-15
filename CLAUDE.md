@@ -51,7 +51,7 @@ The seconds-based timeline is **derived**, not stored:
 
 ## Navigation
 
-No router library. `src/App.tsx` switches views with local state (`list` ⇄ `player`) and special-cases the `/callback` path to complete the OAuth exchange before rendering.
+No router library. `src/App.tsx` switches views with local state (`list` ⇄ `player`, plus transient `editor`/`seed`). Two paths get real URLs via `history.pushState`/`popstate` and the pure `src/nav/routes.ts` (`parsePath`/`trackPath`/`listPath`, all **base-path aware** for sub-path deploys like GitHub Pages): `/callback` completes the OAuth exchange, and **`/track/:id`** is a track's shareable detail page. A deep link opens the player in `'view'` mode (`engine.select` — positioned but not auto-playing; press Play to start); in-app clicks open in `'start'` mode (auto-play). SPA fallback for deep links is handled by nginx `try_files` (Docker) and the vite dev server; **GitHub Pages needs a `404.html` copy of `index.html`** for direct deep-link loads (in-app navigation works regardless).
 
 ## Functions
 
@@ -95,7 +95,7 @@ Grouped by theme; unchecked entries are backlog. **Checked = built, type-checked
 ### Features
 - [ ] Add a link that can be shared to the crowd for survey next song (15s).
 - [ ] Find an API to parse "First beat (s)" from song. Maybe there is a free pass (10 querys per day we can cache and use over some days to save money)
-- [ ] Add url path for view of song detail page.
+- [x] Add url path for view of song detail page. (`/track/:id` via `src/nav/routes.ts` + `pushState`/`popstate` in `App`; opens the player in `'view'` mode via `engine.select`, with a "Copy link" button. Base-path aware. See the Navigation section.)
 
 ### Production ready
 - [ ] Is the nginx container image CORS etc. ready?

@@ -19,6 +19,7 @@ import {
   type RecommendedRoutine,
 } from './data/recommendedImports';
 import { collectStepLibrary } from './data/stepLibrary';
+import { parsePath, trackPath, listPath } from './nav/routes';
 import { loadFavorites, saveFavorites } from './data/favorites';
 import { useOnline } from './hooks/useOnline';
 import LoginScreen from './components/LoginScreen';
@@ -38,6 +39,9 @@ function initialTracks(): { tracks: Track[]; overridden: boolean } {
 }
 
 type View = 'list' | 'player' | 'editor' | 'seed';
+type PlayerMode = 'start' | 'resume' | 'view';
+
+const BASE = import.meta.env.BASE_URL;
 
 export default function App() {
   const online = useOnline();
@@ -45,7 +49,12 @@ export default function App() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [view, setView] = useState<View>('list');
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [resume, setResume] = useState(false);
+  const [playerMode, setPlayerMode] = useState<PlayerMode>('start');
+  // A track id from a deep link (/track/:id) waiting for the list to load.
+  const [pendingTrackId, setPendingTrackId] = useState<string | null>(() => {
+    const r = parsePath(window.location.pathname, BASE);
+    return r.name === 'track' ? r.id : null;
+  });
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [trackInfos, setTrackInfos] = useState<Record<string, TrackInfo>>({});
@@ -88,8 +97,15 @@ export default function App() {
 
   const openTrack = (index: number, asResume = false) => {
     setSelectedIndex(index);
-    setResume(asResume);
+    setPlayerMode(asResume ? 'resume' : 'start');
     setView('player');
+    const id = tracks[index]?.id;
+    if (id) window.history.pushState({}, '', trackPath(id, BASE));
+  };
+  // Back to the list, keeping the URL in sync.
+  const goList = () => {
+    setView('list');
+    window.history.pushState({}, '', listPath(BASE));
   };
 
   const persistTracks = (next: Track[], overrideOff = false) => {
@@ -226,6 +242,38 @@ export default function App() {
       .catch(() => {});
   }, [loggedIn, tracks, online]);
 
+  // Resolve a deep link (/track/:id) once the routine list has loaded. Opens the
+  // track's detail page in 'view' mode (shown quietly, not auto-played).
+  useEffect(() => {
+    if (!pendingTrackId) return;
+    const i = tracks.findIndex((t) => t.id === pendingTrackId);
+    if (i >= 0) {
+      setSelectedIndex(i);
+      setPlayerMode('view');
+      setView('player');
+      setPendingTrackId(null);
+    }
+  }, [pendingTrackId, tracks]);
+
+  // Keep the view in sync with browser back/forward (no pushState here).
+  useEffect(() => {
+    const onPop = () => {
+      const r = parsePath(window.location.pathname, BASE);
+      if (r.name === 'track') {
+        const i = tracks.findIndex((t) => t.id === r.id);
+        if (i >= 0) {
+          setSelectedIndex(i);
+          setPlayerMode('view');
+          setView('player');
+          return;
+        }
+      }
+      setView('list');
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [tracks]);
+
   if (!IS_CONFIGURED) {
     return (
       <div className="screen center">
@@ -348,8 +396,8 @@ export default function App() {
           tracks={tracks}
           startIndex={selectedIndex}
           deviceId={deviceId}
-          resume={resume}
-          onBack={() => setView('list')}
+          mode={playerMode}
+          onBack={goList}
           onUpdateTrack={updateTrack}
         />
       )}
