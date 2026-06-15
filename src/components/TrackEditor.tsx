@@ -234,6 +234,9 @@ export default function TrackEditor({
               return (
                 <li key={r.uri} className="sr-row">
                   <button className="sr-pick" onClick={() => chooseResult(r)}>
+                    {r.imageUrl && (
+                      <img className="sr-art" src={r.imageUrl} alt="" loading="lazy" />
+                    )}
                     <span className="sr-meta">
                       <span className="sr-title">{r.title}</span>
                       <span className="sr-artist">{r.artist}</span>

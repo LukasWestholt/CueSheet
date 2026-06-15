@@ -97,6 +97,14 @@ export interface TrackInfo {
   durationMs: number;
   /** International Standard Recording Code — used to look up BPM elsewhere. */
   isrc: string | null;
+  /** Album cover URL (Spotify CDN, i.scdn.co), or null when none. */
+  imageUrl: string | null;
+}
+
+/** Picks a mid-size cover (Spotify orders images largest-first; [1] is ~300px). */
+function pickAlbumImage(images?: { url: string }[]): string | null {
+  if (!images || images.length === 0) return null;
+  return images[1]?.url ?? images[0]?.url ?? null;
 }
 
 function parseTrackInfo(t: {
@@ -104,12 +112,14 @@ function parseTrackInfo(t: {
   artists?: { name: string }[];
   duration_ms?: number;
   external_ids?: { isrc?: string };
+  album?: { images?: { url: string }[] };
 }): TrackInfo {
   return {
     title: t.name ?? '',
     artist: (t.artists ?? []).map((a) => a.name).join(', '),
     durationMs: t.duration_ms ?? 0,
     isrc: t.external_ids?.isrc ?? null,
+    imageUrl: pickAlbumImage(t.album?.images),
   };
 }
 
@@ -151,6 +161,7 @@ export interface TrackSearchResult {
   artist: string;
   durationMs: number;
   isrc: string | null;
+  imageUrl: string | null;
 }
 
 /** Searches the Spotify catalog for tracks matching a free-text query. */
@@ -167,6 +178,7 @@ export async function searchTracks(query: string, limit = 8): Promise<TrackSearc
     artists?: { name: string }[];
     duration_ms?: number;
     external_ids?: { isrc?: string };
+    album?: { images?: { url: string }[] };
   }[];
   return items
     .filter((t) => t.uri && t.id)
@@ -177,6 +189,7 @@ export async function searchTracks(query: string, limit = 8): Promise<TrackSearc
       artist: (t.artists ?? []).map((a) => a.name).join(', '),
       durationMs: t.duration_ms ?? 0,
       isrc: t.external_ids?.isrc ?? null,
+      imageUrl: pickAlbumImage(t.album?.images),
     }));
 }
 

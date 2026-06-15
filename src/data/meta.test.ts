@@ -23,6 +23,7 @@ describe('resolveTrackMeta', () => {
       durationMs: 220_000,
       bpm: 128,
       firstBeatSec: 1.2,
+      imageUrl: null,
     });
   });
 

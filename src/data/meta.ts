@@ -7,6 +7,7 @@ export interface FetchedMeta {
   durationMs: number | null;
   bpm: number | null;
   firstBeatSec: number | null;
+  imageUrl: string | null;
 }
 
 /** The metadata the UI actually renders, after applying authored overrides. */
@@ -17,6 +18,8 @@ export interface ResolvedMeta {
   /** null while still unknown — callings stay empty until a BPM is available. */
   bpm: number | null;
   firstBeatSec: number;
+  /** Album cover URL, or null when unknown / offline. */
+  imageUrl: string | null;
 }
 
 /**
@@ -30,5 +33,6 @@ export function resolveTrackMeta(track: Track, fetched: Partial<FetchedMeta>): R
     durationMs: track.durationMs ?? fetched.durationMs ?? 0,
     bpm: track.bpm ?? fetched.bpm ?? null,
     firstBeatSec: track.firstBeatSec ?? fetched.firstBeatSec ?? 0,
+    imageUrl: fetched.imageUrl ?? null,
   };
 }

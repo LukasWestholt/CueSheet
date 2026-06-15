@@ -180,6 +180,9 @@ export default function PlayerScreen({
       </header>
 
       <div className="track-head">
+        {meta.imageUrl && (
+          <img className="player-art" src={meta.imageUrl} alt="" loading="lazy" />
+        )}
         <h2>{meta.title}</h2>
         <span className="track-artist">
           {meta.artist}

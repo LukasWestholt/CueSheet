@@ -54,6 +54,13 @@ export default function TrackList({
             )}
             <button className="track-row" onClick={() => onSelect(i)}>
               <span className="track-index">{i + 1}</span>
+              {info?.imageUrl ? (
+                <img className="track-art" src={info.imageUrl} alt="" loading="lazy" />
+              ) : (
+                <span className="track-art track-art-ph" aria-hidden="true">
+                  ♪
+                </span>
+              )}
               <span className="track-meta">
                 <span className="track-title">{title}</span>
                 <span className="track-artist">{artist}</span>

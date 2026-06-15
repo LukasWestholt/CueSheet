@@ -23,7 +23,12 @@ export function useTrackMeta(track: Track, calibration?: Calibration | null): Re
     getTrackInfo(track.spotifyUri)
       .then((info) => {
         if (!info) return;
-        merge({ title: info.title, artist: info.artist, durationMs: info.durationMs });
+        merge({
+          title: info.title,
+          artist: info.artist,
+          durationMs: info.durationMs,
+          imageUrl: info.imageUrl,
+        });
         // Best-effort BPM from Deezer (by ISRC) when not authored — Spotify's
         // own tempo endpoint is usually 403. Don't clobber a BPM already set
         // (Spotify tempo, if it ever returns, wins); calibration still overrides.
