@@ -615,6 +615,11 @@ summary.routines-head > span:first-child {
   color: var(--text);
   font-weight: 600;
 }
+.routines-title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
 /* CSS chevron — no icon asset needed; rotates when the panel is open. */
 summary.routines-head::after {
   content: '';

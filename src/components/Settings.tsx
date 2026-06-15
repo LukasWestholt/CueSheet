@@ -6,7 +6,7 @@ import {
 } from '../data/getsongbpmKey';
 import { testGetsongbpmKey } from '../beatdata/getsongbpm';
 import { GETSONGBPM_URL, REPO_URL } from '../links';
-import { X } from './icons';
+import { X, Settings as SettingsIcon } from './icons';
 
 // App-wide settings. Currently just the optional GetSongBPM API key, which is
 // per-user (a static site can't ship a shared secret) and lives in localStorage.
@@ -44,7 +44,9 @@ export default function Settings() {
   return (
     <details className="routines">
       <summary className="routines-head">
-        <span className="muted">Settings</span>
+        <span className="routines-title">
+          <SettingsIcon size={16} /> Settings
+        </span>
         <span className="muted">BPM auto-fill {savedKey ? '· on' : '· off'}</span>
       </summary>
 
