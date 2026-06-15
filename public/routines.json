@@ -1,14 +1,10 @@
 {
   "routines": [
     {
-      "file": "/default.json",
-      "label": "Default sample routines",
-      "description": "default*.json is loaded automatically on startup as the base set."
-    },
-    {
-      "file": "/example.json",
-      "label": "Example extra routine",
-      "description": "A non-default file — click to import it on top of the defaults."
+      "file": "/playbook-2026.json",
+      "label": "Playbook 2026",
+      "default": true,
+      "description": "My first routine set from 2026 — loaded automatically on startup as the base set."
     }
   ]
 }

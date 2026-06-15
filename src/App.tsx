@@ -15,7 +15,6 @@ import {
   loadRecommendedRoutines,
   loadDefaultRoutines,
   fetchRoutineFile,
-  isDefaultRoutineFile,
   type RecommendedRoutine,
 } from './data/recommendedImports';
 import { collectStepLibrary } from './data/stepLibrary';
@@ -214,11 +213,6 @@ export default function App() {
       });
     }
   }, []);
-  // Non-default manifest files are the one-tap import targets.
-  const importTargets = useMemo(
-    () => recommended.filter((r) => !isDefaultRoutineFile(r.file)),
-    [recommended],
-  );
   const importFromFile = async (file: string): Promise<ValidationResult> => {
     const data = await fetchRoutineFile(file);
     const res = validateTracks(data);
@@ -438,7 +432,7 @@ export default function App() {
             overridden={overridden}
             onImport={importTracks}
             onReset={resetTracks}
-            recommended={importTargets}
+            recommended={recommended}
             onImportFile={importFromFile}
           />
           <Settings />

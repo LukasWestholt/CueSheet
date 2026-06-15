@@ -1,8 +1,9 @@
 // Routine files shipped alongside the deployment (in the web server's public
 // folder). A static host can't list a directory, so a small manifest
-// (public/routines.json) names the files. Files named `default.json` /
-// `default.*.json` are loaded automatically on startup as the base routine set;
-// any others are offered in the UI as one-tap import targets.
+// (public/routines.json) names the files. A file marked `"default": true` (or
+// named `default.json` / `default.*.json`) is loaded automatically on startup
+// as the base routine set; any others are offered in the UI as one-tap import
+// targets. The committed default is `playbook-2026.json`.
 
 import type { Track } from './tracks';
 import { validateTracks } from './validateTracks';
@@ -12,6 +13,8 @@ export interface RecommendedRoutine {
   file: string;
   label: string;
   description?: string;
+  /** Auto-load on startup as part of the base set (besides the `default*.json` name match). */
+  default?: boolean;
 }
 
 /** Normalize a manifest-listed file to a root-absolute URL. */
@@ -48,6 +51,7 @@ export async function loadRecommendedRoutines(
               ? e.file
               : '',
         description: typeof e.description === 'string' ? e.description : undefined,
+        default: e.default === true ? true : undefined,
       }))
       .filter((e) => e.file);
   } catch {
@@ -68,16 +72,20 @@ export function isDefaultRoutineFile(file: string): boolean {
   return /^default(\.[^/]+)?\.json$/i.test(base);
 }
 
+/** A manifest entry that's part of the startup base set: flagged or `default*.json`-named. */
+export function isDefaultRoutine(entry: RecommendedRoutine): boolean {
+  return entry.default === true || isDefaultRoutineFile(entry.file);
+}
+
 /**
  * Loads the startup default routine set from the public folder: every manifest
- * file named `default*.json`, validated and concatenated (deduped by id). Returns
- * [] when there's no manifest / no default files / all invalid, so the caller can
- * fall back to its built-in tracks. Never throws.
+ * entry that's a default (flagged or `default*.json`-named), validated and
+ * concatenated (deduped by id). Returns [] when there's no manifest / no default
+ * files / all invalid, so the caller can fall back to its built-in tracks. Never
+ * throws.
  */
 export async function loadDefaultRoutines(manifestUrl = '/routines.json'): Promise<Track[]> {
-  const defaults = (await loadRecommendedRoutines(manifestUrl)).filter((e) =>
-    isDefaultRoutineFile(e.file),
-  );
+  const defaults = (await loadRecommendedRoutines(manifestUrl)).filter(isDefaultRoutine);
   const out: Track[] = [];
   const seen = new Set<string>();
   for (const e of defaults) {

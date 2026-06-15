@@ -3,6 +3,7 @@ import {
   loadRecommendedRoutines,
   loadDefaultRoutines,
   isDefaultRoutineFile,
+  isDefaultRoutine,
 } from './recommendedImports';
 import type { Track } from './tracks';
 
@@ -30,6 +31,15 @@ describe('loadRecommendedRoutines', () => {
     }));
     const list = await loadRecommendedRoutines();
     expect(list).toEqual([{ file: 'default.json', label: 'Default', description: 'd' }]);
+  });
+
+  it('carries an explicit default flag through', async () => {
+    mockFetch(() => ({
+      ok: true,
+      json: async () => ({ routines: [{ file: 'playbook-2026.json', default: true }] }),
+    }));
+    const [entry] = await loadRecommendedRoutines();
+    expect(entry.default).toBe(true);
   });
 
   it('accepts a bare array and defaults the label to the file name', async () => {
@@ -71,6 +81,16 @@ describe('isDefaultRoutineFile', () => {
   });
 });
 
+describe('isDefaultRoutine', () => {
+  it('is true for a flagged entry or a default*.json name', () => {
+    expect(isDefaultRoutine({ file: 'playbook-2026.json', label: '', default: true })).toBe(true);
+    expect(isDefaultRoutine({ file: '/default.json', label: '' })).toBe(true);
+  });
+  it('is false for an unflagged, non-default-named entry', () => {
+    expect(isDefaultRoutine({ file: 'example.json', label: '' })).toBe(false);
+  });
+});
+
 describe('loadDefaultRoutines', () => {
   it('loads + concatenates only the default*.json files, deduping ids', async () => {
     mockFetch((url) => {
@@ -97,6 +117,28 @@ describe('loadDefaultRoutines', () => {
     });
     const tracks = await loadDefaultRoutines();
     expect(tracks.map((t) => t.id)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('loads a file flagged default even when not named default*.json', async () => {
+    mockFetch((url) => {
+      if (url.includes('routines.json')) {
+        return {
+          ok: true,
+          json: async () => ({
+            routines: [
+              { file: '/playbook-2026.json', default: true },
+              { file: '/example.json' }, // not a default — ignored here
+            ],
+          }),
+        };
+      }
+      if (url.includes('playbook-2026.json')) {
+        return { ok: true, json: async () => [sampleTrack('a'), sampleTrack('b')] };
+      }
+      return { ok: true, json: async () => [sampleTrack('z')] };
+    });
+    const tracks = await loadDefaultRoutines();
+    expect(tracks.map((t) => t.id)).toEqual(['a', 'b']);
   });
 
   it('returns [] when there is no manifest', async () => {

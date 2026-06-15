@@ -486,6 +486,12 @@ button:active {
 .recommended-row .ghost {
   flex: 0 0 auto;
 }
+.rec-loaded {
+  flex: 0 0 auto;
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface-2));
+  color: var(--accent);
+  font-weight: 700;
+}
 
 /* Work-in-progress markers. */
 .badge-wip {
@@ -1550,5 +1556,15 @@ button:active {
 .modal-actions {
   display: flex;
   justify-content: flex-end;
+  gap: 8px;
   margin-top: 8px;
+}
+.code-block {
+  background: var(--surface-2);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin: 6px 0;
+  font-size: 0.8rem;
+  white-space: pre;
+  overflow-x: auto;
 }

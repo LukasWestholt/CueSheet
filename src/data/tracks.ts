@@ -51,9 +51,11 @@ export interface Calling {
 }
 
 // ---------------------------------------------------------------------------
-// DEFAULT (committed) tracks — a small public sample. Your real set lives in
-// the gitignored `tracks.local.ts` (see the loader at the bottom of this file),
-// so you can keep private routines without committing/pushing them.
+// Built-in fallback tracks — a small sample used only as the offline / no-server
+// safety net (see the export at the bottom). The real routine set ships as
+// committed JSON in `public/playbook-2026.json` and is loaded on startup
+// (src/data/recommendedImports.ts#loadDefaultRoutines); a localStorage override
+// (imported/edited routines) wins over both.
 // Find a URI in the Spotify app: Share → Copy Spotify URI.
 // Tune firstBeatSec / bpm / measures to your track.
 // ---------------------------------------------------------------------------
@@ -132,14 +134,7 @@ const DEFAULT_TRACKS: Track[] = [
   },
 ];
 
-// Private track list: drop a `src/data/tracks.local.ts` (gitignored — see
-// tracks.local.example.ts for the shape) that `export const TRACKS: Track[]`.
-// When present it fully replaces DEFAULT_TRACKS; absent (CI, Docker, fresh
-// clone) we fall back to the committed defaults. import.meta.glob tolerates the
-// file not existing, so the build never breaks when it's missing.
-const localModules = import.meta.glob<{ TRACKS?: Track[] }>('./tracks.local.ts', {
-  eager: true,
-});
-const localTracks = Object.values(localModules)[0]?.TRACKS;
-
-export const TRACKS: Track[] = localTracks?.length ? localTracks : DEFAULT_TRACKS;
+// The built-in fallback list. At runtime the app prefers a localStorage override,
+// then the public-folder default set (`playbook-2026.json`); these tracks are
+// only used when neither is available (offline before the SW has precached).
+export const TRACKS: Track[] = DEFAULT_TRACKS;

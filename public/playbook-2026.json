@@ -1,0 +1,1845 @@
+[
+  {
+    "id": "main-1-0",
+    "title": "Low",
+    "artist": "Flo Rida",
+    "spotifyUri": "spotify:track:0t2w4jQazlBggyZS4axpnw",
+    "durationMs": 220000,
+    "firstBeatSec": 1,
+    "bpm": 128,
+    "steps": [
+      {
+        "step": "Jogging",
+        "cue": "intro",
+        "measures": 4
+      },
+      {
+        "step": "Basic",
+        "cue": "chorus",
+        "measures": 3
+      },
+      {
+        "step": "Low",
+        "cue": "chorus",
+        "measures": 1
+      },
+      {
+        "step": "Basic",
+        "cue": "chorus",
+        "measures": 3
+      },
+      {
+        "step": "Low",
+        "cue": "chorus",
+        "measures": 1
+      },
+      {
+        "step": "Jogging",
+        "cue": "verse",
+        "measures": 4
+      },
+      {
+        "step": "Kick",
+        "cue": "verse",
+        "measures": 4
+      },
+      {
+        "step": "Basic",
+        "cue": "chorus",
+        "measures": 3
+      },
+      {
+        "step": "Low",
+        "cue": "chorus",
+        "measures": 1
+      },
+      {
+        "step": "Basic",
+        "cue": "chorus",
+        "measures": 3
+      },
+      {
+        "step": "Low",
+        "cue": "chorus",
+        "measures": 1
+      },
+      {
+        "step": "Jogging",
+        "cue": "verse",
+        "measures": 4
+      },
+      {
+        "step": "Kick",
+        "cue": "verse",
+        "measures": 4
+      },
+      {
+        "step": "Basic",
+        "cue": "chorus",
+        "measures": 3
+      },
+      {
+        "step": "Low",
+        "cue": "chorus",
+        "measures": 1
+      },
+      {
+        "step": "Basic",
+        "cue": "chorus",
+        "measures": 3
+      },
+      {
+        "step": "Low",
+        "cue": "chorus",
+        "measures": 1
+      },
+      {
+        "step": "Jogging",
+        "cue": "verse",
+        "measures": 4
+      },
+      {
+        "step": "Kick",
+        "cue": "verse",
+        "measures": 4
+      },
+      {
+        "step": "Basic",
+        "cue": "chorus",
+        "measures": 3
+      },
+      {
+        "step": "Low",
+        "cue": "chorus",
+        "measures": 1
+      },
+      {
+        "step": "Basic",
+        "cue": "chorus",
+        "measures": 3
+      },
+      {
+        "step": "Low",
+        "cue": "chorus",
+        "measures": 1
+      }
+    ]
+  },
+  {
+    "id": "main-1-1",
+    "spotifyUri": "spotify:track:3CeCwYWvdfXbZLXFhBrbnf",
+    "firstBeatSec": 0,
+    "bpm": 119,
+    "steps": [
+      {
+        "step": "Tip Toe",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Bounce Balance",
+        "cue": "",
+        "measures": 8
+      },
+      {
+        "step": "Jogging",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Pony",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Bounce Balance",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Jogging",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Pony",
+        "cue": "",
+        "measures": 8
+      },
+      {
+        "step": "Jogging",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Tip Toe",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Jogging",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Pony",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Tip Toe",
+        "cue": "",
+        "measures": 4
+      }
+    ]
+  },
+  {
+    "id": "main-1-2",
+    "spotifyUri": "spotify:track:4zPVMv84MMHehLNZYIS1Zv",
+    "firstBeatSec": 1,
+    "bpm": 130,
+    "steps": [
+      {
+        "step": "Jogging",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Tip Toe",
+        "cue": "",
+        "measures": 4.5
+      },
+      {
+        "step": "Jogging",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Kick",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Kick Double",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Tip Toe",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Bounce Balance",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Jogging",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Kick",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Kick im V",
+        "cue": "",
+        "measures": 4
+      }
+    ]
+  },
+  {
+    "id": "main-1-3",
+    "spotifyUri": "spotify:track:1di1BEgJYzPvXUuinsYJGP",
+    "firstBeatSec": 0,
+    "bpm": 108,
+    "steps": [
+      {
+        "step": "Bounce Balance",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Bounce Balance Double",
+        "cue": "",
+        "measures": 2
+      },
+      {
+        "step": "Basic",
+        "cue": "Verse 1",
+        "measures": 4
+      },
+      {
+        "step": "Heel",
+        "cue": "Pre Chorus",
+        "measures": 4
+      },
+      {
+        "step": "Heel Double",
+        "cue": "Chorus",
+        "measures": 6
+      },
+      {
+        "step": "Basic",
+        "cue": "Verse 2",
+        "measures": 4
+      },
+      {
+        "step": "Heel",
+        "cue": "Pre Chorus",
+        "measures": 4
+      },
+      {
+        "step": "Heel Double",
+        "cue": "Chorus",
+        "measures": 5
+      },
+      {
+        "step": "Tip Toe",
+        "cue": "",
+        "measures": 2
+      },
+      {
+        "step": "Bounce Balance",
+        "cue": "Bridge",
+        "measures": 4
+      },
+      {
+        "step": "Heel",
+        "cue": "Increase",
+        "measures": 2
+      },
+      {
+        "step": "Heel Double",
+        "cue": "Chorus",
+        "measures": 8
+      }
+    ]
+  },
+  {
+    "id": "main-1-4",
+    "spotifyUri": "spotify:track:0LMwmV37RCmBO2so0szAFs",
+    "firstBeatSec": 0,
+    "bpm": 108,
+    "steps": [
+      {
+        "step": "Basic",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Heel",
+        "cue": "",
+        "measures": 2
+      },
+      {
+        "step": "Bounce Balance",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Bounce Balance Double",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Heel",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Basic",
+        "cue": "",
+        "measures": 5
+      },
+      {
+        "step": "Bounce Balance",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Heel Double",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Bounce Balance",
+        "cue": "",
+        "measures": 8
+      }
+    ]
+  },
+  {
+    "id": "main-1-5",
+    "spotifyUri": "spotify:track:48QmG1dfvMuYLxMPt7KSRA",
+    "firstBeatSec": 0,
+    "bpm": 102,
+    "steps": [
+      {
+        "step": "Intro",
+        "cue": "Intro",
+        "measures": 2
+      },
+      {
+        "step": "Tip Toe",
+        "cue": "Verse",
+        "measures": 4
+      },
+      {
+        "step": "Jogging",
+        "cue": "Pre Chorus",
+        "measures": 4
+      },
+      {
+        "step": "Basic",
+        "cue": "Chorus",
+        "measures": 8
+      },
+      {
+        "step": "Tip Toe",
+        "cue": "Verse",
+        "measures": 4
+      },
+      {
+        "step": "Jogging",
+        "cue": "Pre Chorus",
+        "measures": 4
+      },
+      {
+        "step": "Basic",
+        "cue": "Chorus",
+        "measures": 8
+      },
+      {
+        "step": "Jogging",
+        "cue": "Bridge",
+        "measures": 4
+      },
+      {
+        "step": "Basic",
+        "cue": "Chorus",
+        "measures": 8
+      }
+    ]
+  },
+  {
+    "id": "main-1-6",
+    "spotifyUri": "spotify:track:3fvY2U1AzW0diYF0hnBbKt",
+    "firstBeatSec": 0,
+    "bpm": 102,
+    "steps": [
+      {
+        "step": "Tip Toe",
+        "cue": "Intro",
+        "measures": 4
+      },
+      {
+        "step": "Butt Kick",
+        "cue": "Verse",
+        "measures": 4
+      },
+      {
+        "step": "Basic",
+        "cue": "Pre Chorus",
+        "measures": 4
+      },
+      {
+        "step": "Jumping Jack",
+        "cue": "Chorus",
+        "measures": 4
+      },
+      {
+        "step": "Basic",
+        "cue": "Post Chorus",
+        "measures": 2
+      },
+      {
+        "step": "Butt Kick",
+        "cue": "Verse",
+        "measures": 4
+      },
+      {
+        "step": "Beat",
+        "cue": "Refrain",
+        "measures": 2
+      },
+      {
+        "step": "Basic",
+        "cue": "Pre Chorus",
+        "measures": 4
+      },
+      {
+        "step": "Jumping Jack",
+        "cue": "Chorus",
+        "measures": 4
+      },
+      {
+        "step": "Basic",
+        "cue": "Post Chorus",
+        "measures": 4
+      },
+      {
+        "step": "Beat",
+        "cue": "Refrain",
+        "measures": 2
+      },
+      {
+        "step": "Basic",
+        "cue": "Pre Chorus",
+        "measures": 4
+      },
+      {
+        "step": "Jumping Jack",
+        "cue": "Chorus",
+        "measures": 4
+      },
+      {
+        "step": "Basic",
+        "cue": "Post Chorus",
+        "measures": 4
+      }
+    ]
+  },
+  {
+    "id": "main-1-7",
+    "spotifyUri": "spotify:track:0lYBSQXN6rCTvUZvg9S0lU",
+    "firstBeatSec": 0,
+    "bpm": 100,
+    "steps": [
+      {
+        "step": "Intro",
+        "cue": "",
+        "measures": 2
+      },
+      {
+        "step": "Bounce Balance",
+        "cue": "verse",
+        "measures": 4
+      },
+      {
+        "step": "Heel",
+        "cue": "pre chorus",
+        "measures": 4
+      },
+      {
+        "step": "Jogging",
+        "cue": "chorus",
+        "measures": 4
+      },
+      {
+        "step": "Tip Toe",
+        "cue": "drop",
+        "measures": 4
+      },
+      {
+        "step": "Bounce Balance",
+        "cue": "verse",
+        "measures": 4
+      },
+      {
+        "step": "Heel",
+        "cue": "pre chorus",
+        "measures": 4
+      },
+      {
+        "step": "Jogging",
+        "cue": "chorus",
+        "measures": 4
+      },
+      {
+        "step": "Kick (Low)",
+        "cue": "bridge",
+        "measures": 4
+      },
+      {
+        "step": "Tip Toe",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "V Step",
+        "cue": "chorus",
+        "measures": 4
+      }
+    ]
+  },
+  {
+    "id": "main-1-8",
+    "spotifyUri": "spotify:track:6esrIQuXxZaThJbYtPIppl",
+    "firstBeatSec": 0,
+    "bpm": 102,
+    "steps": [
+      {
+        "step": "Tip Toe",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Jogging",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Basic",
+        "cue": "",
+        "measures": 7
+      },
+      {
+        "step": "Tip Toe",
+        "cue": "",
+        "measures": 1
+      },
+      {
+        "step": "Jogging",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Basic",
+        "cue": "",
+        "measures": 7
+      },
+      {
+        "step": "Tip Toe",
+        "cue": "",
+        "measures": 1
+      },
+      {
+        "step": "Jogging",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Tip Toe",
+        "cue": "",
+        "measures": 7
+      },
+      {
+        "step": "Jogging",
+        "cue": "",
+        "measures": 8
+      }
+    ]
+  },
+  {
+    "id": "main-1-9",
+    "spotifyUri": "spotify:track:5iIgIxtMNeogKaFUfvuAbs",
+    "firstBeatSec": 0,
+    "bpm": 98,
+    "steps": [
+      {
+        "step": "Tip Toe",
+        "cue": "intro",
+        "measures": 2
+      },
+      {
+        "step": "Bounce Balance",
+        "cue": "verse",
+        "measures": 6
+      },
+      {
+        "step": "Basic",
+        "cue": "prhook",
+        "measures": 2
+      },
+      {
+        "step": "Heel",
+        "cue": "hook",
+        "measures": 2
+      },
+      {
+        "step": "Kick",
+        "cue": "posthook",
+        "measures": 4
+      },
+      {
+        "step": "Bounce Balance",
+        "cue": "verse",
+        "measures": 6
+      },
+      {
+        "step": "Basic",
+        "cue": "prhook",
+        "measures": 2
+      },
+      {
+        "step": "Kick",
+        "cue": "hook",
+        "measures": 2
+      },
+      {
+        "step": "Basic",
+        "cue": "posthook",
+        "measures": 4
+      }
+    ]
+  },
+  {
+    "id": "main-1-10",
+    "spotifyUri": "spotify:track:0lQ2obtzmAsJu9xk3D6FqH",
+    "firstBeatSec": 0,
+    "bpm": 120,
+    "steps": [
+      {
+        "step": "Squat",
+        "cue": "Verse",
+        "measures": 8
+      },
+      {
+        "step": "Bounce Balance",
+        "cue": "Pre Chorus",
+        "measures": 4
+      },
+      {
+        "step": "Scissors",
+        "cue": "Chorus",
+        "measures": 4
+      },
+      {
+        "step": "Bounce Balance",
+        "cue": "Instrumental",
+        "measures": 4
+      },
+      {
+        "step": "Squat",
+        "cue": "Verse",
+        "measures": 8
+      },
+      {
+        "step": "Bounce Balance",
+        "cue": "Pre Chorus",
+        "measures": 4
+      },
+      {
+        "step": "Scissors",
+        "cue": "Chorus",
+        "measures": 4
+      },
+      {
+        "step": "Scissors Double",
+        "cue": "Post Chorus",
+        "measures": 4
+      },
+      {
+        "step": "Bounce Balance",
+        "cue": "Instrumental",
+        "measures": 4
+      }
+    ]
+  },
+  {
+    "id": "main-1-11",
+    "spotifyUri": "spotify:track:0UTjl5acoBcNiDWAHoLVCU",
+    "firstBeatSec": 0,
+    "bpm": 128,
+    "steps": [
+      {
+        "step": "Intro",
+        "cue": "Instrumental",
+        "measures": 2
+      },
+      {
+        "step": "Beat zur Seite",
+        "cue": "Intro",
+        "measures": 4
+      },
+      {
+        "step": "Tip Toe",
+        "cue": "Verse",
+        "measures": 4
+      },
+      {
+        "step": "Bounce Balance",
+        "cue": "Pre Chorus",
+        "measures": 2
+      },
+      {
+        "step": "Pony",
+        "cue": "Chorus",
+        "measures": 4
+      },
+      {
+        "step": "Pony Double",
+        "cue": "Verse",
+        "measures": 4
+      },
+      {
+        "step": "Pony",
+        "cue": "Pre Chorus",
+        "measures": 2
+      },
+      {
+        "step": "Tip Toe",
+        "cue": "Chorus",
+        "measures": 4
+      },
+      {
+        "step": "Bounce Balance",
+        "cue": "Bridge",
+        "measures": 4
+      },
+      {
+        "step": "Pony (4S - 2D)",
+        "cue": "Chorus",
+        "measures": 8
+      }
+    ]
+  },
+  {
+    "id": "main-1-12",
+    "spotifyUri": "spotify:track:5EYdTPdJD74r9EVZBztqGG",
+    "firstBeatSec": 0,
+    "bpm": 123,
+    "steps": [
+      {
+        "step": "Beat Seite",
+        "cue": "Instrumental ohne Beat",
+        "measures": 4
+      },
+      {
+        "step": "Tip Toe",
+        "cue": "Instrumental mit Beat",
+        "measures": 4
+      },
+      {
+        "step": "Scissors",
+        "cue": "Verse",
+        "measures": 8
+      },
+      {
+        "step": "Basic",
+        "cue": "Chorus",
+        "measures": 4
+      },
+      {
+        "step": "Heel",
+        "cue": "Chorus",
+        "measures": 4
+      },
+      {
+        "step": "Tip Toe",
+        "cue": "Interlude",
+        "measures": 4
+      },
+      {
+        "step": "Scissors",
+        "cue": "Verse",
+        "measures": 8
+      },
+      {
+        "step": "Basic",
+        "cue": "Chorus",
+        "measures": 4
+      },
+      {
+        "step": "Beat Seite",
+        "cue": "Interlude",
+        "measures": 4
+      },
+      {
+        "step": "Basic (geschl.)",
+        "cue": "Bridge",
+        "measures": 8
+      },
+      {
+        "step": "Heel",
+        "cue": "Chorus",
+        "measures": 8
+      }
+    ]
+  },
+  {
+    "id": "main-1-13",
+    "spotifyUri": "spotify:track:0Cnb8XdGDMHAmIRBUJMkIS",
+    "firstBeatSec": 0,
+    "bpm": 124,
+    "steps": [
+      {
+        "step": "Intro",
+        "cue": "",
+        "measures": 2
+      },
+      {
+        "step": "Basic",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Jogging",
+        "cue": "",
+        "measures": 2
+      },
+      {
+        "step": "Scissors",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Scissors Double",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Basic",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Jogging",
+        "cue": "",
+        "measures": 2
+      },
+      {
+        "step": "Scissors",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Scissors Double",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Basic",
+        "cue": "",
+        "measures": 4
+      }
+    ]
+  },
+  {
+    "id": "main-1-14",
+    "spotifyUri": "spotify:track:6cx06DFPPHchuUAcTxznu9",
+    "firstBeatSec": 0,
+    "bpm": 123,
+    "steps": [
+      {
+        "step": "Intro",
+        "cue": "",
+        "measures": 2
+      },
+      {
+        "step": "V Step",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Bounce Balance",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Scissors",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Scissors Double",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "V Step",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Bounce Balance",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Scissors",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "V Step",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Scissors",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Scissors Double",
+        "cue": "",
+        "measures": 4
+      }
+    ]
+  },
+  {
+    "id": "main-1-15",
+    "spotifyUri": "spotify:track:1DFD5Fotzgn6yYXkYsKiGs",
+    "firstBeatSec": 0,
+    "bpm": 124,
+    "steps": [
+      {
+        "step": "Intro",
+        "cue": "",
+        "measures": 2
+      },
+      {
+        "step": "V Step",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Scissors",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Squat",
+        "cue": "",
+        "measures": 2
+      },
+      {
+        "step": "Jack",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "V Step",
+        "cue": "",
+        "measures": 8
+      },
+      {
+        "step": "Scissors",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Squat",
+        "cue": "",
+        "measures": 2
+      },
+      {
+        "step": "Jogging",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Scissors",
+        "cue": "",
+        "measures": 4
+      }
+    ]
+  },
+  {
+    "id": "main-1-16",
+    "spotifyUri": "spotify:track:47BBI51FKFwOMlIiX6m8ya",
+    "firstBeatSec": 0,
+    "bpm": 124,
+    "steps": [
+      {
+        "step": "Tip Toe",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Scissors",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Basic",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Side to Side",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Tip Toe",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Scissors",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Basic",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Side to Side",
+        "cue": "",
+        "measures": 4
+      }
+    ]
+  },
+  {
+    "id": "main-1-17",
+    "spotifyUri": "spotify:track:3cHyrEgdyYRjgJKSOiOtcS",
+    "firstBeatSec": 0,
+    "bpm": 130,
+    "steps": [
+      {
+        "step": "Beat",
+        "cue": "",
+        "measures": 6
+      },
+      {
+        "step": "Jogging",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Kick",
+        "cue": "",
+        "measures": 8
+      },
+      {
+        "step": "Beat",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Heel",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Jogging",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Kick",
+        "cue": "",
+        "measures": 8
+      },
+      {
+        "step": "Beat",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Heel",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Jogging",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Kick im V",
+        "cue": "",
+        "measures": 4
+      }
+    ]
+  },
+  {
+    "id": "main-1-18",
+    "spotifyUri": "spotify:track:5TnF44IQRsopRNa63BEyFd",
+    "firstBeatSec": 0,
+    "bpm": 123,
+    "steps": [
+      {
+        "step": "Intro",
+        "cue": "intro",
+        "measures": 2
+      },
+      {
+        "step": "Heel",
+        "cue": "Verse",
+        "measures": 4
+      },
+      {
+        "step": "Bounce Balance",
+        "cue": "Pre Chorus",
+        "measures": 4
+      },
+      {
+        "step": "Rebound",
+        "cue": "Chorus",
+        "measures": 4
+      },
+      {
+        "step": "Jumping Jack",
+        "cue": "Post Chorus",
+        "measures": 4
+      },
+      {
+        "step": "Heel",
+        "cue": "Verse",
+        "measures": 4
+      },
+      {
+        "step": "Bounce Balance",
+        "cue": "Pre Chorus",
+        "measures": 4
+      },
+      {
+        "step": "Rebound",
+        "cue": "Chorus",
+        "measures": 4
+      },
+      {
+        "step": "Jumping Jack",
+        "cue": "Post Chorus",
+        "measures": 4
+      },
+      {
+        "step": "Tip Toe",
+        "cue": "Bridge",
+        "measures": 4
+      },
+      {
+        "step": "Rebound",
+        "cue": "Chorus",
+        "measures": 4
+      },
+      {
+        "step": "Rebound Double",
+        "cue": "Chorus",
+        "measures": 4
+      }
+    ]
+  },
+  {
+    "id": "main-1-19",
+    "spotifyUri": "spotify:track:0TDLuuLlV54CkRRUOahJb4",
+    "firstBeatSec": 0,
+    "bpm": 126,
+    "steps": [
+      {
+        "step": "Butt Kick",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Scissors (x2)",
+        "cue": "",
+        "measures": 8
+      },
+      {
+        "step": "Basic (auf/zu)",
+        "cue": "",
+        "measures": 8
+      },
+      {
+        "step": "One o One",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Scissors",
+        "cue": "",
+        "measures": 8
+      },
+      {
+        "step": "Basic (auf/zu)",
+        "cue": "",
+        "measures": 8
+      },
+      {
+        "step": "One o One",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Tip Toe",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Basic (auf/zu)",
+        "cue": "",
+        "measures": 8
+      },
+      {
+        "step": "One o One",
+        "cue": "",
+        "measures": 4
+      }
+    ]
+  },
+  {
+    "id": "main-1-20",
+    "spotifyUri": "spotify:track:3s4U7OHV7gnj42VV72eSZ6",
+    "firstBeatSec": 0,
+    "bpm": 121,
+    "steps": [
+      {
+        "step": "Intro",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Butt Kick",
+        "cue": "",
+        "measures": 8
+      },
+      {
+        "step": "Basic",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Jogging",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Jogging Double",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Butt Kick",
+        "cue": "",
+        "measures": 8
+      },
+      {
+        "step": "Basic",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Jogging",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Jogging Double",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Tip Toe",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Jogging",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Jogging Double",
+        "cue": "",
+        "measures": 4
+      }
+    ]
+  },
+  {
+    "id": "main-1-21",
+    "spotifyUri": "spotify:track:5JVbvCHX10U2pLa5DEqGav",
+    "firstBeatSec": 0,
+    "bpm": 118,
+    "steps": [
+      {
+        "step": "Basic",
+        "cue": "intro",
+        "measures": 4
+      },
+      {
+        "step": "Beat",
+        "cue": "verse",
+        "measures": 4
+      },
+      {
+        "step": "Rebound",
+        "cue": "chorus",
+        "measures": 2
+      },
+      {
+        "step": "Beat",
+        "cue": "verse",
+        "measures": 4
+      },
+      {
+        "step": "Rebound",
+        "cue": "chorus",
+        "measures": 4
+      },
+      {
+        "step": "Beat",
+        "cue": "verse",
+        "measures": 4
+      },
+      {
+        "step": "Basic",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Rebound",
+        "cue": "chorus",
+        "measures": 4
+      },
+      {
+        "step": "Basic",
+        "cue": "bridge",
+        "measures": 4
+      },
+      {
+        "step": "Beat",
+        "cue": "verse",
+        "measures": 4
+      },
+      {
+        "step": "Rebound",
+        "cue": "chorus",
+        "measures": 8
+      }
+    ]
+  },
+  {
+    "id": "main-1-22",
+    "spotifyUri": "spotify:track:0k664IuFwVP557Gnx7RhIl",
+    "firstBeatSec": 0,
+    "bpm": 120,
+    "steps": [
+      {
+        "step": "Beat",
+        "cue": "intro",
+        "measures": 4
+      },
+      {
+        "step": "Heel",
+        "cue": "verse",
+        "measures": 4
+      },
+      {
+        "step": "Basic",
+        "cue": "pre chorus",
+        "measures": 4
+      },
+      {
+        "step": "2o2/1o1",
+        "cue": "chorus",
+        "measures": 8
+      },
+      {
+        "step": "Heel",
+        "cue": "verse",
+        "measures": 4
+      },
+      {
+        "step": "Basic",
+        "cue": "pre chorus",
+        "measures": 4
+      },
+      {
+        "step": "2o2/1o1",
+        "cue": "chorus",
+        "measures": 8
+      },
+      {
+        "step": "Beat",
+        "cue": "bridge",
+        "measures": 4
+      },
+      {
+        "step": "2o2/1o1",
+        "cue": "chorus",
+        "measures": 8
+      }
+    ]
+  },
+  {
+    "id": "main-1-23",
+    "spotifyUri": "spotify:track:6f3Slt0GbA2bPZlz0aIFXN",
+    "firstBeatSec": 0,
+    "bpm": 120,
+    "steps": [
+      {
+        "step": "Instrumental",
+        "cue": "",
+        "measures": 2
+      },
+      {
+        "step": "Bounce Balance",
+        "cue": "Chorus ohne Beat",
+        "measures": 4
+      },
+      {
+        "step": "Basic + Arme",
+        "cue": "Verse bisschen Beat",
+        "measures": 4
+      },
+      {
+        "step": "Stomping",
+        "cue": "Chorus",
+        "measures": 8
+      },
+      {
+        "step": "Basic",
+        "cue": "Verse",
+        "measures": 4
+      },
+      {
+        "step": "Freeze",
+        "cue": "Bridge",
+        "measures": 8
+      },
+      {
+        "step": "Stomping",
+        "cue": "Chorus",
+        "measures": 8
+      }
+    ]
+  },
+  {
+    "id": "main-1-24",
+    "spotifyUri": "spotify:track:1vXB0If9PfpM5mcTShrQQU",
+    "firstBeatSec": 0,
+    "bpm": 123,
+    "steps": [
+      {
+        "step": "Heel",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Jogging",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Arme vor",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Stomping Scissors",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Stomping Scissors Double",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Heel",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Jogging",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Arme vor",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Stomping Scissors",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Stomping Scissors Double",
+        "cue": "",
+        "measures": 4
+      }
+    ]
+  },
+  {
+    "id": "main-1-25",
+    "spotifyUri": "spotify:track:02itaCXOdC54J0ISjqqFAp",
+    "firstBeatSec": 0,
+    "bpm": 130,
+    "steps": [
+      {
+        "step": "Intro",
+        "cue": "",
+        "measures": 2
+      },
+      {
+        "step": "Bounce Balance",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Basic (Arme vor)",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Stomp Side to Side",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Stomp Side to Side Double",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Bounce Balance",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Tip Toe",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Basic (Arme vor)",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Stomp Side to Side",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Stomp Side to Side Double",
+        "cue": "",
+        "measures": 4
+      }
+    ]
+  },
+  {
+    "id": "main-1-26",
+    "spotifyUri": "spotify:track:5AEs83CYoPApEjYEJGbTuJ",
+    "firstBeatSec": 0,
+    "bpm": 128,
+    "steps": [
+      {
+        "step": "Intro",
+        "cue": "",
+        "measures": 2
+      },
+      {
+        "step": "Side to Side",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Jogging + Arme",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Stomp Pony",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Stomp Basic",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Tip Toe",
+        "cue": "",
+        "measures": 8
+      },
+      {
+        "step": "Side to Side",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Jogging + Arme",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Stomp Pony",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Stomp Basic",
+        "cue": "",
+        "measures": 4
+      }
+    ]
+  },
+  {
+    "id": "main-1-27",
+    "spotifyUri": "spotify:track:2aQpISWUBToaF84DDiTeRV",
+    "firstBeatSec": 0,
+    "bpm": 123,
+    "steps": [
+      {
+        "step": "Scissors",
+        "cue": "intro",
+        "measures": 4
+      },
+      {
+        "step": "Heel",
+        "cue": "verse",
+        "measures": 3
+      },
+      {
+        "step": "Pony",
+        "cue": "mehr",
+        "measures": 4
+      },
+      {
+        "step": "Pony Double",
+        "cue": "hook",
+        "measures": 4
+      },
+      {
+        "step": "Scissors",
+        "cue": "break",
+        "measures": 4
+      },
+      {
+        "step": "Pony",
+        "cue": "chorus",
+        "measures": 4
+      },
+      {
+        "step": "Heel",
+        "cue": "verse",
+        "measures": 4
+      },
+      {
+        "step": "Pony",
+        "cue": "mehr",
+        "measures": 4
+      },
+      {
+        "step": "Pony Double",
+        "cue": "hook",
+        "measures": 4
+      },
+      {
+        "step": "Pony",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Heel",
+        "cue": "outro",
+        "measures": 4
+      }
+    ]
+  },
+  {
+    "id": "main-1-28",
+    "spotifyUri": "spotify:track:3u5N55tHf7hXATSQrjBh2q",
+    "firstBeatSec": 0,
+    "bpm": 129,
+    "steps": [
+      {
+        "step": "V Step",
+        "cue": "intro",
+        "measures": 4
+      },
+      {
+        "step": "Heel",
+        "cue": "verse",
+        "measures": 4
+      },
+      {
+        "step": "Jogging",
+        "cue": "pre chorus",
+        "measures": 4
+      },
+      {
+        "step": "Rebound",
+        "cue": "chorus",
+        "measures": 4
+      },
+      {
+        "step": "Basic",
+        "cue": "post chorus",
+        "measures": 8
+      },
+      {
+        "step": "Heel",
+        "cue": "verse",
+        "measures": 4
+      },
+      {
+        "step": "Jogging",
+        "cue": "pre chorus",
+        "measures": 4
+      },
+      {
+        "step": "Rebound",
+        "cue": "chorus",
+        "measures": 4
+      },
+      {
+        "step": "Basic",
+        "cue": "post chorus",
+        "measures": 4
+      },
+      {
+        "step": "Heel",
+        "cue": "instrumental",
+        "measures": 4
+      },
+      {
+        "step": "V Step",
+        "cue": "outro",
+        "measures": 8
+      }
+    ]
+  },
+  {
+    "id": "main-1-29",
+    "spotifyUri": "spotify:track:47BBI51FKFwOMlIiX6m8ya",
+    "firstBeatSec": 0,
+    "bpm": 124,
+    "steps": [
+      {
+        "step": "Tip Toe",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Heel + Arme",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Stomping Basic",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Stomp Side to Side",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Tip Toe",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Heel + Arme",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Stomping Basic",
+        "cue": "",
+        "measures": 4
+      },
+      {
+        "step": "Stomp Side to Side",
+        "cue": "",
+        "measures": 4
+      }
+    ]
+  }
+]

@@ -1,8 +1,9 @@
 import type { Track } from './tracks';
 
 // Runtime override for the routine list: imported/edited routines are stored
-// here so they drive the app without touching tracks.ts / tracks.local.ts.
-// When absent, the app falls back to the code-defined TRACKS.
+// here so they drive the app without touching the committed routine JSON.
+// When absent, the app falls back to the public-folder default set (or the
+// code-defined TRACKS when offline before precache).
 const KEY = 'tjf.tracks';
 
 export function loadStoredTracks(): Track[] | null {
