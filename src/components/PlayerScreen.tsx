@@ -455,6 +455,9 @@ export default function PlayerScreen({
             <button className="primary big" onClick={engine.skipGap}>
               Continue <Play size={18} />
             </button>
+            <button className="link" onClick={onBack}>
+              End session · back to list
+            </button>
           </div>
         </div>
       )}
