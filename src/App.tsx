@@ -128,7 +128,7 @@ export default function App() {
   useEffect(() => {
     (async () => {
       try {
-        if (window.location.pathname === '/callback') {
+        if (window.location.pathname === `${import.meta.env.BASE_URL}callback`) {
           await handleRedirectCallback();
         }
       } catch (e) {
