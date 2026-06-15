@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/LukasWestholt/CueSheet/blob/main/public/routines.schema.json",
+  "title": "CueSheet routine file",
+  "description": "A routine file for CueSheet: a JSON array of tracks, each authored musically (steps measured in 8-counts). Matches the Track[] shape validated by src/data/validateTracks.ts. Drop one in public/ and list it in public/routines.json to contribute.",
+  "type": "array",
+  "items": { "$ref": "#/$defs/track" },
+  "$defs": {
+    "track": {
+      "type": "object",
+      "required": ["id", "spotifyUri", "steps"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique id for this routine (must be unique across the file)."
+        },
+        "spotifyUri": {
+          "type": "string",
+          "pattern": "^spotify:track:[A-Za-z0-9]{22}$",
+          "description": "Spotify track URI, e.g. spotify:track:0t2w4jQazlBggyZS4axpnw."
+        },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/step" },
+          "description": "The ordered calling steps that make up the routine."
+        },
+        "title": {
+          "type": "string",
+          "description": "Optional title override (else fetched from Spotify)."
+        },
+        "artist": {
+          "type": "string",
+          "description": "Optional artist override (else fetched from Spotify)."
+        },
+        "durationMs": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Optional track duration in ms (else the live Spotify value is used)."
+        },
+        "firstBeatSec": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Seconds into the track where count 1 lands."
+        },
+        "bpm": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Beats per minute. The usual range is 40–220."
+        },
+        "wip": {
+          "type": "boolean",
+          "description": "Mark the routine as a work in progress (suppresses the length warning)."
+        },
+        "_description": {
+          "type": "string",
+          "description": "Free-text annotation (e.g. \"Title — Artist\"). JSON-only; ignored by the app."
+        }
+      },
+      "patternProperties": {
+        "^_": {
+          "description": "Underscore-prefixed keys are JSON-only annotations, ignored by the app."
+        }
+      }
+    },
+    "step": {
+      "type": "object",
+      "required": ["step", "measures"],
+      "additionalProperties": false,
+      "properties": {
+        "step": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The move/step the coach calls out, e.g. \"Jumping Jacks\"."
+        },
+        "cue": {
+          "type": "string",
+          "description": "Optional detail or section label, e.g. \"chorus\", \"arms up\"."
+        },
+        "measures": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "multipleOf": 0.5,
+          "description": "Length of this step in measures (8-counts). Halves allowed."
+        }
+      }
+    }
+  }
+}

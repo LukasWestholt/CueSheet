@@ -26,6 +26,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Validate routine JSON
+        run: npm run validate:json
+
       - name: Test
         run: npm run test:run
 

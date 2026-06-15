@@ -1,0 +1,13 @@
+{
+  "json.schemas": [
+    {
+      "fileMatch": [
+        "/public/playbook-*.json",
+        "/public/default.json",
+        "/public/default.*.json",
+        "cuesheet-routines-*.json"
+      ],
+      "url": "./public/routines.schema.json"
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="JsonSchemaMappingsProjectConfiguration">
+    <state>
+      <map>
+        <entry key="CueSheet routine file">
+          <value>
+            <SchemaInfo>
+              <option name="name" value="CueSheet routine file" />
+              <option name="relativePathToSchema" value="public/routines.schema.json" />
+              <option name="schemaVersion" value="JSON Schema version 2020.12" />
+              <option name="patterns">
+                <list>
+                  <Item>
+                    <option name="path" value="public/playbook-*.json" />
+                    <option name="mappingKind" value="Pattern" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="public/default.json" />
+                    <option name="mappingKind" value="File" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="public/default.*.json" />
+                    <option name="mappingKind" value="Pattern" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="cuesheet-routines-*.json" />
+                    <option name="mappingKind" value="Pattern" />
+                  </Item>
+                </list>
+              </option>
+            </SchemaInfo>
+          </value>
+        </entry>
+      </map>
+    </state>
+  </component>
+</project>
