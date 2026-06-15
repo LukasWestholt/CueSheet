@@ -29,10 +29,17 @@ RUN npm run build
 # --- Runtime stage -----------------------------------------------------------
 FROM nginx:alpine AS runtime
 
-# SPA-friendly config: client routes and the /callback OAuth path fall back to
-# index.html instead of 404ing.
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# SPA-friendly config + security headers. Shipped as an nginx env-template: the
+# base image's entrypoint runs envsubst over /etc/nginx/templates/*.template at
+# startup, writing /etc/nginx/conf.d/default.conf (overwriting the stock one).
+COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /app/dist /usr/share/nginx/html
+
+# Optional CORS for the served static files — empty by default (no CORS header).
+# Override at run time, e.g. -e CORS_ALLOW_ORIGIN=https://app.example.com (or "*").
+# Defined here so envsubst always resolves ${CORS_ALLOW_ORIGIN} (to empty) rather
+# than leaving the literal placeholder in the config.
+ENV CORS_ALLOW_ORIGIN=""
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

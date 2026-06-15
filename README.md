@@ -72,6 +72,15 @@ Podman is a drop-in replacement (`podman run --rm -p 8080:80 ghcr.io/lukaswestho
 > docker run --rm -p 8080:80 cuesheet
 > ```
 
+The image ships hardened nginx headers (CSP, `nosniff`, `X-Frame-Options`, …).
+CORS is off by default; to let another origin fetch the served files (e.g. the
+public routine JSON), set `CORS_ALLOW_ORIGIN` at run time:
+
+```bash
+docker run --rm -p 8080:80 -e CORS_ALLOW_ORIGIN=https://app.example.com \
+  ghcr.io/lukaswestholt/cuesheet:main          # or CORS_ALLOW_ORIGIN='*'
+```
+
 Register the origin you serve from as a redirect URI in the Spotify dashboard —
 `http://127.0.0.1:8080/callback` works because Spotify allows loopback-IP URIs
 without HTTPS (use `127.0.0.1`, not `localhost`). The container serves on port
