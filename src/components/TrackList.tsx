@@ -1,5 +1,6 @@
 import type { Track } from '../data/tracks';
 import type { TrackInfo } from '../spotify/api';
+import { Star, Music } from './icons';
 
 function formatDuration(ms: number): string {
   const total = Math.round(ms / 1000);
@@ -55,7 +56,7 @@ export default function TrackList({
                 aria-pressed={fav}
                 onClick={() => onToggleFavorite(t.id)}
               >
-                ★
+                <Star filled={fav} size={20} />
               </button>
             )}
             <button className="track-row" onClick={() => onSelect(i)}>
@@ -64,7 +65,7 @@ export default function TrackList({
                 <img className="track-art" src={info.imageUrl} alt="" loading="lazy" />
               ) : (
                 <span className="track-art track-art-ph" aria-hidden="true">
-                  ♪
+                  <Music size={20} />
                 </span>
               )}
               <span className="track-meta">

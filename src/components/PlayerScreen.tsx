@@ -8,6 +8,7 @@ import { useCalibration } from '../hooks/useCalibration';
 import { useWakeLock } from '../hooks/useWakeLock';
 import CallingDisplay from './CallingDisplay';
 import TapToTime from './TapToTime';
+import { SkipBack, SkipForward, Pause, Play, Link as LinkIcon, AlertTriangle } from './icons';
 import { trackPath } from '../nav/routes';
 import { sessionEstimate } from '../data/setlist';
 
@@ -224,10 +225,13 @@ export default function PlayerScreen({
           {meta.bpm ? ` · ${Math.round(meta.bpm)} BPM` : ' · detecting tempo…'}
         </span>
         {track?.wip && (
-          <p className="wip-note">⚠ Work in progress — timings may be off.</p>
+          <p className="wip-note">
+            <AlertTriangle size={16} /> Work in progress — timings may be off.
+          </p>
         )}
         <button className="link copy-link" onClick={copyLink}>
-          {linkCopied ? 'Link copied!' : '🔗 Copy link to this track'}
+          <LinkIcon size={16} />
+          {linkCopied ? 'Link copied!' : 'Copy link to this track'}
         </button>
       </div>
 
@@ -282,7 +286,7 @@ export default function PlayerScreen({
 
       <div className="controls">
         <button className="round" onClick={engine.prev} aria-label="Previous track">
-          ⏮
+          <SkipBack />
         </button>
         <button
           className="round primary xl"
@@ -293,13 +297,13 @@ export default function PlayerScreen({
           {playLabel}
         </button>
         <button className="round" onClick={engine.next} aria-label="Next track">
-          ⏭
+          <SkipForward />
         </button>
       </div>
 
       {/* The easy permanent-pause button */}
       <button className="hold-btn" onClick={engine.holdNow}>
-        ⏸ Pause permanently between tracks
+        <Pause size={18} /> Pause permanently between tracks
       </button>
 
       <label className="toggle-row">
@@ -437,7 +441,7 @@ export default function PlayerScreen({
           <div className="overlay-card">
             <span className="muted">Paused between tracks</span>
             <button className="primary big" onClick={engine.skipGap}>
-              Continue ▶
+              Continue <Play size={18} />
             </button>
           </div>
         </div>
