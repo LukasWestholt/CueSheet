@@ -591,6 +591,44 @@ button:disabled:active {
   justify-content: space-between;
   font-size: var(--text-sm);
 }
+/* The Settings panel uses <details><summary class="routines-head">; make that
+   summary read as an interactive disclosure (RoutinesManager reuses the class
+   on a plain <div>, so these rules are scoped to summary only). */
+summary.routines-head {
+  cursor: pointer;
+  align-items: center;
+  gap: var(--space-2);
+  user-select: none;
+  border-radius: var(--radius-sm);
+  margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-2));
+  padding: var(--space-2) var(--space-2);
+  transition: background 0.12s ease;
+}
+summary.routines-head::-webkit-details-marker {
+  display: none;
+}
+summary.routines-head:hover {
+  background: var(--surface-2);
+}
+summary.routines-head > span:first-child {
+  flex: 1;
+  color: var(--text);
+  font-weight: 600;
+}
+/* CSS chevron — no icon asset needed; rotates when the panel is open. */
+summary.routines-head::after {
+  content: '';
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(45deg);
+  transition: transform 0.15s ease;
+}
+details.routines[open] > summary.routines-head::after {
+  transform: rotate(-135deg);
+}
 .routines-actions {
   display: flex;
   flex-wrap: wrap;
