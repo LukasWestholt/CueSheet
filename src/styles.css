@@ -166,7 +166,52 @@ button:active {
   margin: 4px 0;
 }
 .popular-picks .muted {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
+}
+.popular-list {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  max-height: 210px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.popular-pick {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  background: var(--surface-2);
+  border: none;
+  border-radius: 6px;
+  padding: 5px 9px;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.82rem;
+}
+.popular-pick:hover {
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface-2));
+}
+.pp-title {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.pp-artist {
+  flex: 1;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 0.74rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pp-bpm {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
 }
 
 /* Top bar ---------------------------------------------------------------- */
@@ -534,18 +579,21 @@ button:active {
 .bpm-advice.bpm-ok,
 .editor input.bpm-ok,
 .rec-bpm strong.bpm-ok,
+.pp-bpm.bpm-ok,
 .sr-bpm-btn.bpm-ok {
   color: var(--accent);
 }
 .bpm-advice.bpm-warn,
 .editor input.bpm-warn,
 .rec-bpm strong.bpm-warn,
+.pp-bpm.bpm-warn,
 .sr-bpm-btn.bpm-warn {
   color: var(--warn);
 }
 .bpm-advice.bpm-bad,
 .editor input.bpm-bad,
 .rec-bpm strong.bpm-bad,
+.pp-bpm.bpm-bad,
 .sr-bpm-btn.bpm-bad {
   color: var(--danger);
 }

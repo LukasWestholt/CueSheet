@@ -255,16 +255,21 @@ export default function TrackEditor({
         )}
         {showPopular && (
           <div className="popular-picks">
-            <span className="muted">Popular tracks (offline)</span>
-            <ul className="search-results">
+            <span className="muted">Popular tracks</span>
+            <ul className="popular-list">
               {POPULAR_TRACKS.map((p) => (
-                <li key={p.uri} className="sr-row">
-                  <button className="sr-pick" onClick={() => choosePopular(p)}>
-                    <span className="sr-meta">
-                      <span className="sr-title">{p.title}</span>
-                      <span className="sr-artist">{p.artist}</span>
-                    </span>
-                    {p.bpm != null && <span className="sr-dur">{p.bpm} BPM</span>}
+                <li key={p.uri}>
+                  <button className="popular-pick" onClick={() => choosePopular(p)}>
+                    <span className="pp-title">{p.title}</span>
+                    <span className="pp-artist">{p.artist}</span>
+                    {p.bpm != null && (
+                      <span
+                        className={`pp-bpm ${bpmLevelClass(bpmAdvice(p.bpm).level)}`}
+                        title={bpmAdvice(p.bpm).label}
+                      >
+                        {p.bpm}
+                      </span>
+                    )}
                   </button>
                 </li>
               ))}
