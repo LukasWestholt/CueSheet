@@ -14,15 +14,16 @@
     <title>CueSheet</title>
   </head>
   <body>
-    <div id="root"></div>
-    <!-- Attribution backlink kept in the STATIC HTML (outside #root, so React
-         doesn't wipe it). GetSongBPM verifies the backlink by reading the raw
-         source HTML, which never contains React-rendered nodes. Must stay
-         visible — do not hide it. -->
-    <footer class="site-credit">
-      Tempo &amp; BPM data by
-      <a href="https://getsongbpm.com" target="_blank" rel="noreferrer">GetSongBPM</a>
-    </footer>
+    <!-- Attribution backlink kept in the STATIC source HTML so GetSongBPM can
+         verify it by reading the raw page source. It lives INSIDE #root, so once
+         JS loads React replaces it on first render and the visible "BPM data:
+         GetSongBPM" link (LoginScreen) takes over — no duplicate on screen. -->
+    <div id="root">
+      <footer class="site-credit">
+        Tempo &amp; BPM data by
+        <a href="https://getsongbpm.com" target="_blank" rel="noreferrer">GetSongBPM</a>
+      </footer>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
