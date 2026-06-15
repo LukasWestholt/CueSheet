@@ -10,6 +10,10 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  # The docker/* actions have no newer major tag on a Node 24 runtime yet; force
+  # their bundled JS onto Node 24 to clear the Node 20 deprecation warning.
+  # Becomes the default June 16 2026, after which this is a harmless no-op.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build-and-push:
@@ -19,7 +23,7 @@ jobs:
       packages: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
