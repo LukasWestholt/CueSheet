@@ -49,8 +49,9 @@ export default function CallingDisplay({
   // that crowds its predecessor, so it flips to yellow; then they alternate.
   const altFrame = announcing && isShortCur && shortRunBack % 2 === 0;
 
-  // Countdown ring fills as we approach the next calling.
-  const ringPct = Math.round(segmentProgress * 100);
+  // Countdown ring fills as we approach the next calling. Keep two decimals so
+  // the conic sweep flows each 100ms tick instead of jumping a whole percent.
+  const ringPct = Math.round(segmentProgress * 10000) / 100;
 
   return (
     <div

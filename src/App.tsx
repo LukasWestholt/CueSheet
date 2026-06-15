@@ -28,6 +28,7 @@ import DevicePicker from './components/DevicePicker';
 import RoutinesManager from './components/RoutinesManager';
 import TrackEditor from './components/TrackEditor';
 import PlaylistSeed from './components/PlaylistSeed';
+import InstallPrompt from './components/InstallPrompt';
 
 /** Use a valid stored override if present, else the code-defined routines. */
 function initialTracks(): { tracks: Track[]; overridden: boolean } {
@@ -285,6 +286,7 @@ export default function App() {
               Log out
             </button>
           </header>
+          <InstallPrompt />
           {resumeIndex != null && tracks[resumeIndex] && (
             <button
               className="resume-btn primary big"

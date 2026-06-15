@@ -6,6 +6,7 @@ import { getTrackInfo, searchTracks, type TrackSearchResult } from '../spotify/a
 import { getBpmByIsrc } from '../beatdata/deezer';
 import { bpmAdvice, bpmLevelClass } from '../data/bpmAdvice';
 import { checkRoutineLength, lengthWarning } from '../data/routineLength';
+import { POPULAR_TRACKS, type PopularTrack } from '../data/popularTracks';
 
 const TRACK_URI_RE = /^spotify:track:[A-Za-z0-9]{22}$/;
 
@@ -134,6 +135,22 @@ export default function TrackEditor({
     setResults([]);
   };
 
+  const choosePopular = (p: PopularTrack) => {
+    patch({
+      spotifyUri: p.uri,
+      title: draft.title ?? p.title,
+      artist: draft.artist ?? p.artist,
+      ...(p.bpm != null ? { bpm: p.bpm } : {}),
+    });
+    setQuery('');
+    setResults([]);
+  };
+
+  // Offline quick-picks: when the search is empty and no track is set yet, show
+  // the hard-coded popular tracks so a routine can be started without a network call.
+  const showPopular =
+    !draft.spotifyUri && query.trim() === '' && !searching && POPULAR_TRACKS.length > 0;
+
   const issues = useMemo(() => validateTracks([draft]).issues, [draft]);
   const hasErrors = issues.some((i) => i.level === 'error');
 
@@ -235,6 +252,24 @@ export default function TrackEditor({
               );
             })}
           </ul>
+        )}
+        {showPopular && (
+          <div className="popular-picks">
+            <span className="muted">Popular tracks (offline)</span>
+            <ul className="search-results">
+              {POPULAR_TRACKS.map((p) => (
+                <li key={p.uri} className="sr-row">
+                  <button className="sr-pick" onClick={() => choosePopular(p)}>
+                    <span className="sr-meta">
+                      <span className="sr-title">{p.title}</span>
+                      <span className="sr-artist">{p.artist}</span>
+                    </span>
+                    {p.bpm != null && <span className="sr-dur">{p.bpm} BPM</span>}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
         <label className="field">
           <span>Spotify URI</span>

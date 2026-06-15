@@ -5,7 +5,9 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 
 export default tseslint.config(
-  { ignores: ['dist', 'dev-dist'] },
+  // '.claude' holds transient git worktrees from parallel runs — never lint them
+  // (mirrors the vitest exclude in vite.config.ts).
+  { ignores: ['dist', 'dev-dist', '.claude'] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],

@@ -79,9 +79,9 @@ Grouped by theme; unchecked entries are backlog. **Checked = built, type-checked
 - [x] **Reconnect / device-lost handling.** Surface when the target Connect device disappears or playback is hijacked by another app, with a one-tap re-target. (engine `noDevice` + `hijacked` + `recover()`, two recovery banners — detects both the device *disappearing* (empty polls) and another app *hijacking* the session (a foreign track plays for `HIJACK_POLLS` polls). Unit-tested with mocks, not against a live device.)
 - [x] **Token-expiry UX.** Graceful re-auth when the refresh fails mid-class rather than a silent stall. (`AUTH_EXPIRED_EVENT` → login screen; plus `startTokenAutoRefresh` proactive background refresh.)
 - [x] **Offline audit.** Verify the shell, track list, and authored callings truly work offline (matches the stated offline-first goal). (`useOnline` banner + gated fetches; precache manifest **inspected** — not yet confirmed in a live offline browser session.)
-- [ ] **PWA install prompt / affordance.** (the offline audit half of the old combined item is done; the install prompt remains.)
-- [ ] **Fast loading search insert bar.** Hard code some search results and display them opening a search without text for quick access the most popular 20 jumping fitness songs offline.
-- [ ] Can we make the progress bar circle has more units, so that it flows more?
+- [x] **PWA install prompt / affordance.** (`useInstallPrompt` captures `beforeinstallprompt`; `InstallPrompt` banner in the list view offers one-tap install on Android/desktop, "Add to Home Screen" guidance on iOS, hidden once installed or dismissed (`tjf.installDismissed`).)
+- [x] **Fast loading search insert bar.** Hard code some search results and display them opening a search without text for quick access the most popular 20 jumping fitness songs offline. (`src/data/popularTracks.ts` quick-picks rendered in `TrackEditor` when the search is empty and no track is set yet — no network call. **Seeded with the 3 verified repo URIs**; extend toward the full 20 with real Spotify URIs.)
+- [x] **Smoother progress/countdown ring.** (`CallingDisplay` ring `conic-gradient` now uses 2-decimal precision instead of whole percents, so it sweeps each 100ms tick.)
 
 ### Track list UX
 - [x] **Search / filter / favorites** in `TrackList` as the list grows. (search box + `useOnline`-aware filtering, starred favorites in `tjf.favorites`.)
