@@ -49,15 +49,30 @@ export default function TrackList({
         const queued = setlist?.has(t.id) ?? false;
         return (
           <li key={t.id} className="track-li">
-            {onToggleFavorite && (
-              <button
-                className={`track-fav ${fav ? 'is-fav' : ''}`}
-                aria-label={fav ? 'Remove favorite' : 'Add favorite'}
-                aria-pressed={fav}
-                onClick={() => onToggleFavorite(t.id)}
-              >
-                <Star filled={fav} size={20} />
-              </button>
+            {(onToggleFavorite || onToggleSetlist) && (
+              <div className="track-side">
+                {onToggleFavorite && (
+                  <button
+                    className={`track-fav ${fav ? 'is-fav' : ''}`}
+                    aria-label={fav ? 'Remove favorite' : 'Add favorite'}
+                    aria-pressed={fav}
+                    onClick={() => onToggleFavorite(t.id)}
+                  >
+                    <Star filled={fav} size={20} />
+                  </button>
+                )}
+                {onToggleSetlist && (
+                  <button
+                    className={`track-queue ${queued ? 'is-queued' : ''}`}
+                    aria-pressed={queued}
+                    aria-label={queued ? 'Remove from setlist' : 'Add to setlist'}
+                    title={queued ? 'In setlist' : 'Add to setlist'}
+                    onClick={() => onToggleSetlist(t.id)}
+                  >
+                    {queued ? <Check size={20} /> : <Plus size={20} />}
+                  </button>
+                )}
+              </div>
             )}
             <button className="track-row" onClick={() => onSelect(i)}>
               <span className="track-index">{i + 1}</span>
@@ -80,17 +95,6 @@ export default function TrackList({
                 )}
               </span>
             </button>
-            {onToggleSetlist && (
-              <button
-                className={`track-queue ${queued ? 'is-queued' : ''}`}
-                aria-pressed={queued}
-                aria-label={queued ? 'Remove from setlist' : 'Add to setlist'}
-                title={queued ? 'In setlist' : 'Add to setlist'}
-                onClick={() => onToggleSetlist(t.id)}
-              >
-                {queued ? <Check size={20} /> : <Plus size={20} />}
-              </button>
-            )}
             {onEdit && (
               <button className="track-edit" onClick={() => onEdit(i)}>
                 Edit

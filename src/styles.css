@@ -1049,11 +1049,20 @@ button:disabled:active {
 }
 
 /* Track list ------------------------------------------------------------- */
+.track-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  flex-shrink: 0;
+  width: 44px;
+}
 .track-fav {
+  flex: 1;
+  width: 100%;
   background: var(--surface);
   color: var(--muted);
   font-size: var(--text-lg);
-  padding: 0 var(--space-3);
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1152,20 +1161,31 @@ button:disabled:active {
 /* Setlist / session ------------------------------------------------------ */
 .track-queue {
   flex-shrink: 0;
-  width: 44px;
+  width: 100%;
   height: 44px;
   border-radius: var(--radius-sm);
-  background: var(--surface-2);
-  color: var(--muted);
+  background: transparent;
+  border: 1px dashed color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--accent);
   font-size: var(--text-lg);
   line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+.track-queue:hover {
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface-2));
+  border-color: color-mix(in srgb, var(--accent) 70%, transparent);
 }
 .track-queue.is-queued {
-  background: color-mix(in srgb, var(--success) 22%, var(--surface-2));
-  color: var(--success);
+  background: var(--success);
+  border: 1px solid var(--success);
+  color: #062b14;
+}
+.track-queue.is-queued:hover {
+  background: color-mix(in srgb, var(--success) 88%, #000);
+  border-color: color-mix(in srgb, var(--success) 88%, #000);
 }
 .setlist {
   background: var(--surface);
