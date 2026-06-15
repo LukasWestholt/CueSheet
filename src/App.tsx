@@ -35,6 +35,7 @@ import PlaylistSeed from './components/PlaylistSeed';
 import InstallPrompt from './components/InstallPrompt';
 import SetlistPanel from './components/SetlistPanel';
 import Settings from './components/Settings';
+import Toaster from './components/Toaster';
 import { ingestGetsongbpmKeyFromUrl } from './data/getsongbpmKey';
 
 // Apply a `?getsongbpm_key=…` bookmark before React renders (strips the param).
@@ -341,6 +342,7 @@ export default function App() {
 
   return (
     <div className="screen">
+      <Toaster />
       {!online && (
         <div className="offline-banner">
           Offline — routines are viewable, but Spotify playback, search and login need a

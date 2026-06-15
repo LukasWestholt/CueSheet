@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Track } from '../data/tracks';
 import { interpolatePosition } from '../playback/position';
+import { toast } from '../data/toast';
 import {
   getDevices,
   getPlaybackState,
@@ -31,6 +32,10 @@ const LOOP_RESTART_MS = 2000; // same track back within this of the start (after
 /** Default inter-track gap (seconds). Exported so session estimates stay in sync. */
 export const DEFAULT_GAP_SECONDS = 10;
 const PREV_TRACK_WINDOW_MS = 3000; // a 2nd "prev" within this jumps to the previous track
+
+/** Toast when a fire-and-forget playback command (pause/resume/seek) fails. */
+const controlFailed = (what: string) => () =>
+  toast(`Couldn’t ${what} on Spotify — check the player device.`);
 
 export interface PlayerEngine {
   index: number;
@@ -300,7 +305,7 @@ export function usePlayerEngine(
   const togglePlayPause = useCallback(() => {
     const p = phaseRef.current;
     if (p === 'playing') {
-      apiPause(deviceIdRef.current ?? undefined).catch(() => {});
+      apiPause(deviceIdRef.current ?? undefined).catch(controlFailed('pause'));
       // Freeze position at the last known value.
       const snap = snapshotRef.current;
       if (snap) {
@@ -309,7 +314,7 @@ export function usePlayerEngine(
       setPhase('paused');
       phaseRef.current = 'paused';
     } else if (p === 'paused') {
-      apiResume(deviceIdRef.current ?? undefined).catch(() => {});
+      apiResume(deviceIdRef.current ?? undefined).catch(controlFailed('resume'));
       const snap = snapshotRef.current;
       if (snap) {
         snapshotRef.current = { ...snap, isPlaying: true, fetchedAt: Date.now() };
@@ -342,7 +347,7 @@ export function usePlayerEngine(
     const duration =
       snapshotRef.current?.durationMs || tracks[indexRef.current]?.durationMs || 0;
     const target = Math.max(0, duration > 0 ? Math.min(rawPositionMs, duration) : rawPositionMs);
-    apiSeek(target, deviceIdRef.current ?? undefined).catch(() => {});
+    apiSeek(target, deviceIdRef.current ?? undefined).catch(controlFailed('seek'));
     // Reflect the new position immediately so display + callings don't wait for
     // the next poll.
     const snap = snapshotRef.current;
@@ -368,7 +373,7 @@ export function usePlayerEngine(
     // The easy "pause permanently between tracks" button.
     const p = phaseRef.current;
     if (p === 'gap' || p === 'playing' || p === 'paused') {
-      if (p !== 'gap') apiPause(deviceIdRef.current ?? undefined).catch(() => {});
+      if (p !== 'gap') apiPause(deviceIdRef.current ?? undefined).catch(controlFailed('pause'));
       setPhase('held');
       phaseRef.current = 'held';
     }
