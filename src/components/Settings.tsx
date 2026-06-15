@@ -4,6 +4,7 @@ import {
   saveGetsongbpmKey,
   getsongbpmKeyUrl,
 } from '../data/getsongbpmKey';
+import { testGetsongbpmKey } from '../beatdata/getsongbpm';
 import { GETSONGBPM_URL, REPO_URL } from '../links';
 
 // App-wide settings. Currently just the optional GetSongBPM API key, which is
@@ -12,6 +13,9 @@ export default function Settings() {
   const [key, setKey] = useState(loadGetsongbpmKey);
   const [savedKey, setSavedKey] = useState(loadGetsongbpmKey);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [test, setTest] = useState<
+    { state: 'idle' | 'testing' } | { state: 'ok' } | { state: 'fail'; reason: string }
+  >({ state: 'idle' });
 
   const save = () => {
     saveGetsongbpmKey(key);
@@ -21,6 +25,16 @@ export default function Settings() {
     saveGetsongbpmKey('');
     setKey('');
     setSavedKey('');
+    setTest({ state: 'idle' });
+  };
+  const runTest = async () => {
+    setTest({ state: 'testing' });
+    const result = await testGetsongbpmKey(key);
+    setTest(result.ok ? { state: 'ok' } : { state: 'fail', reason: result.reason });
+  };
+  const onKeyChange = (value: string) => {
+    setKey(value);
+    setTest({ state: 'idle' });
   };
 
   const dirty = key.trim() !== savedKey;
@@ -52,9 +66,16 @@ export default function Settings() {
             placeholder="Paste your GetSongBPM key"
             autoComplete="off"
             spellCheck={false}
-            onChange={(e) => setKey(e.target.value)}
+            onChange={(e) => onKeyChange(e.target.value)}
             style={{ flex: 1 }}
           />
+          <button
+            className="ghost"
+            onClick={runTest}
+            disabled={!key.trim() || test.state === 'testing'}
+          >
+            {test.state === 'testing' ? 'Testing…' : 'Test'}
+          </button>
           <button className="ghost" onClick={save} disabled={!dirty}>
             Save
           </button>
@@ -64,6 +85,16 @@ export default function Settings() {
             </button>
           )}
         </div>
+        {test.state === 'ok' && (
+          <p className="hint" style={{ color: 'var(--accent)' }}>
+            ✓ Key works — BPM auto-fill is ready.
+          </p>
+        )}
+        {test.state === 'fail' && (
+          <p className="hint" style={{ color: 'var(--danger)' }}>
+            ✕ {test.reason}
+          </p>
+        )}
       </div>
 
       {savedKey && (

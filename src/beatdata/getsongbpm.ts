@@ -18,11 +18,20 @@
 // Unlike Deezer this matches by **title + artist** (GetSongBPM has no ISRC
 // lookup), so it's fuzzier — we take the first search hit. CORS works, so a
 // plain fetch() is fine (no JSONP needed); CSP connect-src must allow the host.
+//
+// Host note: `https://api.getsong.co` is the official Web API base URL (per the
+// API docs / changelog v1.2, Sep 2024). The old `api.getsongbpm.com` host only
+// 301-redirects here and sits behind a Cloudflare bot challenge, so we call
+// getsong.co directly — a programmatic fetch then skips both the challenge and a
+// CSP redirect block, and gets `Access-Control-Allow-Origin: *`. Auth is the
+// `api_key` query param (rate limit 3000 req/hour). Quirk: it returns JSON but
+// mislabels it `Content-Type: text/html`, so never gate on content-type — parse
+// defensively.
 
 import { cached } from '../spotify/metaCache';
 import { loadGetsongbpmKey } from '../data/getsongbpmKey';
 
-const BASE = 'https://api.getsongbpm.com';
+const BASE = 'https://api.getsong.co';
 
 interface GsbSong {
   id?: string;
@@ -81,4 +90,42 @@ export async function getBpmByTitleArtist(
       return null;
     }
   });
+}
+
+export type GsbKeyTestResult = { ok: true } | { ok: false; reason: string };
+
+/**
+ * Pings GetSongBPM with the given key to confirm it's valid and activated.
+ * Uses a well-known query (Adele – Hello) so a successful key is very likely
+ * to return a hit. Bypasses the cache (this is a connectivity/auth check, not a
+ * lookup). Returns a friendly reason string on failure.
+ */
+export async function testGetsongbpmKey(key: string): Promise<GsbKeyTestResult> {
+  const apiKey = key.trim();
+  if (!apiKey) return { ok: false, reason: 'Enter a key first.' };
+  try {
+    const lookup = encodeURIComponent('song:hello artist:adele');
+    const res = await fetch(`${BASE}/search/?api_key=${apiKey}&type=both&lookup=${lookup}`);
+    // The backend returns JSON but mislabels it `text/html`, and a bot challenge
+    // would return a real HTML page — so parse defensively rather than trusting
+    // Content-Type or status alone. A clean rejection reads:
+    //   HTTP 401  {"error":"Invalid API Key, or inactive."}
+    const body = await res.text();
+    let data: GsbSearchResponse;
+    try {
+      data = JSON.parse(body) as GsbSearchResponse;
+    } catch {
+      return {
+        ok: false,
+        reason: 'Could not reach the GetSongBPM API (blocked or unavailable). Try again from the app on your device.',
+      };
+    }
+    if (typeof data.error === 'string' && data.error) {
+      return { ok: false, reason: data.error };
+    }
+    if (!res.ok) return { ok: false, reason: `Request failed (HTTP ${res.status}).` };
+    return { ok: true };
+  } catch {
+    return { ok: false, reason: 'Network error — check your connection.' };
+  }
 }
