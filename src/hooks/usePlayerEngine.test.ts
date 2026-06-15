@@ -286,9 +286,9 @@ describe('usePlayerEngine', () => {
   });
 
   it('treats an end-of-track auto-advance as the gap, not a hijack', async () => {
-    // Our track 'a' near the end (8s of 10s: past the 3s auto-advance window's
-    // start, but not within the 500ms end-guard, so the ticker won't fire). Each
-    // poll re-reports 8s, keeping the interpolated ticker below the end-guard.
+    // Our track 'a' at 8s of 10s, re-reported each poll so the interpolated ticker
+    // stays under the 500ms end-guard (never auto-fires) but climbs into the 1.5s
+    // auto-advance window (>=8.5s) by the next poll.
     let uri = 'spotify:track:a';
     getPlaybackState.mockImplementation(async () => ({
       isPlaying: true,
@@ -318,5 +318,37 @@ describe('usePlayerEngine', () => {
     expect(result.current.phase).toBe('gap');
     expect(result.current.hijacked).toBe(false);
     expect(pause).toHaveBeenCalled(); // enterGapOrEnd stopped the autoplayed track
+  });
+
+  it('treats a repeat=track loop (same track restarting near the end) as the gap', async () => {
+    // Same trick: 'a' re-reported at 8s keeps the ticker below the end-guard while
+    // the last snapshot climbs into the near-end window; then the track restarts.
+    let progressMs = 8_000;
+    getPlaybackState.mockImplementation(async () => ({
+      isPlaying: true,
+      progressMs,
+      durationMs: 10_000,
+      trackUri: 'spotify:track:a',
+      deviceId: 'd',
+      deviceName: 'Tablet',
+      fetchedAt: Date.now(),
+    }));
+    const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
+    await startAt(result, 0);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+    expect(result.current.phase).toBe('playing');
+
+    // repeat=track restarts the same track from the top instead of stopping.
+    progressMs = 0;
+    pause.mockClear();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+    expect(result.current.phase).toBe('gap');
+    expect(result.current.hijacked).toBe(false);
+    expect(pause).toHaveBeenCalled();
   });
 });

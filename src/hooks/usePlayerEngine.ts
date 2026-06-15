@@ -25,7 +25,8 @@ const TICK_MS = 100; // how often we re-render the interpolated position
 const END_GUARD_MS = 500; // treat as ended this close to the track's end
 const NO_DEVICE_NULLS = 2; // consecutive empty polls before declaring the device lost
 const HIJACK_POLLS = 3; // consecutive wrong-track polls before declaring a hijack
-const END_AUTOPLAY_WINDOW_MS = 3000; // a wrong track this close to the end = Spotify auto-advancing, not a hijack
+const END_AUTOPLAY_WINDOW_MS = 1500; // a track change/restart this close to the end = the track ending, not a hijack
+const LOOP_RESTART_MS = 2000; // same track back within this of the start (after being near the end) = a repeat=track loop
 
 /** Default inter-track gap (seconds). Exported so session estimates stay in sync. */
 export const DEFAULT_GAP_SECONDS = 10;
@@ -170,27 +171,32 @@ export function usePlayerEngine(
         nullPollsRef.current = 0;
         if (noDeviceRef.current) setNoDevice(false);
 
+        // Were we near our track's end on the last good snapshot? Both the
+        // auto-advance and loop guards below key off this: a track change or a
+        // restart this close to the end is the track *ending*, not a hijack.
+        const expectedUri = tracks[indexRef.current]?.spotifyUri;
+        const last = snapshotRef.current;
+        const wasNearEnd =
+          phaseRef.current === 'playing' &&
+          last != null &&
+          last.durationMs > 0 &&
+          interpolatePosition(last) >= last.durationMs - END_AUTOPLAY_WINDOW_MS;
+
         // Hijack guard: while we expect our track to be playing, Spotify reports a
         // *different* track — another app/user grabbed this Connect device. Confirm
         // across a few polls so the brief lag during our own track change isn't
         // mistaken for one.
-        const expectedUri = tracks[indexRef.current]?.spotifyUri;
         if (
           phaseRef.current === 'playing' &&
           snap.trackUri &&
           expectedUri &&
           snap.trackUri !== expectedUri
         ) {
-          // A *different* track while we were near the end of ours = Spotify
-          // auto-advancing at the track's end (we lost the ~500ms pre-empt race),
-          // not a hijack. Treat it as the normal end: enterGapOrEnd() pauses the
-          // autoplayed track and runs our gap / ends the routine.
-          const last = snapshotRef.current;
-          const nearEnd =
-            last != null &&
-            last.durationMs > 0 &&
-            interpolatePosition(last) >= last.durationMs - END_AUTOPLAY_WINDOW_MS;
-          if (nearEnd) {
+          // A different track while we were near the end = Spotify auto-advancing
+          // at the track's end (we lost the ~500ms pre-empt race), not a hijack.
+          // Treat it as the normal end: enterGapOrEnd() pauses the autoplayed
+          // track and runs our gap / ends the routine.
+          if (wasNearEnd) {
             wrongTrackPollsRef.current = 0;
             enterGapOrEnd();
             return;
@@ -205,6 +211,14 @@ export function usePlayerEngine(
         }
         wrongTrackPollsRef.current = 0;
         if (hijackedRef.current) setHijacked(false);
+
+        // Loop guard: the *same* track jumped back to the top while we were near
+        // the end = the device has repeat=track on and looped it (we lost the
+        // pre-empt race). Treat it as the normal end rather than replaying.
+        if (wasNearEnd && snap.progressMs < LOOP_RESTART_MS) {
+          enterGapOrEnd();
+          return;
+        }
 
         snapshotRef.current = snap;
         setDeviceName(snap.deviceName);
