@@ -101,4 +101,4 @@ Grouped by theme; unchecked entries are backlog. **Checked = built, type-checked
 - [ ] Is the nginx container image CORS etc. ready?
 - [ ] performance / caching used?
 - [ ] monetarization? ko-fe link?
-- [ ] Real landing page for new user with function list and cost explaination (ko-fe). Link to source code too! Issues too.
+- [x] Real landing page for new user with function list and cost explaination (ko-fe). Link to source code too! Issues too. (`LoginScreen` is now the landing page: feature list, "what it costs" (free/open-source, Premium needed, Ko-fi support), and footer links to source/issues/Ko-fi. URLs in `src/links.ts`.)

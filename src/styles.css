@@ -250,6 +250,102 @@ button:active {
   margin: 12px 0 20px;
 }
 
+/* Landing / pre-login page ---------------------------------------------- */
+.landing {
+  padding-top: calc(env(safe-area-inset-top) + 24px);
+}
+.landing-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.landing-hero {
+  text-align: center;
+}
+.landing-hero .logo {
+  font-size: 3rem;
+}
+.landing-hero h1 {
+  margin: 6px 0 8px;
+}
+.landing-hero .lead {
+  color: var(--muted);
+  margin: 0 auto 18px;
+  max-width: 36ch;
+}
+.landing-hero .hint {
+  margin-top: 10px;
+}
+.landing-section {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 18px 18px 20px;
+}
+.landing-section h2 {
+  font-size: 1.05rem;
+  margin: 0 0 12px;
+}
+.landing-section p {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin: 0 0 10px;
+}
+.landing-section p strong {
+  color: var(--text);
+}
+.feature-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.feature-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.feature-title {
+  font-weight: 600;
+}
+.feature-body {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.cost-list {
+  margin: 0 0 12px;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.cost-list li {
+  margin: 4px 0;
+}
+.cost-list strong {
+  color: var(--text);
+}
+.kofi-btn {
+  display: inline-block;
+  background: var(--accent);
+  color: #04150b;
+  font-weight: 700;
+  text-decoration: none;
+  padding: 10px 16px;
+  border-radius: 999px;
+}
+.landing-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 18px;
+  padding: 4px 0 8px;
+}
+.landing-footer a {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
 .spinner {
   width: 40px;
   height: 40px;
