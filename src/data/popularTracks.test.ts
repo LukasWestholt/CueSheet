@@ -4,6 +4,10 @@ import { POPULAR_TRACKS } from './popularTracks';
 const URI_RE = /^spotify:track:[A-Za-z0-9]{22}$/;
 
 describe('POPULAR_TRACKS', () => {
+  it('has the full curated set of 20', () => {
+    expect(POPULAR_TRACKS).toHaveLength(20);
+  });
+
   it('every entry has a valid Spotify track URI', () => {
     for (const t of POPULAR_TRACKS) expect(t.uri).toMatch(URI_RE);
   });
