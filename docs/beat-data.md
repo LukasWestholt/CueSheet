@@ -17,6 +17,7 @@ source must be callable from the browser — i.e. it must support **CORS** or
 | **Deezer** | ✅ | none | ⚠️ no CORS, but **JSONP works** | BPM present but **`0` for many tracks** | Lookup by **ISRC** (`/track/isrc:<ISRC>`) or id; returns a `bpm` field. **Chosen.** |
 | **GetSongBPM** | ✅ | API key | ✅ CORS | Good | **Fallback behind Deezer** (fills `bpm:0` gaps). **Mandatory backlink** to getsongbpm.com or the account is suspended; needs a key. Attribution UX cost. |
 | **AcousticBrainz** | ✅ | none | n/a | n/a | **Dead** — project ended 2022/23 (data-quality issues); no replacement. |
+| **SoundNet Track-Analysis** (RapidAPI) | 💲 | RapidAPI key | ✅ CORS (gateway reflects `Origin`) | BPM only | **Rejected** — see below. Returns `tempo` (integer BPM) + features, **no beat grid**; billable key would ship in client JS. |
 | **TuneBat** | — | — | ❌ | Good | No official public API (scraping only — against ToS). |
 | **AcoustID / Chromaprint** | ✅ | key | n/a | n/a | Matches by **audio fingerprint** — we never have the raw audio, so N/A. |
 | **Soundcharts / Musicgpt / Mixed-In-Key** | ❌ | key | varies | Good | Paid / commercial. |
@@ -51,6 +52,35 @@ source must be callable from the browser — i.e. it must support **CORS** or
   it tries `getBpmByIsrc(info.isrc)` then `getBpmByTitleArtist(...)`, filling
   `fetched.bpm` **only if not already set**. Final priority stays **authored >
   tap calibration > Deezer → GetSongBPM / Spotify fetch > default**.
+
+## Evaluated and rejected: SoundNet Track-Analysis (RapidAPI)
+
+`track-analysis.p.rapidapi.com` (`/pktx/analysis?song=&artist=` or
+`/pktx/spotify/{spotifyId}`). Markets itself as the replacement for Spotify's
+deprecated `audio-analysis`, and it would have two nice properties for us:
+
+- **Lookup by Spotify track id directly** (no ISRC dance like Deezer), and
+- **CORS works** — verified the preflight: the RapidAPI gateway reflects the
+  `Origin` and allows the `x-rapidapi-key` header, so it's browser-callable
+  with no proxy (unlike plain Deezer, which needs JSONP).
+
+Rejected anyway, for two reasons:
+
+1. **No beat grid — so it does not solve the open problem.** Despite the
+   "audio-*analysis*" name, the response is the flat **`audio-features`** shape:
+   `id, key, mode, camelot, tempo, duration, popularity, energy, danceability,
+   happiness, acousticness, instrumentalness, liveness, speechiness, loudness`.
+   There are **no `beats`/`bars`/`tatums`/`segments` arrays** and no timestamps,
+   so there is **no first-beat** — the one thing we still lack. It would only be
+   a third BPM source behind Deezer + GetSongBPM, which we already have.
+2. **Billable key in a client-only app.** RapidAPI keys are tied to a paid
+   account and can't be origin/referrer-restricted. In a no-backend PWA the key
+   ships in the browser bundle and is trivially extractable, so anyone could lift
+   it and burn quota/run up charges. GetSongBPM's exposed key is at least *free*;
+   this one isn't — a different risk class.
+
+If a backend/proxy is ever added (see the JSONP note below), reconsider it as a
+BPM source only — but it still won't give first-beat.
 
 ## Tradeoffs of JSONP
 
