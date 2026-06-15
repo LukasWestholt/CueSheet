@@ -49,6 +49,34 @@ Playback position is **interpolated** between polls
    npm run dev      # http://127.0.0.1:5173
    ```
 
+## Run with Docker
+
+A multi-stage image (Vite build → nginx) is published to GHCR on every push to
+`main` by `.github/workflows/docker.yml`. Pull and run it:
+
+```bash
+docker run --rm -p 8080:80 ghcr.io/lukaswestholt/cuesheet:main
+# then open http://127.0.0.1:8080
+```
+
+Podman is a drop-in replacement (`podman run --rm -p 8080:80 ghcr.io/lukaswestholt/cuesheet:main`).
+
+> **Client ID is baked at build time.** Vite inlines `VITE_SPOTIFY_CLIENT_ID`
+> into the static bundle during `npm run build`, so the published image only has
+> a Client ID if the repo's `VITE_SPOTIFY_CLIENT_ID` variable was set when it was
+> built. Without one the app loads but shows the "Setup needed" screen. To bake
+> your own, build locally:
+>
+> ```bash
+> docker build --build-arg VITE_SPOTIFY_CLIENT_ID=your_client_id -t cuesheet .
+> docker run --rm -p 8080:80 cuesheet
+> ```
+
+Register the origin you serve from as a redirect URI in the Spotify dashboard —
+`http://127.0.0.1:8080/callback` works because Spotify allows loopback-IP URIs
+without HTTPS (use `127.0.0.1`, not `localhost`). The container serves on port
+`80`; map it to whatever host port you like.
+
 ## Testing the Spotify sync
 
 - You need **Spotify Premium** on the device that plays audio.
