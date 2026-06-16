@@ -683,6 +683,9 @@ details.routines[open] > summary.routines-head::after {
 .rec-label {
   font-weight: 600;
   font-size: var(--text-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 .rec-desc {
   font-size: var(--text-xs);
@@ -691,11 +694,60 @@ details.routines[open] > summary.routines-head::after {
 .recommended-row .ghost {
   flex: 0 0 auto;
 }
-.rec-loaded {
+
+/* Toggleable routine source rows (server files + custom uploads). */
+.source-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+}
+.source-default {
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+/* Load / Loaded pill — mirrors the setlist toggle: dashed accent to add, solid
+   green when loaded. */
+.source-toggle {
   flex: 0 0 auto;
-  background: color-mix(in srgb, var(--success) 22%, var(--surface-2));
-  color: var(--success);
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  border: 1px dashed color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--accent);
+}
+.source-toggle:hover {
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface-2));
+  border-color: color-mix(in srgb, var(--accent) 70%, transparent);
+}
+.source-toggle.is-on {
+  background: var(--success);
+  border: 1px solid var(--success);
+  color: #062b14;
+}
+.source-toggle.is-on:hover {
+  background: color-mix(in srgb, var(--success) 88%, #000);
+  border-color: color-mix(in srgb, var(--success) 88%, #000);
+}
+.source-remove {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2);
+  background: transparent;
+  color: var(--muted);
+}
+.source-remove:hover {
+  color: var(--danger);
 }
 
 /* Work-in-progress markers. */

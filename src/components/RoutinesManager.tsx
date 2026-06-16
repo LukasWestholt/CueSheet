@@ -3,51 +3,48 @@ import type { Track } from '../data/tracks';
 import { serializeTracks } from '../data/tracksStore';
 import { validateTracks, type ValidationResult } from '../data/validateTracks';
 import { collectStepLibrary } from '../data/stepLibrary';
-import { isDefaultRoutine, type RecommendedRoutine } from '../data/recommendedImports';
+import type { RoutineSourceRow } from '../data/routineSources';
 import { REPO_URL } from '../links';
-import { X } from './icons';
+import { X, Check, Plus } from './icons';
 
 export default function RoutinesManager({
   tracks,
-  overridden,
-  onImport,
+  sources,
+  onToggleSource,
+  onAddCustom,
+  onRemoveCustom,
   onReset,
-  recommended = [],
-  onImportFile,
 }: {
   tracks: Track[];
-  /** True when the in-app list is an imported/edited override (not code-defined). */
-  overridden: boolean;
-  onImport: (tracks: Track[]) => void;
+  /** All routine sources (public-folder files + custom uploads) with toggle state. */
+  sources: RoutineSourceRow[];
+  /** Merge a source into / remove it from the active list. */
+  onToggleSource: (key: string) => Promise<void>;
+  /** Add an uploaded routine file to the custom list (does not load it). */
+  onAddCustom: (label: string, tracks: Track[]) => void;
+  /** Remove an uploaded custom file (unloading it first if active). */
+  onRemoveCustom: (id: string) => void;
+  /** Re-enable just the public-folder defaults. */
   onReset: () => void;
-  /** Routine files served from the public folder, offered as import targets. */
-  recommended?: RecommendedRoutine[];
-  onImportFile?: (file: string) => Promise<ValidationResult>;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [result, setResult] = useState<ValidationResult | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [showMoves, setShowMoves] = useState(false);
-  const [busyFile, setBusyFile] = useState<string | null>(null);
+  const [busyKey, setBusyKey] = useState<string | null>(null);
   const [contributeOpen, setContributeOpen] = useState(false);
 
-  const importFile = async (entry: RecommendedRoutine) => {
-    if (!onImportFile) return;
+  const serverSources = sources.filter((s) => s.kind === 'server');
+  const customSources = sources.filter((s) => s.kind === 'custom');
+
+  const toggle = async (key: string) => {
     setNote(null);
     setResult(null);
-    setBusyFile(entry.file);
+    setBusyKey(key);
     try {
-      const res = await onImportFile(entry.file);
-      setResult(res);
-      if (res.ok) setNote(`Imported ${res.trackCount} routines from “${entry.label}”.`);
-    } catch (e) {
-      setResult({
-        ok: false,
-        trackCount: 0,
-        issues: [{ level: 'error', where: entry.file, message: e instanceof Error ? e.message : String(e) }],
-      });
+      await onToggleSource(key);
     } finally {
-      setBusyFile(null);
+      setBusyKey(null);
     }
   };
 
@@ -65,10 +62,12 @@ export default function RoutinesManager({
     setResult(null);
   };
 
+  // Upload a routine file: it joins the "Custom routine files" list (disabled),
+  // then one tap loads it. Never replaces the active list.
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setNote(null);
     const file = e.target.files?.[0];
-    e.target.value = ''; // allow re-importing the same file
+    e.target.value = ''; // allow re-uploading the same file
     if (!file) return;
     let data: unknown;
     try {
@@ -80,15 +79,57 @@ export default function RoutinesManager({
     const res = validateTracks(data);
     setResult(res);
     if (res.ok) {
-      onImport(data as Track[]);
-      setNote(`Imported ${res.trackCount} routines.`);
+      const label = file.name.replace(/\.json$/i, '') || 'Uploaded routines';
+      onAddCustom(label, data as Track[]);
+      setNote(`Added “${label}” (${res.trackCount} routines). Tap Load to use it.`);
     }
   };
+
+  const renderRow = (s: RoutineSourceRow) => (
+    <li key={s.key} className="source-row">
+      <span className="rec-meta">
+        <span className="rec-label">
+          {s.label}
+          {s.isDefault && <span className="badge source-default">default</span>}
+        </span>
+        {s.description && <span className="rec-desc">{s.description}</span>}
+      </span>
+      <button
+        className={`source-toggle ${s.enabled ? 'is-on' : ''}`}
+        aria-pressed={s.enabled}
+        disabled={busyKey != null}
+        onClick={() => toggle(s.key)}
+      >
+        {busyKey === s.key ? (
+          '…'
+        ) : s.enabled ? (
+          <>
+            <Check size={16} /> Loaded
+          </>
+        ) : (
+          <>
+            <Plus size={16} /> Load
+          </>
+        )}
+      </button>
+      {s.kind === 'custom' && (
+        <button
+          className="source-remove"
+          aria-label={`Remove ${s.label}`}
+          title="Remove this file"
+          disabled={busyKey != null}
+          onClick={() => onRemoveCustom(s.key.slice(4))}
+        >
+          <X size={16} />
+        </button>
+      )}
+    </li>
+  );
 
   return (
     <section className="routines">
       <div className="routines-head">
-        <span className="muted">Routines{overridden ? ' · imported' : ''}</span>
+        <span className="muted">Routines</span>
         <span className="muted">{tracks.length} tracks · {library.length} moves</span>
       </div>
 
@@ -97,54 +138,34 @@ export default function RoutinesManager({
           Export
         </button>
         <button className="ghost" onClick={() => fileRef.current?.click()}>
-          Import
+          Upload
         </button>
         <button className="ghost" onClick={() => { setNote(null); setResult(validateTracks(tracks)); }}>
           Validate
         </button>
-        {overridden && (
-          <button
-            className="link"
-            onClick={() => { onReset(); setResult(null); setNote('Reverted to built-in routines.'); }}
-          >
-            Reset
-          </button>
-        )}
+        <button
+          className="link"
+          onClick={() => { onReset(); setResult(null); setNote('Re-enabled the default routine files.'); }}
+        >
+          Reset
+        </button>
         <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={onFile} />
       </div>
 
-      {recommended.length > 0 && onImportFile && (
+      {serverSources.length > 0 && (
         <div className="recommended">
           <span className="muted">Routine files on this server</span>
-          <ul className="recommended-list">
-            {recommended.map((r) => {
-              const isDefault = isDefaultRoutine(r);
-              return (
-                <li key={r.file} className="recommended-row">
-                  <span className="rec-meta">
-                    <span className="rec-label">{r.label}</span>
-                    {r.description && <span className="rec-desc">{r.description}</span>}
-                  </span>
-                  {isDefault ? (
-                    <span className="badge rec-loaded" title="Auto-loaded on startup">
-                      loaded
-                    </span>
-                  ) : (
-                    <button
-                      className="ghost"
-                      onClick={() => importFile(r)}
-                      disabled={busyFile != null}
-                    >
-                      {busyFile === r.file ? 'Importing…' : 'Import'}
-                    </button>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
+          <ul className="recommended-list">{serverSources.map(renderRow)}</ul>
           <button className="link" onClick={() => setContributeOpen(true)}>
             + Contribute a routine
           </button>
+        </div>
+      )}
+
+      {customSources.length > 0 && (
+        <div className="recommended">
+          <span className="muted">Custom routine files</span>
+          <ul className="recommended-list">{customSources.map(renderRow)}</ul>
         </div>
       )}
 
@@ -183,8 +204,10 @@ export default function RoutinesManager({
       )}
 
       <p className="hint">
-        Export is a backup of your routines (your edits on this device). Import
-        replaces the in-app list on this device.
+        Each routine file can be loaded or unloaded independently — the active
+        list is everything currently loaded (it can be empty). Upload adds a file
+        to “Custom routine files” without loading it. Export backs up the active
+        list; it stays on this device.
       </p>
     </section>
   );

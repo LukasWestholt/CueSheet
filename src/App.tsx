@@ -9,14 +9,28 @@ import {
 } from './spotify/auth';
 import { getPlaybackState, getTracksInfo, type TrackInfo } from './spotify/api';
 import { TRACKS, type Track } from './data/tracks';
-import { clearStoredTracks, loadStoredTracks, saveStoredTracks } from './data/tracksStore';
-import { validateTracks, type ValidationResult } from './data/validateTracks';
+import { loadStoredTracks, saveStoredTracks } from './data/tracksStore';
+import { validateTracks } from './data/validateTracks';
 import {
   loadRecommendedRoutines,
-  loadDefaultRoutines,
   fetchRoutineFile,
+  isDefaultRoutine,
   type RecommendedRoutine,
 } from './data/recommendedImports';
+import {
+  type CustomFile,
+  type SourcesState,
+  type RoutineSourceRow,
+  loadCustomFiles,
+  saveCustomFiles,
+  loadSourcesState,
+  saveSourcesState,
+  serverSourceKey,
+  customSourceKey,
+  newCustomId,
+  mergeTracks,
+  removeTracksByIds,
+} from './data/routineSources';
 import { collectStepLibrary } from './data/stepLibrary';
 import { parsePath, trackPath, listPath } from './nav/routes';
 import { loadFavorites, saveFavorites } from './data/favorites';
@@ -42,10 +56,24 @@ import { ingestGetsongbpmKeyFromUrl } from './data/getsongbpmKey';
 ingestGetsongbpmKeyFromUrl();
 
 /** Use a valid stored override if present, else the code-defined routines. */
-function initialTracks(): { tracks: Track[]; overridden: boolean } {
+/** The materialized active list: a valid stored list, else the code-defined set. */
+function initialTracks(): Track[] {
   const stored = loadStoredTracks();
-  if (stored && validateTracks(stored).ok) return { tracks: stored, overridden: true };
-  return { tracks: TRACKS, overridden: false };
+  if (stored && validateTracks(stored).ok) return stored;
+  return TRACKS;
+}
+
+/**
+ * Enabled-source state at mount. A pre-existing stored list (from before the
+ * source model) counts as already initialized so we don't merge the default
+ * files on top of it — its tracks just have no source provenance until the user
+ * toggles things.
+ */
+function initialSources(): SourcesState {
+  const s = loadSourcesState();
+  if (s.initialized) return s;
+  if (loadStoredTracks() != null) return { enabled: s.enabled, initialized: true };
+  return s;
 }
 
 type View = 'list' | 'player' | 'editor' | 'seed';
@@ -71,8 +99,14 @@ export default function App() {
   const [infosError, setInfosError] = useState<string | null>(null);
   // Index of one of our tracks that Spotify is already playing (e.g. after a reload).
   const [resumeIndex, setResumeIndex] = useState<number | null>(null);
-  // The routine list: a stored override (imported/edited) or the code-defined set.
-  const [{ tracks, overridden }, setTrackState] = useState(initialTracks);
+  // The materialized active routine list (what the app renders + the editor edits).
+  const [tracks, setTracks] = useState<Track[]>(initialTracks);
+  // Composable routine sources: uploaded files + which source keys are merged.
+  const [customFiles, setCustomFiles] = useState<CustomFile[]>(loadCustomFiles);
+  const [sources, setSources] = useState<SourcesState>(initialSources);
+  const enabledSet = useMemo(() => new Set(sources.enabled), [sources.enabled]);
+  // In-memory cache of fetched server-file contents (file path -> tracks).
+  const serverContent = useRef<Map<string, Track[]>>(new Map());
   // When view === 'editor': index of the track being edited, or null for a new one.
   const [editIndex, setEditIndex] = useState<number | null>(null);
 
@@ -148,31 +182,106 @@ export default function App() {
     window.history.pushState({}, '', listPath(BASE));
   };
 
-  const persistTracks = (next: Track[], overrideOff = false) => {
-    if (overrideOff) clearStoredTracks();
-    else saveStoredTracks(next);
-    setTrackState({ tracks: next, overridden: !overrideOff });
-    setSelectedIndex(0);
-    setResumeIndex(null);
-  };
-  const importTracks = (next: Track[]) => persistTracks(next);
-  // Reset drops the user override and reloads the public-folder defaults
-  // (default*.json), falling back to the built-in code tracks if none load.
-  const resetTracks = () => {
-    clearStoredTracks();
-    loadDefaultRoutines().then((defs) => {
-      setTrackState({ tracks: defs.length ? defs : TRACKS, overridden: false });
+  // Commit the materialized active list. `resetSelection` is off for in-place
+  // edits (tap-to-time) so the player keeps its current track.
+  const commitTracks = (next: Track[], resetSelection = true) => {
+    saveStoredTracks(next);
+    setTracks(next);
+    if (resetSelection) {
       setSelectedIndex(0);
       setResumeIndex(null);
-    });
+    }
+  };
+  const persistCustomFiles = (next: CustomFile[]) => {
+    saveCustomFiles(next);
+    setCustomFiles(next);
+  };
+  const persistSources = (next: SourcesState) => {
+    saveSourcesState(next);
+    setSources(next);
+  };
+
+  // Resolve a source's tracks: server files are fetched + validated + cached;
+  // custom files come from localStorage. Returns [] on any failure.
+  const getSourceTracks = async (key: string): Promise<Track[]> => {
+    if (key.startsWith('srv:')) {
+      const file = key.slice(4);
+      const cached = serverContent.current.get(file);
+      if (cached) return cached;
+      try {
+        const data = await fetchRoutineFile(file);
+        if (!validateTracks(data).ok) return [];
+        const list = data as Track[];
+        serverContent.current.set(file, list);
+        return list;
+      } catch {
+        return [];
+      }
+    }
+    if (key.startsWith('cst:')) {
+      return customFiles.find((f) => customSourceKey(f.id) === key)?.tracks ?? [];
+    }
+    return [];
+  };
+
+  // Merge a source into the active list, or remove it. Removing only drops ids
+  // not still provided by another enabled source; tracks owned by no source
+  // (authored in the editor) always stay.
+  const toggleSource = async (key: string) => {
+    if (enabledSet.has(key)) {
+      const own = await getSourceTracks(key);
+      const otherKeys = sources.enabled.filter((k) => k !== key);
+      const keepIds = new Set<string>();
+      for (const k of otherKeys) for (const t of await getSourceTracks(k)) keepIds.add(t.id);
+      commitTracks(removeTracksByIds(tracks, new Set(own.map((t) => t.id)), keepIds));
+      persistSources({ ...sources, enabled: otherKeys });
+    } else {
+      const own = await getSourceTracks(key);
+      commitTracks(mergeTracks(tracks, own));
+      persistSources({ ...sources, enabled: [...sources.enabled, key] });
+    }
+  };
+
+  // Upload (formerly "Import"): add the file to the custom list, disabled — the
+  // coach loads it with one tap. Never replaces the active list.
+  const addCustomFile = (label: string, data: Track[]) =>
+    persistCustomFiles([...customFiles, { id: newCustomId(), label, tracks: data }]);
+
+  const removeCustomFile = async (id: string) => {
+    const key = customSourceKey(id);
+    if (enabledSet.has(key)) {
+      const own = customFiles.find((f) => f.id === id)?.tracks ?? [];
+      const otherKeys = sources.enabled.filter((k) => k !== key);
+      const keepIds = new Set<string>();
+      for (const k of otherKeys) for (const t of await getSourceTracks(k)) keepIds.add(t.id);
+      commitTracks(removeTracksByIds(tracks, new Set(own.map((t) => t.id)), keepIds));
+      persistSources({ ...sources, enabled: otherKeys });
+    }
+    persistCustomFiles(customFiles.filter((f) => f.id !== id));
+  };
+
+  // Reset: re-enable just the public-folder defaults and materialize them,
+  // falling back to the built-in tracks if none load (e.g. offline).
+  const resetTracks = async () => {
+    let list: Track[] = [];
+    const enabled: string[] = [];
+    for (const r of recommended.filter(isDefaultRoutine)) {
+      const content = await getSourceTracks(serverSourceKey(r.file));
+      if (!content.length) continue;
+      list = mergeTracks(list, content);
+      enabled.push(serverSourceKey(r.file));
+    }
+    commitTracks(list.length ? list : TRACKS);
+    persistSources({ enabled, initialized: true });
   };
 
   // Update a single track in place (tap-to-time). Matched by id, not index, so it
   // works whether the player is showing the full list or a setlist session.
   const updateTrack = (_index: number, updated: Track) => {
-    const next = tracks.map((t) => (t.id === updated.id ? updated : t));
-    saveStoredTracks(next);
-    setTrackState({ tracks: next, overridden: true });
+    commitTracks(
+      tracks.map((t) => (t.id === updated.id ? updated : t)),
+      false,
+    );
   };
 
   const openEditor = (index: number | null) => {
@@ -184,42 +293,65 @@ export default function App() {
       editIndex == null
         ? [...tracks, track]
         : tracks.map((t, i) => (i === editIndex ? track : t));
-    persistTracks(next);
+    commitTracks(next);
     setView('list');
   };
   const deleteTrack = () => {
     if (editIndex == null) return;
-    persistTracks(tracks.filter((_, i) => i !== editIndex));
+    commitTracks(tracks.filter((_, i) => i !== editIndex));
     setView('list');
   };
   const seedTracks = (stubs: Track[]) => {
-    persistTracks([...tracks, ...stubs]);
+    commitTracks([...tracks, ...stubs]);
     setView('list');
   };
 
   // Routine files shipped in the web server's public folder (see public/routines.json).
   const [recommended, setRecommended] = useState<RecommendedRoutine[]>([]);
-  const overriddenAtMount = useRef(overridden);
+  const seededRef = useRef(false);
   useEffect(() => {
-    loadRecommendedRoutines().then(setRecommended).catch(() => {});
-    // Without a user override, the public-folder default*.json files become the
-    // base routine set (replacing the built-in code tracks) when present.
-    if (!overriddenAtMount.current) {
-      loadDefaultRoutines().then((defs) => {
-        if (defs.length) {
-          setTrackState({ tracks: defs, overridden: false });
-          setSelectedIndex(0);
-          setResumeIndex(null);
+    loadRecommendedRoutines()
+      .then(async (recs) => {
+        setRecommended(recs);
+        if (seededRef.current || sources.initialized) return;
+        seededRef.current = true;
+        // First run: enable the default files and materialize them as the base set.
+        let list: Track[] = [];
+        const enabled: string[] = [];
+        for (const r of recs.filter(isDefaultRoutine)) {
+          const content = await getSourceTracks(serverSourceKey(r.file));
+          if (!content.length) continue;
+          list = mergeTracks(list, content);
+          enabled.push(serverSourceKey(r.file));
         }
-      });
-    }
+        if (enabled.length) {
+          commitTracks(list);
+          persistSources({ enabled, initialized: true });
+        }
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const importFromFile = async (file: string): Promise<ValidationResult> => {
-    const data = await fetchRoutineFile(file);
-    const res = validateTracks(data);
-    if (res.ok) importTracks(data as Track[]);
-    return res;
-  };
+
+  // The routine sources shown in the Routines panel: server files then customs.
+  const sourceRows: RoutineSourceRow[] = useMemo(() => {
+    const server: RoutineSourceRow[] = recommended.map((r) => ({
+      key: serverSourceKey(r.file),
+      label: r.label,
+      description: r.description,
+      kind: 'server',
+      isDefault: isDefaultRoutine(r),
+      enabled: enabledSet.has(serverSourceKey(r.file)),
+    }));
+    const custom: RoutineSourceRow[] = customFiles.map((f) => ({
+      key: customSourceKey(f.id),
+      label: f.label,
+      kind: 'custom',
+      isDefault: false,
+      enabled: enabledSet.has(customSourceKey(f.id)),
+    }));
+    return [...server, ...custom];
+  }, [recommended, customFiles, enabledSet]);
 
   // Handle the OAuth redirect, then determine login state.
   useEffect(() => {
@@ -437,11 +569,11 @@ export default function App() {
           </div>
           <RoutinesManager
             tracks={tracks}
-            overridden={overridden}
-            onImport={importTracks}
+            sources={sourceRows}
+            onToggleSource={toggleSource}
+            onAddCustom={addCustomFile}
+            onRemoveCustom={removeCustomFile}
             onReset={resetTracks}
-            recommended={recommended}
-            onImportFile={importFromFile}
           />
           <Settings />
         </>
