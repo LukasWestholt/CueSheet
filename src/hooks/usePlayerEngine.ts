@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Track } from '../data/tracks';
+import { useStateRef } from './useStateRef';
 import { interpolatePosition } from '../playback/position';
 import { toast } from '../data/toast';
 import {
@@ -78,36 +79,30 @@ export function usePlayerEngine(
   deviceId: string | null,
   gapSeconds = DEFAULT_GAP_SECONDS,
 ): PlayerEngine {
-  const [index, setIndex] = useState(0);
-  const [phase, setPhase] = useState<Phase>('idle');
+  // State paired with a ref the timers/poller read for fresh values without
+  // being torn down (useStateRef keeps the two in sync — set once, both update).
+  const [index, setIndex, indexRef] = useStateRef(0);
+  const [phase, setPhase, phaseRef] = useStateRef<Phase>('idle');
+  const [autoContinue, setAutoContinue, autoRef] = useStateRef(true);
+  const [noDevice, setNoDevice, noDeviceRef] = useStateRef(false);
+  const [hijacked, setHijacked, hijackedRef] = useStateRef(false);
+
+  // Plain state (no ref needed — only read during render).
   const [positionMs, setPositionMs] = useState(0);
   const [durationMs, setDurationMs] = useState(0);
   const [gapRemaining, setGapRemaining] = useState(gapSeconds);
-  const [autoContinue, setAutoContinueState] = useState(true);
   const [deviceName, setDeviceName] = useState<string | null>(null);
-  const [noDevice, setNoDevice] = useState(false);
-  const [hijacked, setHijacked] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Refs mirror state so the timers/poller read fresh values without resetting.
-  const indexRef = useRef(index);
-  const phaseRef = useRef(phase);
-  const autoRef = useRef(autoContinue);
+  // Pure refs (mutable values that never drive a render).
   const snapshotRef = useRef<PlaybackSnapshot | null>(null);
   const gapDeadlineRef = useRef(0);
   const deviceIdRef = useRef(deviceId);
   const lastPrevAtRef = useRef(0);
-  const noDeviceRef = useRef(noDevice);
   const nullPollsRef = useRef(0);
-  const hijackedRef = useRef(hijacked);
   const wrongTrackPollsRef = useRef(0);
 
-  indexRef.current = index;
-  phaseRef.current = phase;
-  autoRef.current = autoContinue;
   deviceIdRef.current = deviceId;
-  noDeviceRef.current = noDevice;
-  hijackedRef.current = hijacked;
 
   const track = tracks[index];
 
@@ -116,23 +111,19 @@ export function usePlayerEngine(
       const t = tracks[i];
       if (!t) return;
       setIndex(i);
-      indexRef.current = i;
       setPhase('loading');
-      phaseRef.current = 'loading';
       setPositionMs(0);
       snapshotRef.current = null;
       setError(null);
       try {
         await playTrack(t.spotifyUri, deviceIdRef.current ?? undefined, 0);
         setPhase('playing');
-        phaseRef.current = 'playing';
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
         setPhase('paused');
-        phaseRef.current = 'paused';
       }
     },
-    [tracks],
+    [tracks, setIndex, setPhase],
   );
 
   const enterGapOrEnd = useCallback(() => {
@@ -142,19 +133,16 @@ export function usePlayerEngine(
     const hasNext = indexRef.current + 1 < tracks.length;
     if (!hasNext) {
       setPhase('ended');
-      phaseRef.current = 'ended';
       return;
     }
     if (autoRef.current) {
       gapDeadlineRef.current = Date.now() + gapSeconds * 1000;
       setGapRemaining(gapSeconds);
       setPhase('gap');
-      phaseRef.current = 'gap';
     } else {
       setPhase('held');
-      phaseRef.current = 'held';
     }
-  }, [tracks.length, gapSeconds]);
+  }, [tracks.length, gapSeconds, setPhase, indexRef, autoRef]);
 
   // Poll Spotify for the authoritative playback state.
   useEffect(() => {
@@ -246,7 +234,7 @@ export function usePlayerEngine(
       cancelled = true;
       clearInterval(id);
     };
-  }, [enterGapOrEnd, tracks]);
+  }, [enterGapOrEnd, tracks, setNoDevice, setHijacked, phaseRef, indexRef, noDeviceRef, hijackedRef]);
 
   // High-frequency ticker: interpolate position, run the gap countdown.
   useEffect(() => {
@@ -276,7 +264,7 @@ export function usePlayerEngine(
       }
     }, TICK_MS);
     return () => clearInterval(id);
-  }, [enterGapOrEnd, playIndex, tracks]);
+  }, [enterGapOrEnd, playIndex, tracks, phaseRef, indexRef, noDeviceRef, hijackedRef]);
 
   // ---- Controls ----------------------------------------------------------
   const start = useCallback((i: number) => void playIndex(i), [playIndex]);
@@ -285,22 +273,18 @@ export function usePlayerEngine(
     // Re-attach to a track already playing on Spotify (e.g. after a page
     // reload) without sending a play command — the poller syncs the position.
     setIndex(i);
-    indexRef.current = i;
     setError(null);
     setPhase('playing');
-    phaseRef.current = 'playing';
-  }, []);
+  }, [setIndex, setPhase]);
 
   const select = useCallback((i: number) => {
     // Point the engine at a track without playing it: idle keeps both timers
     // inactive, so a deep-linked detail page shows the routine quietly until the
     // user presses Play.
     setIndex(i);
-    indexRef.current = i;
     setError(null);
     setPhase('idle');
-    phaseRef.current = 'idle';
-  }, []);
+  }, [setIndex, setPhase]);
 
   const togglePlayPause = useCallback(() => {
     const p = phaseRef.current;
@@ -312,7 +296,6 @@ export function usePlayerEngine(
         snapshotRef.current = { ...snap, isPlaying: false, fetchedAt: Date.now() };
       }
       setPhase('paused');
-      phaseRef.current = 'paused';
     } else if (p === 'paused') {
       apiResume(deviceIdRef.current ?? undefined).catch(controlFailed('resume'));
       const snap = snapshotRef.current;
@@ -320,17 +303,16 @@ export function usePlayerEngine(
         snapshotRef.current = { ...snap, isPlaying: true, fetchedAt: Date.now() };
       }
       setPhase('playing');
-      phaseRef.current = 'playing';
     } else if (p === 'held' || p === 'gap' || p === 'ended') {
       // Resume the routine from where we paused between tracks.
       void playIndex(indexRef.current + (p === 'ended' ? 0 : 1));
     }
-  }, [playIndex]);
+  }, [playIndex, setPhase, phaseRef, indexRef]);
 
   const next = useCallback(() => {
     const i = Math.min(tracks.length - 1, indexRef.current + 1);
     void playIndex(i);
-  }, [playIndex, tracks.length]);
+  }, [playIndex, tracks.length, indexRef]);
 
   const prev = useCallback(() => {
     // First press restarts the current track; a quick second press (within
@@ -339,7 +321,7 @@ export function usePlayerEngine(
     const goPrevious = now - lastPrevAtRef.current < PREV_TRACK_WINDOW_MS && indexRef.current > 0;
     lastPrevAtRef.current = now;
     void playIndex(goPrevious ? indexRef.current - 1 : indexRef.current);
-  }, [playIndex]);
+  }, [playIndex, indexRef]);
 
   const seekTo = useCallback((rawPositionMs: number) => {
     const p = phaseRef.current;
@@ -355,19 +337,19 @@ export function usePlayerEngine(
       snapshotRef.current = { ...snap, progressMs: target, fetchedAt: Date.now() };
     }
     setPositionMs(target);
-  }, [tracks]);
+  }, [tracks, phaseRef, indexRef]);
 
   const skipGap = useCallback(() => {
     if (phaseRef.current === 'gap' || phaseRef.current === 'held') {
       void playIndex(indexRef.current + 1);
     }
-  }, [playIndex]);
+  }, [playIndex, phaseRef, indexRef]);
 
   const extendGap = useCallback((seconds: number) => {
     if (phaseRef.current !== 'gap') return;
     gapDeadlineRef.current += seconds * 1000;
     setGapRemaining(Math.max(0, Math.ceil((gapDeadlineRef.current - Date.now()) / 1000)));
-  }, []);
+  }, [phaseRef]);
 
   const holdNow = useCallback(() => {
     // The easy "pause permanently between tracks" button.
@@ -375,14 +357,8 @@ export function usePlayerEngine(
     if (p === 'gap' || p === 'playing' || p === 'paused') {
       if (p !== 'gap') apiPause(deviceIdRef.current ?? undefined).catch(controlFailed('pause'));
       setPhase('held');
-      phaseRef.current = 'held';
     }
-  }, []);
-
-  const setAutoContinue = useCallback((v: boolean) => {
-    setAutoContinueState(v);
-    autoRef.current = v;
-  }, []);
+  }, [setPhase, phaseRef]);
 
   const recover = useCallback(() => {
     void (async () => {
@@ -404,12 +380,11 @@ export function usePlayerEngine(
         setHijacked(false);
         setError(null);
         setPhase('playing');
-        phaseRef.current = 'playing';
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
       }
     })();
-  }, [tracks]);
+  }, [tracks, setNoDevice, setHijacked, setPhase, indexRef]);
 
   return {
     index,

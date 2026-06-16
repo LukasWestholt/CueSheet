@@ -224,17 +224,36 @@ export default function App() {
     return [];
   };
 
-  // Merge a source into the active list, or remove it. Removing only drops ids
-  // not still provided by another enabled source; tracks owned by no source
-  // (authored in the editor) always stay.
+  // Disable a source: drop its tracks from the active list, but keep any id
+  // another still-enabled source provides; tracks owned by no source (authored
+  // in the editor) always stay.
+  const disableSource = async (key: string) => {
+    const own = await getSourceTracks(key);
+    const otherKeys = sources.enabled.filter((k) => k !== key);
+    const keepIds = new Set<string>();
+    for (const k of otherKeys) for (const t of await getSourceTracks(k)) keepIds.add(t.id);
+    commitTracks(removeTracksByIds(tracks, new Set(own.map((t) => t.id)), keepIds));
+    persistSources({ ...sources, enabled: otherKeys });
+  };
+
+  // Materialize the public-folder default files into one merged list + the set
+  // of enabled source keys (shared by first-run seeding and Reset).
+  const materializeDefaultSources = async (recs: RecommendedRoutine[]) => {
+    let list: Track[] = [];
+    const enabled: string[] = [];
+    for (const r of recs.filter(isDefaultRoutine)) {
+      const content = await getSourceTracks(serverSourceKey(r.file));
+      if (!content.length) continue;
+      list = mergeTracks(list, content);
+      enabled.push(serverSourceKey(r.file));
+    }
+    return { list, enabled };
+  };
+
+  // Merge a source into the active list, or remove it.
   const toggleSource = async (key: string) => {
     if (enabledSet.has(key)) {
-      const own = await getSourceTracks(key);
-      const otherKeys = sources.enabled.filter((k) => k !== key);
-      const keepIds = new Set<string>();
-      for (const k of otherKeys) for (const t of await getSourceTracks(k)) keepIds.add(t.id);
-      commitTracks(removeTracksByIds(tracks, new Set(own.map((t) => t.id)), keepIds));
-      persistSources({ ...sources, enabled: otherKeys });
+      await disableSource(key);
     } else {
       const own = await getSourceTracks(key);
       commitTracks(mergeTracks(tracks, own));
@@ -249,28 +268,14 @@ export default function App() {
 
   const removeCustomFile = async (id: string) => {
     const key = customSourceKey(id);
-    if (enabledSet.has(key)) {
-      const own = customFiles.find((f) => f.id === id)?.tracks ?? [];
-      const otherKeys = sources.enabled.filter((k) => k !== key);
-      const keepIds = new Set<string>();
-      for (const k of otherKeys) for (const t of await getSourceTracks(k)) keepIds.add(t.id);
-      commitTracks(removeTracksByIds(tracks, new Set(own.map((t) => t.id)), keepIds));
-      persistSources({ ...sources, enabled: otherKeys });
-    }
+    if (enabledSet.has(key)) await disableSource(key);
     persistCustomFiles(customFiles.filter((f) => f.id !== id));
   };
 
   // Reset: re-enable just the public-folder defaults and materialize them,
   // falling back to the built-in tracks if none load (e.g. offline).
   const resetTracks = async () => {
-    let list: Track[] = [];
-    const enabled: string[] = [];
-    for (const r of recommended.filter(isDefaultRoutine)) {
-      const content = await getSourceTracks(serverSourceKey(r.file));
-      if (!content.length) continue;
-      list = mergeTracks(list, content);
-      enabled.push(serverSourceKey(r.file));
-    }
+    const { list, enabled } = await materializeDefaultSources(recommended);
     commitTracks(list.length ? list : TRACKS);
     persistSources({ enabled, initialized: true });
   };
@@ -316,14 +321,7 @@ export default function App() {
         if (seededRef.current || sources.initialized) return;
         seededRef.current = true;
         // First run: enable the default files and materialize them as the base set.
-        let list: Track[] = [];
-        const enabled: string[] = [];
-        for (const r of recs.filter(isDefaultRoutine)) {
-          const content = await getSourceTracks(serverSourceKey(r.file));
-          if (!content.length) continue;
-          list = mergeTracks(list, content);
-          enabled.push(serverSourceKey(r.file));
-        }
+        const { list, enabled } = await materializeDefaultSources(recs);
         if (enabled.length) {
           commitTracks(list);
           persistSources({ enabled, initialized: true });

@@ -6,6 +6,7 @@ import { usePlayerEngine } from '../hooks/usePlayerEngine';
 import { useTrackMeta } from '../hooks/useTrackMeta';
 import { useCalibration } from '../hooks/useCalibration';
 import { useWakeLock } from '../hooks/useWakeLock';
+import { useCopyFlag } from '../hooks/useCopyFlag';
 import CallingDisplay from './CallingDisplay';
 import TapToTime from './TapToTime';
 import { SkipBack, SkipForward, Pause, Play, Link as LinkIcon, AlertTriangle } from './icons';
@@ -139,20 +140,12 @@ export default function PlayerScreen({
   // --- Tap tempo + downbeat calibration --------------------------------------
   const tapsRef = useRef<number[]>([]);
   const [tapBpm, setTapBpm] = useState<number | null>(null);
-  const [copied, setCopied] = useState(false);
-  const [linkCopied, setLinkCopied] = useState(false);
+  const [copied, copyData] = useCopyFlag();
+  const [linkCopied, copyText] = useCopyFlag();
 
   // Copy a shareable deep link to this track's detail page.
-  const copyLink = async () => {
-    const url = window.location.origin + trackPath(track.id, import.meta.env.BASE_URL);
-    try {
-      await navigator.clipboard.writeText(url);
-      setLinkCopied(true);
-      setTimeout(() => setLinkCopied(false), 1500);
-    } catch {
-      /* clipboard may be unavailable */
-    }
-  };
+  const copyLink = () =>
+    copyText(window.location.origin + trackPath(track.id, import.meta.env.BASE_URL));
 
   const onTap = () => {
     const now = performance.now();
@@ -168,16 +161,8 @@ export default function PlayerScreen({
     setTapBpm(null);
   };
   const markFirstBeat = () => updateCal({ firstBeatSec: Math.max(0, positionSeconds) });
-  const copyToData = async () => {
-    const snippet = `bpm: ${meta.bpm ?? 0}, firstBeatSec: ${meta.firstBeatSec.toFixed(2)},`;
-    try {
-      await navigator.clipboard.writeText(snippet);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      /* clipboard may be unavailable */
-    }
-  };
+  const copyToData = () =>
+    copyData(`bpm: ${meta.bpm ?? 0}, firstBeatSec: ${meta.firstBeatSec.toFixed(2)},`);
 
   const playLabel =
     engine.phase === 'playing'

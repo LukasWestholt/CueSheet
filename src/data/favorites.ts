@@ -1,21 +1,17 @@
 // Favorite track ids, persisted in localStorage so a coach's starred routines
 // survive reloads.
+import { readJSON, writeJSON } from './storage';
+
 const KEY = 'tjf.favorites';
 
 export function loadFavorites(): Set<string> {
-  try {
-    const raw = localStorage.getItem(KEY);
-    const arr = raw ? JSON.parse(raw) : [];
-    return new Set(Array.isArray(arr) ? (arr as string[]) : []);
-  } catch {
-    return new Set();
-  }
+  return readJSON(
+    KEY,
+    new Set<string>(),
+    (data) => new Set(Array.isArray(data) ? (data as string[]) : []),
+  );
 }
 
 export function saveFavorites(ids: Set<string>): void {
-  try {
-    localStorage.setItem(KEY, JSON.stringify([...ids]));
-  } catch {
-    /* storage unavailable — favorites just won't persist this session */
-  }
+  writeJSON(KEY, [...ids]);
 }

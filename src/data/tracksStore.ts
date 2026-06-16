@@ -1,4 +1,5 @@
 import type { Track } from './tracks';
+import { readJSON, writeJSON, removeKey } from './storage';
 
 // Runtime override for the routine list: imported/edited routines are stored
 // here so they drive the app without touching the committed routine JSON.
@@ -7,30 +8,17 @@ import type { Track } from './tracks';
 const KEY = 'tjf.tracks';
 
 export function loadStoredTracks(): Track[] | null {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return null;
-    const data = JSON.parse(raw);
-    return Array.isArray(data) ? (data as Track[]) : null;
-  } catch {
-    return null;
-  }
+  return readJSON<Track[] | null>(KEY, null, (data) =>
+    Array.isArray(data) ? (data as Track[]) : null,
+  );
 }
 
 export function saveStoredTracks(tracks: Track[]): void {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(tracks));
-  } catch {
-    /* storage full / unavailable — the in-memory list still works this session */
-  }
+  writeJSON(KEY, tracks);
 }
 
 export function clearStoredTracks(): void {
-  try {
-    localStorage.removeItem(KEY);
-  } catch {
-    /* ignore */
-  }
+  removeKey(KEY);
 }
 
 /** Pretty JSON for export/download. */

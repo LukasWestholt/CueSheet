@@ -1,6 +1,7 @@
 // Per-track calibration the coach sets by ear (tap tempo + mark the downbeat),
 // stored in localStorage keyed by Spotify URI. This replaces the deprecated
 // Spotify audio-features/analysis endpoints for BPM and first beat.
+import { readJSON, writeJSON, removeKey } from './storage';
 
 export interface Calibration {
   bpm?: number;
@@ -24,18 +25,13 @@ export function bpmFromTaps(timestamps: number[]): number | null {
 }
 
 export function loadCalibration(uri: string): Calibration | null {
-  try {
-    const raw = localStorage.getItem(KEY_PREFIX + uri);
-    return raw ? (JSON.parse(raw) as Calibration) : null;
-  } catch {
-    return null;
-  }
+  return readJSON<Calibration | null>(KEY_PREFIX + uri, null);
 }
 
 export function saveCalibration(uri: string, cal: Calibration): void {
-  localStorage.setItem(KEY_PREFIX + uri, JSON.stringify(cal));
+  writeJSON(KEY_PREFIX + uri, cal);
 }
 
 export function clearCalibration(uri: string): void {
-  localStorage.removeItem(KEY_PREFIX + uri);
+  removeKey(KEY_PREFIX + uri);
 }
