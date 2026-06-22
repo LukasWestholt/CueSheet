@@ -140,7 +140,6 @@ export default function PlayerScreen({
   // --- Tap tempo + downbeat calibration --------------------------------------
   const tapsRef = useRef<number[]>([]);
   const [tapBpm, setTapBpm] = useState<number | null>(null);
-  const [copied, copyData] = useCopyFlag();
   const [linkCopied, copyText] = useCopyFlag();
 
   // Copy a shareable deep link to this track's detail page.
@@ -161,8 +160,6 @@ export default function PlayerScreen({
     setTapBpm(null);
   };
   const markFirstBeat = () => updateCal({ firstBeatSec: Math.max(0, positionSeconds) });
-  const copyToData = () =>
-    copyData(`bpm: ${meta.bpm ?? 0}, firstBeatSec: ${meta.firstBeatSec.toFixed(2)},`);
 
   const playLabel =
     engine.phase === 'playing'
@@ -389,16 +386,13 @@ export default function PlayerScreen({
             Mark first beat
           </button>
         </div>
-        <div className="calib-foot">
-          <button className="link" onClick={copyToData} disabled={!cal}>
-            {copied ? 'Copied!' : 'Copy to tracks.ts'}
-          </button>
-          {cal && (
+        {cal && (
+          <div className="calib-foot">
             <button className="link" onClick={clearCal}>
               Clear
             </button>
-          )}
-        </div>
+          </div>
+        )}
         <p className="hint">
           {bpmAuthored || firstBeatAuthored
             ? 'Authored in tracks.ts (overrides tapping) — clear it there to calibrate by ear.'
