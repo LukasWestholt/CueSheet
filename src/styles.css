@@ -97,6 +97,12 @@ body,
 #root {
   height: 100%;
   margin: 0;
+  /* App-like: never scroll the page sideways. `clip` (unlike `hidden`) creates
+     no scroll container, so iOS Safari can't rubber-band/pan horizontally even
+     if something overruns the viewport. The real fixes are per-component
+     (min-width: 0 so long titles/inputs shrink); this is the safety net.
+     Inner `overflow-x: auto` containers keep their own horizontal scroll. */
+  overflow-x: clip;
 }
 
 body {
@@ -104,11 +110,6 @@ body {
   color: var(--text);
   font-family: var(--font-body);
   overscroll-behavior: none;
-  /* App-like: never scroll the page sideways. Clips any element that
-     overruns the viewport width (e.g. a nowrap label in a flex row) instead of
-     letting Safari rubber-band horizontally. Inner `overflow-x: auto`
-     containers keep their own horizontal scroll. */
-  overflow-x: hidden;
 }
 
 .screen {
@@ -932,6 +933,9 @@ details.routines[open] > summary.routines-head::after {
   border-radius: var(--radius-sm);
   padding: var(--space-3) var(--space-3);
   width: 100%;
+  /* Allow inputs to shrink below their intrinsic size so the step grid
+     (two 1fr inputs + measures + ops) never overflows a narrow phone. */
+  min-width: 0;
 }
 .editor-fields {
   display: flex;
@@ -1210,20 +1214,34 @@ details.routines[open] > summary.routines-head::after {
   display: flex;
   flex-direction: column;
   flex: 1;
+  /* Let the title column shrink instead of forcing the row wider than the
+     screen — without this, a long title overflows horizontally and shoves the
+     badges/Edit button out of alignment between rows. */
+  min-width: 0;
 }
 .track-title {
   font-weight: 600;
   font-size: var(--text-lg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
 }
 .track-artist {
   color: var(--muted);
   font-size: var(--text-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
 }
 .track-aside {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: var(--space-1);
+  /* Fixed right-hand column: never shrink, so badges/time line up row to row. */
+  flex-shrink: 0;
 }
 .badge {
   background: var(--surface-2);
@@ -1231,6 +1249,7 @@ details.routines[open] > summary.routines-head::after {
   font-size: var(--text-xs);
   padding: 2px var(--space-2);
   border-radius: var(--radius-pill);
+  white-space: nowrap;
 }
 .track-time {
   font-variant-numeric: tabular-nums;
