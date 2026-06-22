@@ -1,5 +1,6 @@
 import type { Track } from '../data/tracks';
 import type { TrackInfo } from '../spotify/api';
+import { cleanTitle } from '../data/title';
 import { Star, Music, Check, Plus } from './icons';
 
 function formatDuration(ms: number): string {
@@ -84,7 +85,9 @@ export default function TrackList({
                 </span>
               )}
               <span className="track-meta">
-                <span className="track-title">{title}</span>
+                <span className="track-title" title={title}>
+                  {cleanTitle(title)}
+                </span>
                 <span className="track-artist">{artist}</span>
               </span>
               <span className="track-aside">
