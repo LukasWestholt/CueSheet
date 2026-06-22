@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { humanBeat } from './callings';
+import { humanBeat, preCloseGroups } from './callings';
 
 describe('humanBeat', () => {
   it('reports end of track when there is no next step', () => {
@@ -47,5 +47,53 @@ describe('humanBeat', () => {
 
   it('is not announcing while still in the running count', () => {
     expect(humanBeat(4, 40).announcing).toBe(false);
+  });
+
+  describe('half-count placement', () => {
+    const step = (measures: number, halfPosition?: number) => ({ measures, halfPosition });
+
+    it('front-places the half (halfPosition 0): "1 2 3 4, 1 2 3 4 5 6 7 8, …"', () => {
+      const s = step(4.5, 0);
+      // orphan first (beats 0..3), labelled 1
+      expect(humanBeat(0, 36, s).count).toBe(1);
+      expect(humanBeat(1, 35, s).count).toBe(2);
+      expect(humanBeat(3, 33, s).count).toBe(4);
+      // then the full measures, labelled 1, 2, 3 (downbeats at 4, 12, 20)
+      expect(humanBeat(4, 32, s).count).toBe(1);
+      expect(humanBeat(12, 24, s).count).toBe(2);
+      expect(humanBeat(20, 16, s).count).toBe(3);
+    });
+
+    it('default places the half just before the close: "… 4 2 3 4, 4 3 2 →"', () => {
+      const s = step(4.5); // no halfPosition → natural
+      expect(humanBeat(0, 36, s).count).toBe(1);
+      expect(humanBeat(8, 28, s).count).toBe(2);
+      expect(humanBeat(16, 20, s).count).toBe(3);
+      expect(humanBeat(24, 12, s).count).toBe(4); // orphan downbeat "4"
+      expect(humanBeat(25, 11, s).count).toBe(2);
+    });
+
+    it('preCloseGroups lays out the pre-close measures + orphan', () => {
+      // 4.5 front: [½:1][1:1][1:2][1:3]
+      expect(preCloseGroups(4.5, 0)).toEqual([
+        { len: 4, label: 1 },
+        { len: 8, label: 1 },
+        { len: 8, label: 2 },
+        { len: 8, label: 3 },
+      ]);
+      // 4.5 natural: [1:1][1:2][1:3][½:4]
+      expect(preCloseGroups(4.5)).toEqual([
+        { len: 8, label: 1 },
+        { len: 8, label: 2 },
+        { len: 8, label: 3 },
+        { len: 4, label: 4 },
+      ]);
+      // whole measures: just the full measures before the close
+      expect(preCloseGroups(4)).toEqual([
+        { len: 8, label: 1 },
+        { len: 8, label: 2 },
+        { len: 8, label: 3 },
+      ]);
+    });
   });
 });

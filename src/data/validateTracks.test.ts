@@ -50,6 +50,24 @@ describe('validateTracks', () => {
     expect(validateTracks(bad).ok).toBe(false);
   });
 
+  it('validates halfPosition: in range ok, out of range errors, ignored-when-whole warns', () => {
+    const uri = 'spotify:track:0t2w4jQazlBggyZS4axpnw';
+    const ok = [{ id: 'x', spotifyUri: uri, steps: [{ step: 'A', measures: 4.5, halfPosition: 0 }] }];
+    expect(validateTracks(ok).ok).toBe(true);
+    // halfPosition 4 > floor(4.5)-1 = 3 → error
+    const bad = [{ id: 'x', spotifyUri: uri, steps: [{ step: 'A', measures: 4.5, halfPosition: 4 }] }];
+    expect(validateTracks(bad).ok).toBe(false);
+    // non-integer → error
+    const bad2 = [{ id: 'x', spotifyUri: uri, steps: [{ step: 'A', measures: 4.5, halfPosition: 1.5 }] }];
+    expect(validateTracks(bad2).ok).toBe(false);
+    // whole measures → halfPosition ignored (warning, still ok)
+    const warn = validateTracks([
+      { id: 'x', spotifyUri: uri, steps: [{ step: 'A', measures: 4, halfPosition: 0 }] },
+    ]);
+    expect(warn.ok).toBe(true);
+    expect(warn.issues.some((i) => i.level === 'warning' && /halfPosition/.test(i.message))).toBe(true);
+  });
+
   it('errors on duplicate ids but only warns on duplicate URIs', () => {
     const uri = 'spotify:track:0t2w4jQazlBggyZS4axpnw';
     const dupId = validateTracks([

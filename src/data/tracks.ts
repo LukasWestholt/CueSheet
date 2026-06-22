@@ -15,6 +15,14 @@ export interface StepCalling {
    * 8-count (8 beats). Half values (e.g. 2.5 = two 8/8 + one 4/8) allowed.
    */
   measures: number;
+  /**
+   * Where the orphan half-count (the 4/8) sits when `measures` ends in .5 —
+   * the number of full measures that come *before* it. 0 = at the front
+   * ("1 2 3 4, 1 2 3 4 5 6 7 8, …"); omitted/default = just before the closing
+   * count-in ("… 4 2 3 4, 4 3 2 →move"). Ignored when `measures` is whole.
+   * Only affects how the human 8-count is displayed, not the timeline.
+   */
+  halfPosition?: number;
 }
 
 export interface Track {
@@ -48,6 +56,10 @@ export interface Calling {
   time: number;
   step: string;
   cue?: string;
+  /** Step length in measures (carried through for the human 8-count display). */
+  measures?: number;
+  /** Orphan half-count placement — see StepCalling.halfPosition. */
+  halfPosition?: number;
 }
 
 // ---------------------------------------------------------------------------

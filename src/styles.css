@@ -1009,6 +1009,20 @@ details.routines[open] > summary.routines-head::after {
 .step-measures {
   text-align: center;
 }
+/* Half-count placement — a sub-row spanning the whole step grid, shown only
+   when a step's measures end in .5 and there's a real choice of position. */
+.step-half-row {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--muted);
+}
+.step-half-row select {
+  flex: 0 1 auto;
+}
 .step-ops {
   display: flex;
   gap: var(--space-1);

@@ -79,6 +79,16 @@ export function validateTracks(data: unknown): ValidationResult {
         if (step.cue != null && typeof step.cue !== 'string') {
           add('error', sWhere, '"cue" must be a string.');
         }
+        if (step.halfPosition != null) {
+          const hp = step.halfPosition;
+          const m = step.measures;
+          const maxPos = typeof m === 'number' && m > 0 ? Math.max(0, Math.floor(m) - 1) : Infinity;
+          if (typeof hp !== 'number' || !Number.isInteger(hp) || hp < 0 || hp > maxPos) {
+            add('error', sWhere, `"halfPosition" must be an integer between 0 and ${maxPos} (got ${JSON.stringify(hp)}).`);
+          } else if (typeof m === 'number' && Math.round(m * 2) % 2 === 0) {
+            add('warning', sWhere, `"halfPosition" is ignored because "measures" ${m} has no half-count.`);
+          }
+        }
       });
     }
 

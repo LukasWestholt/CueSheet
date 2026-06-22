@@ -11,6 +11,11 @@ import { ArrowUp, ArrowDown, X } from './icons';
 
 const TRACK_URI_RE = /^spotify:track:[A-Za-z0-9]{22}$/;
 
+/** A step's `measures` ends in .5 → it has an orphan 4/8 half-count. */
+const hasHalfCount = (measures: number) => Math.round(measures * 2) % 2 === 1;
+/** Default (and max) half-count position: just before the closing count-in. */
+const naturalHalfPos = (measures: number) => Math.max(0, Math.floor(measures) - 1);
+
 function fmtDuration(ms: number): string {
   const total = Math.round(ms / 1000);
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
@@ -387,7 +392,17 @@ export default function TrackEditor({
               step="0.5"
               min="0.5"
               value={s.measures}
-              onChange={(e) => setStep(i, { measures: Number(e.target.value) })}
+              onChange={(e) => {
+                const measures = Number(e.target.value);
+                // Drop the half-count placement when there's no longer a half,
+                // and clamp it if the step got shorter.
+                const halfPosition = !hasHalfCount(measures)
+                  ? undefined
+                  : s.halfPosition != null
+                    ? Math.min(s.halfPosition, naturalHalfPos(measures))
+                    : undefined;
+                setStep(i, { measures, halfPosition });
+              }}
             />
             <div className="step-ops">
               <button className="icon-btn" onClick={() => moveStep(i, -1)} disabled={i === 0} aria-label="Move up">
@@ -410,6 +425,30 @@ export default function TrackEditor({
                 <X size={18} />
               </button>
             </div>
+            {hasHalfCount(s.measures) && naturalHalfPos(s.measures) >= 1 && (
+              <label className="step-half-row">
+                <span>Half-count (4/8) is counted</span>
+                <select
+                  value={String(s.halfPosition ?? naturalHalfPos(s.measures))}
+                  // Store only a real override; the natural default stays omitted
+                  // so existing/exported JSON isn't littered with default values.
+                  onChange={(e) => {
+                    const p = Number(e.target.value);
+                    setStep(i, { halfPosition: p === naturalHalfPos(s.measures) ? undefined : p });
+                  }}
+                >
+                  {Array.from({ length: naturalHalfPos(s.measures) + 1 }, (_, p) => (
+                    <option key={p} value={p}>
+                      {p === 0
+                        ? 'at the front'
+                        : p === naturalHalfPos(s.measures)
+                          ? `after ${p} (before the close)`
+                          : `after ${p} eights`}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
           </li>
         ))}
       </ol>

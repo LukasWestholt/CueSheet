@@ -83,8 +83,15 @@ export interface BeatDisplay {
  *
  * `beatsElapsed` — beats since the current step began (fractional ok).
  * `beatsToNext`  — beats until the next step, or null when there is none.
+ * `step`         — the current step's length, so a half measure can be placed
+ *                  (front vs. just-before-the-close). Omit to use plain 8-count
+ *                  alignment (natural placement).
  */
-export function humanBeat(beatsElapsed: number, beatsToNext: number | null): BeatDisplay {
+export function humanBeat(
+  beatsElapsed: number,
+  beatsToNext: number | null,
+  step?: { measures: number; halfPosition?: number },
+): BeatDisplay {
   if (beatsToNext === null) return { count: null, mode: 'end', announcing: false };
 
   // Closing window: the last COUNT_FROM × BEATS_PER_COUNT beats before the switch.
@@ -97,7 +104,63 @@ export function humanBeat(beatsElapsed: number, beatsToNext: number | null): Bea
 
   // Running 8-count: the downbeat of each measure shows the measure ordinal.
   const beat = Math.max(0, Math.floor(beatsElapsed));
-  const pos = beat % BEATS_PER_MEASURE; // 0..7
-  const measure = Math.floor(beat / BEATS_PER_MEASURE) + 1;
-  return { count: pos === 0 ? measure : pos + 1, mode: 'count', announcing: false };
+  const count =
+    step && Number.isFinite(step.measures)
+      ? runningCount(beat, step.measures, step.halfPosition)
+      : plainCount(beat);
+  return { count, mode: 'count', announcing: false };
+}
+
+/** Plain 8-count alignment: 1..8 with the measure number on each downbeat. */
+function plainCount(beat: number): number {
+  const pos = beat % BEATS_PER_MEASURE;
+  return pos === 0 ? Math.floor(beat / BEATS_PER_MEASURE) + 1 : pos + 1;
+}
+
+interface BeatGroup {
+  /** Beats in this counted group (8 for a full measure, 4 for the orphan half). */
+  len: number;
+  /** Number called on the group's downbeat. */
+  label: number;
+}
+
+/**
+ * The counted groups of a step *before* its closing count-in (the last 8 beats,
+ * handled separately). Full measures are labelled 1, 2, … in playing order; a
+ * half measure (when `measures` ends in .5) is inserted after `halfPosition`
+ * full measures and labelled `halfPosition + 1`:
+ *
+ *   4.5, halfPosition 0 → [½:1] [1:1] [1:2] [1:3]   →  1 2 3 4, 1…8, 2…8, 3…8
+ *   4.5, halfPosition 3 → [1:1] [1:2] [1:3] [½:4]   →  1…8, 2…8, 3…8, 4 2 3 4
+ */
+export function preCloseGroups(measures: number, halfPosition?: number): BeatGroup[] {
+  const F = Math.floor(measures);
+  const hasHalf = Math.round(measures * 2) % 2 === 1;
+  const fullCount = Math.max(0, F - 1); // the last full measure is the close
+  const groups: BeatGroup[] = [];
+  const addFull = (from: number, to: number) => {
+    for (let k = from; k <= to; k++) groups.push({ len: BEATS_PER_MEASURE, label: k });
+  };
+  if (!hasHalf) {
+    addFull(1, fullCount);
+    return groups;
+  }
+  // 0 = front, default = just before the close.
+  const p = Math.min(Math.max(Math.round(halfPosition ?? fullCount), 0), fullCount);
+  addFull(1, p);
+  groups.push({ len: BEATS_PER_MEASURE / 2, label: p + 1 });
+  addFull(p + 1, fullCount);
+  return groups;
+}
+
+function runningCount(beat: number, measures: number, halfPosition?: number): number {
+  let acc = 0;
+  for (const g of preCloseGroups(measures, halfPosition)) {
+    if (beat < acc + g.len) {
+      const pos = beat - acc;
+      return pos === 0 ? g.label : pos + 1;
+    }
+    acc += g.len;
+  }
+  return plainCount(beat); // safety: beyond the pre-close region
 }

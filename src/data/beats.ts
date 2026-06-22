@@ -33,6 +33,6 @@ export function buildCallings(
   return steps.map((s) => {
     const time = firstBeatSec + beatCursor * secondsPerBeat;
     beatCursor += beatsForStep(s.measures);
-    return { time, step: s.step, cue: s.cue };
+    return { time, step: s.step, cue: s.cue, measures: s.measures, halfPosition: s.halfPosition };
   });
 }

@@ -28,7 +28,11 @@ export default function CallingDisplay({
     secondsToNext !== null && secsPerBeat ? secondsToNext / secsPerBeat : null;
   const beatsElapsed =
     current && secsPerBeat ? Math.max(0, (positionSeconds - current.time) / secsPerBeat) : 0;
-  const beat = secsPerBeat ? humanBeat(beatsElapsed, beatsToNext) : null;
+  const curStep =
+    current && current.measures != null
+      ? { measures: current.measures, halfPosition: current.halfPosition }
+      : undefined;
+  const beat = secsPerBeat ? humanBeat(beatsElapsed, beatsToNext, curStep) : null;
   const announcing = next !== null && (beat?.announcing ?? false);
 
   // In a run of consecutive short steps, alternate the count-in frame colour
