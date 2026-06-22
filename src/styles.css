@@ -104,6 +104,11 @@ body {
   color: var(--text);
   font-family: var(--font-body);
   overscroll-behavior: none;
+  /* App-like: never scroll the page sideways. Clips any element that
+     overruns the viewport width (e.g. a nowrap label in a flex row) instead of
+     letting Safari rubber-band horizontally. Inner `overflow-x: auto`
+     containers keep their own horizontal scroll. */
+  overflow-x: hidden;
 }
 
 .screen {
