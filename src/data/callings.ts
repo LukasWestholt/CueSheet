@@ -1,4 +1,5 @@
 import type { Calling } from './tracks';
+import { BEATS_PER_MEASURE } from './beats';
 
 export interface ActiveCallings {
   current: Calling | null;
@@ -42,43 +43,61 @@ export function resolveCallings(
 }
 
 /**
- * How many musical beats one displayed count-in number spans. At 2, the
- * count-in ticks every 2 beats ("4/4" feel) instead of every beat ("8/8"),
- * so "3 … 2 … 1 … <next>" plays back roughly half as fast.
+ * How many musical beats one closing count-in number spans. At 2, the close
+ * ticks every 2 beats ("4/4" feel) instead of every beat, so "4 … 3 … 2 …"
+ * plays back calmly enough to call out.
  */
 export const BEATS_PER_COUNT = 2;
 
-/** Highest count-in number shown (the "4" in "4, 3, 2, 1"). */
+/** Highest closing count shown (the "4" in "4, 3, 2, →move"). */
 export const COUNT_FROM = 4;
 
-export interface CountIn {
-  /** The number to show (1..COUNT_FROM), or null when not yet counting in. */
+export type BeatMode =
+  /** Running 8-count: "1 2 3 4 5 6 7 8, 2 2 3 4 …" (first beat = measure no.). */
+  | 'count'
+  /** Closing count-in toward the switch: 4, 3, 2. */
+  | 'countdown'
+  /** Final beat of the step: announce the move (we never say "1"). */
+  | 'announce'
+  /** No next step — end of track. */
+  | 'end';
+
+export interface BeatDisplay {
+  /** Number to show: the running 8-count, or the closing 4/3/2. null otherwise. */
   count: number | null;
-  /**
-   * Whether the next move should be emphasised ("CALL NOW"). True for the whole
-   * count-in window, so the coach sees the upcoming step enlarged from "4" on.
-   */
+  mode: BeatMode;
+  /** Emphasise the upcoming move — true through the whole closing window. */
   announcing: boolean;
 }
 
 /**
- * Derives the beat-synced count-in from the beats remaining until the next
- * step. Each displayed number spans `beatsPerCount` beats, so e.g. with the
- * default of 2 the count shows "3" ~6 beats out, "2" ~4, "1" ~2.
+ * Maps a position within a step to the way a coach counts it aloud:
  *
- * `countsToNext` is `secondsToNext * bpm / 60`; pass null when BPM is unknown
- * (the caller then falls back to the seconds ring).
+ *   1 2 3 4 5 6 7 8,  2 2 3 4 5 6 7 8,  3 2 3 4 5 6 7 8,  4 3 2 →move
+ *
+ * — the first beat of every eight is the measure number, then it closes with
+ * "4 3 2" (each spanning `BEATS_PER_COUNT` beats) and announces the next move
+ * on the final beat (we never say "1": the move name is the best-timed call
+ * there). A half measure falls out naturally as a short "N 2 3 4" group right
+ * before the close.
+ *
+ * `beatsElapsed` — beats since the current step began (fractional ok).
+ * `beatsToNext`  — beats until the next step, or null when there is none.
  */
-export function deriveCountIn(
-  countsToNext: number | null,
-  beatsPerCount: number = BEATS_PER_COUNT,
-): CountIn {
-  if (countsToNext === null) return { count: null, announcing: false };
+export function humanBeat(beatsElapsed: number, beatsToNext: number | null): BeatDisplay {
+  if (beatsToNext === null) return { count: null, mode: 'end', announcing: false };
 
-  const displayCount = Math.ceil(countsToNext / beatsPerCount);
-  const count = displayCount <= COUNT_FROM ? Math.max(1, displayCount) : null;
-  // Emphasise the next move for the whole count-in window (last COUNT_FROM counts).
-  const announcing = count !== null;
+  // Closing window: the last COUNT_FROM × BEATS_PER_COUNT beats before the switch.
+  const closing = Math.ceil(beatsToNext / BEATS_PER_COUNT);
+  if (closing <= COUNT_FROM) {
+    // "4 3 2" are spoken; the would-be "1" beat announces the move instead.
+    if (closing <= 1) return { count: null, mode: 'announce', announcing: true };
+    return { count: closing, mode: 'countdown', announcing: true };
+  }
 
-  return { count, announcing };
+  // Running 8-count: the downbeat of each measure shows the measure ordinal.
+  const beat = Math.max(0, Math.floor(beatsElapsed));
+  const pos = beat % BEATS_PER_MEASURE; // 0..7
+  const measure = Math.floor(beat / BEATS_PER_MEASURE) + 1;
+  return { count: pos === 0 ? measure : pos + 1, mode: 'count', announcing: false };
 }

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Track } from '../data/tracks';
-import { buildCallings } from '../data/beats';
+import { buildCallings, beatsForStep } from '../data/beats';
 import { bpmFromTaps } from '../data/calibration';
 import { usePlayerEngine } from '../hooks/usePlayerEngine';
 import { useTrackMeta } from '../hooks/useTrackMeta';
@@ -308,7 +308,10 @@ export default function PlayerScreen({
                 onClick={() => engine.seekTo(c.time * 1000 - offsetMs)}
                 disabled={engine.phase !== 'playing' && engine.phase !== 'paused'}
               >
-                <span className="row-time">{fmt(c.time * 1000)}</span>
+                <span className="row-time">
+                  <span className="row-secs">{fmt(c.time * 1000)}</span>
+                  <span className="row-beats">{beatsForStep(track.steps[i]?.measures ?? 0)} beats</span>
+                </span>
                 <span className="row-step">{c.step}</span>
                 {c.cue && <span className="row-cue">{c.cue}</span>}
               </button>

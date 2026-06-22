@@ -1491,6 +1491,11 @@ details.routines[open] > summary.routines-head::after {
   font-size: var(--text-display);
   color: var(--accent);
 }
+/* The running 8-count (1..8) — bright and glanceable, but the urgent accent
+   colour is reserved for the closing "4 3 2" count-in above. */
+.ring-num.beat {
+  color: var(--text);
+}
 
 /* Count-in: emphasise the next move so the coach calls "3, 2, 1, <move>". */
 .calling-display.announcing {
@@ -1691,7 +1696,7 @@ details.routines[open] > summary.routines-head::after {
 }
 .row-jump {
   display: grid;
-  grid-template-columns: 52px 1fr auto;
+  grid-template-columns: 64px 1fr auto;
   gap: var(--space-3);
   align-items: baseline;
   width: 100%;
@@ -1716,9 +1721,17 @@ details.routines[open] > summary.routines-head::after {
   background: var(--surface-2);
 }
 .row-time {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
   font-size: var(--text-sm);
+}
+/* Step length in beats, under the start time — the coach counts in 8s. */
+.row-beats {
+  font-size: var(--text-xs);
+  color: var(--muted);
 }
 .row-step {
   font-weight: 600;

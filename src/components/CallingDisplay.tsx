@@ -1,10 +1,10 @@
 import type { Calling } from '../data/tracks';
-import { resolveCallings, deriveCountIn } from '../data/callings';
+import { resolveCallings, humanBeat } from '../data/callings';
 
-// The "4/4" count-in: in the final counts before a switch, the coach calls
-// "3, 2, 1, <next move>". We surface that as a beat-synced visual cue. Each
-// number spans BEATS_PER_COUNT beats (see deriveCountIn), so the spoken count
-// is calm enough to call out rather than flying by once per beat.
+// The ring is a human 8-count: the coach counts "1 2 3 4 5 6 7 8, 2 2 3 4 …"
+// (first beat of each eight = the measure number), then closes each step with
+// "4 3 2 →move" — see humanBeat. Without a BPM we can't count beats, so it
+// falls back to a plain seconds countdown.
 
 export default function CallingDisplay({
   callings,
@@ -20,13 +20,16 @@ export default function CallingDisplay({
     positionSeconds,
   );
 
-  // Convert the remaining time into musical counts (beats), then into a
-  // half-time count-in where each displayed number spans 2 beats.
-  const countsToNext =
-    secondsToNext !== null && bpm ? (secondsToNext * bpm) / 60 : null;
-  const { count: countIn, announcing: countAnnouncing } =
-    deriveCountIn(countsToNext);
-  const announcing = next !== null && countAnnouncing;
+  // Map the position to the way a coach counts it: a running 8-count for the
+  // bulk of the step, then a "4 3 2 →move" close. Needs a BPM to know where the
+  // beats fall; null → fall back to the seconds ring below.
+  const secsPerBeat = bpm ? 60 / bpm : null;
+  const beatsToNext =
+    secondsToNext !== null && secsPerBeat ? secondsToNext / secsPerBeat : null;
+  const beatsElapsed =
+    current && secsPerBeat ? Math.max(0, (positionSeconds - current.time) / secsPerBeat) : 0;
+  const beat = secsPerBeat ? humanBeat(beatsElapsed, beatsToNext) : null;
+  const announcing = next !== null && (beat?.announcing ?? false);
 
   // In a run of consecutive short steps, alternate the count-in frame colour
   // (green → yellow) so two quick switches are easy to tell apart.
@@ -73,8 +76,16 @@ export default function CallingDisplay({
           }}
         >
           <div className="ring-inner">
-            {countIn !== null ? (
-              <span className="ring-num count">{countIn}</span>
+            {beat ? (
+              beat.mode === 'announce' ? (
+                <span className="ring-num count">→</span>
+              ) : beat.count !== null ? (
+                <span className={`ring-num ${beat.mode === 'countdown' ? 'count' : 'beat'}`}>
+                  {beat.count}
+                </span>
+              ) : (
+                <span className="ring-num">✓</span>
+              )
             ) : secondsToNext !== null ? (
               <>
                 <span className="ring-num">{Math.ceil(secondsToNext)}</span>

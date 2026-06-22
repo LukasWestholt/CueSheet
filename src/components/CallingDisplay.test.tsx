@@ -41,15 +41,33 @@ describe('CallingDisplay', () => {
     expect(screen.getByText('s')).toBeTruthy();
   });
 
-  it('shows a beat-synced count-in and "CALL NOW" near a switch when BPM is set', () => {
-    // position 9 → 1s to next; at 120 BPM that's 2 beats → count-in "1".
+  it('announces the move (→, not "1") in the final beats of the close', () => {
+    // position 9 → 1s to next; at 120 BPM that's 2 beats → the "1" beat, which
+    // we replace with the move announcement rather than a counted "1".
     const { container } = render(
       <CallingDisplay callings={callings} positionSeconds={9} bpm={120} />,
     );
     expect(screen.getByText('CALL NOW')).toBeTruthy();
-    expect(screen.getByText('1')).toBeTruthy(); // the count-in number
+    expect(screen.getByText('→')).toBeTruthy(); // move announce, not "1"
+    expect(screen.queryByText('1')).toBeNull();
     expect(container.querySelector('.calling-display.announcing')).not.toBeNull();
     // No "s" unit while counting in beats.
+    expect(screen.queryByText('s')).toBeNull();
+  });
+
+  it('shows the closing "4 3 2" count and "CALL NOW"', () => {
+    // 8 beats to next at 120 BPM = 4s out → position 6 → "4".
+    render(<CallingDisplay callings={callings} positionSeconds={6} bpm={120} />);
+    expect(screen.getByText('CALL NOW')).toBeTruthy();
+    expect(screen.getByText('4')).toBeTruthy();
+  });
+
+  it('shows the running human 8-count mid-step (no "CALL NOW")', () => {
+    // position 0.5 → 9.5s to next: running count. At 120 BPM that's 1 beat in →
+    // count "2".
+    render(<CallingDisplay callings={callings} positionSeconds={0.5} bpm={120} />);
+    expect(screen.getByText('2')).toBeTruthy();
+    expect(screen.queryByText('CALL NOW')).toBeNull();
     expect(screen.queryByText('s')).toBeNull();
   });
 
