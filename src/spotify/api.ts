@@ -72,6 +72,21 @@ export async function seek(positionMs: number, deviceId?: string): Promise<void>
   await api(`/me/player/seek?${params.toString()}`, { method: 'PUT' });
 }
 
+/**
+ * Sets the active device's volume (0–100). Throws on failure so callers can
+ * surface it — some Connect devices (certain speakers) reject remote volume
+ * control with 403, which is worth telling the coach about.
+ */
+export async function setVolume(volumePercent: number, deviceId?: string): Promise<void> {
+  const v = Math.max(0, Math.min(100, Math.round(volumePercent)));
+  const params = new URLSearchParams({ volume_percent: String(v) });
+  if (deviceId) params.set('device_id', deviceId);
+  const res = await api(`/me/player/volume?${params.toString()}`, { method: 'PUT' });
+  if (!res.ok && res.status !== 202 && res.status !== 204) {
+    throw new Error(`Set volume failed (${res.status})`);
+  }
+}
+
 export interface PlaybackSnapshot {
   isPlaying: boolean;
   progressMs: number;
@@ -81,6 +96,8 @@ export interface PlaybackSnapshot {
   deviceName: string | null;
   /** Spotify device type, e.g. "Smartphone"/"Tablet"/"Computer"/"Speaker". */
   deviceType: string | null;
+  /** Active device volume 0–100, or null when the device can't report it. */
+  volumePercent: number | null;
   fetchedAt: number;
 }
 
@@ -291,6 +308,28 @@ export async function getTrackTempo(uri: string): Promise<number | null> {
   });
 }
 
+export interface SpotifyAccount {
+  /** Display name, or null when the account hasn't set one. */
+  displayName: string | null;
+  /** Subscription level: "premium", "free"/"open", or null when unknown. */
+  product: string | null;
+}
+
+/**
+ * The logged-in user's profile (display name + subscription level). `product`
+ * needs the `user-read-private` scope. Returns null on failure so callers treat
+ * the Premium check as inconclusive rather than blocking.
+ */
+export async function getCurrentUser(): Promise<SpotifyAccount | null> {
+  const res = await api('/me');
+  if (!res.ok) return null;
+  const data = await res.json();
+  return {
+    displayName: data.display_name ?? null,
+    product: data.product ?? null,
+  };
+}
+
 /** Returns the current playback snapshot, or null when no device is active. */
 export async function getPlaybackState(): Promise<PlaybackSnapshot | null> {
   const res = await api('/me/player');
@@ -305,6 +344,7 @@ export async function getPlaybackState(): Promise<PlaybackSnapshot | null> {
     deviceId: data.device?.id ?? null,
     deviceName: data.device?.name ?? null,
     deviceType: data.device?.type ?? null,
+    volumePercent: data.device?.volume_percent ?? null,
     fetchedAt: Date.now(),
   };
 }

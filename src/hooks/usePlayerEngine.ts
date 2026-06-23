@@ -11,6 +11,7 @@ import {
   playTrack,
   resume as apiResume,
   seek as apiSeek,
+  setVolume as apiSetVolume,
   type PlaybackSnapshot,
 } from '../spotify/api';
 
@@ -50,6 +51,8 @@ export interface PlayerEngine {
   gapRemaining: number;
   autoContinue: boolean;
   deviceName: string | null;
+  /** Active device volume 0–100, or null when unknown / not yet polled. */
+  volumePercent: number | null;
   /** Whether the keep-awake ping is on (defaults to the local-device heuristic). */
   keepAwake: boolean;
   /** While keep-awake is on: the device wasn't found on the last check (asleep/offline). */
@@ -76,6 +79,8 @@ export interface PlayerEngine {
   prev: () => void;
   /** Jump to a raw song position (ms, before sync offset). */
   seekTo: (positionMs: number) => void;
+  /** Set the active device's volume (0–100); optimistic + debounced. */
+  setVolume: (percent: number) => void;
   skipGap: () => void;
   /** Add seconds to the running inter-track gap countdown. */
   extendGap: (seconds: number) => void;
@@ -105,6 +110,7 @@ export function usePlayerEngine(
   // deviceName has a ref so the keep-awake loop can read the device we last
   // played on (its ping target, re-resolved by name since Spotify reassigns ids).
   const [deviceName, setDeviceName, deviceNameRef] = useStateRef<string | null>(null);
+  const [volumePercent, setVolumePercent] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Pure refs (mutable values that never drive a render).
@@ -119,6 +125,10 @@ export function usePlayerEngine(
   // flight (recover() clears noDevice only once it has resumed playback).
   const recoverRef = useRef<() => void>(() => {});
   const lastRecoverAtRef = useRef(0);
+  // Volume: debounce the API write while dragging, and ignore poll readings for
+  // a moment after a user change so a stale snapshot doesn't snap the slider back.
+  const volumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastVolumeSetAtRef = useRef(0);
 
   deviceIdRef.current = deviceId;
 
@@ -270,6 +280,10 @@ export function usePlayerEngine(
 
         snapshotRef.current = snap;
         setDeviceName(snap.deviceName);
+        // Don't clobber a volume the coach just dragged with a stale reading.
+        if (Date.now() - lastVolumeSetAtRef.current > 1500) {
+          setVolumePercent(snap.volumePercent);
+        }
         syncKeepAwakeDefault(snap.deviceName, snap.deviceType);
         // If Spotify reports it stopped near the end, the track finished.
         if (
@@ -395,6 +409,22 @@ export function usePlayerEngine(
     setPositionMs(target);
   }, [tracks, phaseRef, indexRef]);
 
+  const setVolume = useCallback((percent: number) => {
+    const v = Math.max(0, Math.min(100, Math.round(percent)));
+    lastVolumeSetAtRef.current = Date.now();
+    setVolumePercent(v); // optimistic — reflect the drag immediately
+    const snap = snapshotRef.current;
+    if (snap) snapshotRef.current = { ...snap, volumePercent: v };
+    // Debounce the PUT so dragging the slider doesn't fire a request per tick.
+    if (volumeTimerRef.current) clearTimeout(volumeTimerRef.current);
+    volumeTimerRef.current = setTimeout(() => {
+      apiSetVolume(v, deviceIdRef.current ?? undefined).catch(controlFailed('set volume'));
+    }, 200);
+  }, []);
+  useEffect(() => () => {
+    if (volumeTimerRef.current) clearTimeout(volumeTimerRef.current);
+  }, []);
+
   const skipGap = useCallback(() => {
     if (phaseRef.current === 'gap' || phaseRef.current === 'held') {
       void playIndex(indexRef.current + 1);
@@ -452,6 +482,7 @@ export function usePlayerEngine(
     gapRemaining,
     autoContinue,
     deviceName,
+    volumePercent,
     keepAwake,
     deviceAsleep,
     recheckDevice,
@@ -463,6 +494,7 @@ export function usePlayerEngine(
     next,
     prev,
     seekTo,
+    setVolume,
     skipGap,
     extendGap,
     holdNow,

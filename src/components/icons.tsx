@@ -65,6 +65,16 @@ export function Pause(p: IconProps) {
   );
 }
 
+export function Volume(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" />
+      <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+      <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+    </Svg>
+  );
+}
+
 export function Star({ filled, ...p }: IconProps & { filled?: boolean }) {
   return (
     <Svg {...p} fill={filled ? 'currentColor' : 'none'}>

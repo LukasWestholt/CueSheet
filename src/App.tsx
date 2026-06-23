@@ -7,7 +7,13 @@ import {
   logout,
   startTokenAutoRefresh,
 } from './spotify/auth';
-import { getPlaybackState, getTracksInfo, type TrackInfo } from './spotify/api';
+import {
+  getCurrentUser,
+  getPlaybackState,
+  getTracksInfo,
+  type SpotifyAccount,
+  type TrackInfo,
+} from './spotify/api';
 import { TRACKS, type Track } from './data/tracks';
 import { loadStoredTracks, saveStoredTracks } from './data/tracksStore';
 import { validateTracks } from './data/validateTracks';
@@ -50,6 +56,7 @@ import InstallPrompt from './components/InstallPrompt';
 import SetlistPanel from './components/SetlistPanel';
 import Settings from './components/Settings';
 import Toaster from './components/Toaster';
+import { AlertTriangle } from './components/icons';
 import { ingestGetsongbpmKeyFromUrl } from './data/getsongbpmKey';
 
 // Apply a `?getsongbpm_key=…` bookmark before React renders (strips the param).
@@ -95,6 +102,7 @@ export default function App() {
   });
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [account, setAccount] = useState<SpotifyAccount | null>(null);
   const [trackInfos, setTrackInfos] = useState<Record<string, TrackInfo>>({});
   const [infosError, setInfosError] = useState<string | null>(null);
   // Index of one of our tracks that Spotify is already playing (e.g. after a reload).
@@ -384,6 +392,15 @@ export default function App() {
     return () => window.removeEventListener(AUTH_EXPIRED_EVENT, onExpired);
   }, []);
 
+  // Once logged in (and online), fetch the account profile for the Premium gate
+  // + a greeting. Best-effort: a null result just leaves the gate inconclusive.
+  useEffect(() => {
+    if (!loggedIn || !online) return;
+    getCurrentUser()
+      .then((a) => setAccount(a))
+      .catch(() => {});
+  }, [loggedIn, online]);
+
   // Once logged in (and online), fetch list metadata (titles/durations).
   useEffect(() => {
     if (!loggedIn || !online) return;
@@ -503,10 +520,33 @@ export default function App() {
         <>
           <header className="topbar">
             <h1>Tracks</h1>
-            <button className="link" onClick={() => { logout(); setLoggedIn(false); }}>
-              Log out
-            </button>
+            <div className="topbar-end">
+              {account?.displayName && (
+                <span className="topbar-user" title={account.displayName}>
+                  {account.displayName}
+                </span>
+              )}
+              <button
+                className="link"
+                onClick={() => {
+                  logout();
+                  setLoggedIn(false);
+                  setAccount(null);
+                }}
+              >
+                Log out
+              </button>
+            </div>
           </header>
+          {account && account.product != null && account.product !== 'premium' && (
+            <div className="premium-banner" role="alert">
+              <AlertTriangle size={18} />
+              <span>
+                This account isn’t Spotify <strong>Premium</strong>. Playback control needs
+                Premium — search and authoring still work, but Play/Pause/Seek will fail.
+              </span>
+            </div>
+          )}
           <InstallPrompt />
           {resumeIndex != null && tracks[resumeIndex] && (
             <button

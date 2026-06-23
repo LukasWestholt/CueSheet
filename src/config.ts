@@ -12,6 +12,9 @@ export const SCOPES: string[] = [
   'user-read-playback-state',
   'user-modify-playback-state',
   'user-read-currently-playing',
+  // Reads the account profile (display name + Premium status) for the
+  // Premium gate. See getCurrentUser() / GET /me.
+  'user-read-private',
 ];
 
 export const IS_CONFIGURED: boolean =
