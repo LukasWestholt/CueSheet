@@ -126,13 +126,6 @@ export default function Settings() {
           own GetSongBPM quota.
         </p>
       )}
-      <p className="hint">
-        Using GetSongBPM requires a visible link back to{' '}
-        <a href={GETSONGBPM_URL} target="_blank" rel="noreferrer">
-          getsongbpm.com
-        </a>{' '}
-        — it’s shown in the landing-page footer and the page source.
-      </p>
 
       <ApiKeyHelp open={helpOpen} onClose={() => setHelpOpen(false)} />
     </details>

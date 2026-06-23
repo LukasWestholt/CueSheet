@@ -105,6 +105,22 @@ the Spotify app, then "Add to Home Screen" in Safari.
 Each track in `src/data/tracks.ts` has a `callings` array — `{ time, step, cue }`
 where `time` is seconds from the start. Keep it sorted by `time`.
 
+## BPM data (GetSongBPM attribution)
+
+BPM auto-fill can optionally use [GetSongBPM](https://getsongbpm.com) via a free,
+per-user API key the coach pastes in **Settings** (it's stored in their browser,
+not bundled). GetSongBPM's API terms **require a visible backlink to
+getsongbpm.com**, which they verify by crawling the page source — keys without
+one get suspended.
+
+That backlink ships in two always-present places, so don't remove them:
+
+- the landing-page footer (`SiteFooter`), and
+- the raw `index.html` source (the static `<a href="https://getsongbpm.com">`).
+
+So the requirement is satisfied app-wide regardless of whether any individual
+user holds a key.
+
 ## Project layout
 
 ```
