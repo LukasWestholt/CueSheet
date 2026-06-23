@@ -1544,7 +1544,7 @@
   {
     "id": "main-1-24",
     "_description": "Coco Jamboo — Mr. President",
-    "spotifyUri": "spotify:track:1vXB0If9PfpM5mcTShrQQU",
+    "spotifyUri": "spotify:track:3T1n5twZgndJrapVU0xai4",
     "firstBeatSec": 0,
     "bpm": 123,
     "wip": true,
@@ -1599,7 +1599,9 @@
         "cue": "",
         "measures": 4
       }
-    ]
+    ],
+    "title": "Coco Jamboo",
+    "artist": "9Tendo, Mr. President"
   },
   {
     "id": "main-1-25",
