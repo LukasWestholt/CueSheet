@@ -23,6 +23,11 @@ function fmt(ms: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+/** Shared "the playback device went to sleep" message (held overlay + lost banner). */
+function deviceOfflineMessage(name: string | null): string {
+  return `${name ?? 'The playback device'} is offline — wake it up (open Spotify on it). It reconnects automatically once it’s back.`;
+}
+
 /** Like fmt but with an hours field for long session totals (H:MM:SS). */
 function fmtLong(ms: number): string {
   const total = Math.max(0, Math.round(ms / 1000));
@@ -232,10 +237,7 @@ export default function PlayerScreen({
 
       {engine.noDevice && (
         <div className="device-lost">
-          <span>
-            Lost the playback device. Open Spotify on your tablet (and press play), or
-            reconnect:
-          </span>
+          <span>{deviceOfflineMessage(engine.deviceName)}</span>
           <div className="device-lost-actions">
             <button className="ghost" onClick={onBack}>
               Devices
@@ -437,9 +439,18 @@ export default function PlayerScreen({
             <button className="primary big" onClick={engine.skipGap}>
               Continue <Play size={18} />
             </button>
-            {engine.keepAwake && engine.deviceName && (
-              <span className="hint">Keeping {engine.deviceName} awake</span>
-            )}
+            {engine.keepAwake &&
+              engine.deviceName &&
+              (engine.deviceAsleep ? (
+                <div className="keepawake-offline">
+                  <span className="hint">{deviceOfflineMessage(engine.deviceName)}</span>
+                  <button className="link" onClick={engine.recheckDevice}>
+                    Check again
+                  </button>
+                </div>
+              ) : (
+                <span className="hint">Keeping {engine.deviceName} awake</span>
+              ))}
             <button className="link" onClick={onBack}>
               End session · back to list
             </button>

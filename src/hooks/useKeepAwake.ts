@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, type MutableRefObject } from 'react';
+import { useCallback, useEffect, useRef, useState, type MutableRefObject } from 'react';
 import { getDevices, transferPlayback } from '../spotify/api';
 import { isLikelyLocalDevice } from '../spotify/localDevice';
 import { loadKeepAwakeOverride } from '../data/keepAwakeSetting';
@@ -17,6 +17,10 @@ const KEEP_AWAKE_MS = 15000;
 export interface KeepAwake {
   /** Effective on/off (override, else the local-device heuristic default). */
   keepAwake: boolean;
+  /** True when keep-awake is on but the device wasn't found on the last check (asleep/offline). */
+  asleep: boolean;
+  /** Re-check the device list now (and re-assert it if it's back). For a manual "Check again". */
+  recheck: () => void;
   /** Recompute the heuristic default from the currently active device. */
   syncDefault: (deviceName: string | null, deviceType: string | null) => void;
 }
@@ -40,9 +44,14 @@ export function useKeepAwake(refs: {
   const [keepAwake, setKeepAwakeState, keepAwakeRef] = useStateRef<boolean>(
     overrideRef.current ?? false,
   );
+  // True when the last keep-alive check couldn't find the device — it has gone
+  // to sleep / dropped off Connect (only meaningful while keep-awake is on).
+  const [asleep, setAsleep] = useState(false);
 
   const syncDefault = useCallback(
     (deviceName: string | null, deviceType: string | null) => {
+      // A live snapshot means the device is awake again.
+      setAsleep(false);
       const effective =
         overrideRef.current ?? isLikelyLocalDevice(deviceName, deviceType, navigator.userAgent);
       if (effective !== keepAwakeRef.current) setKeepAwakeState(effective);
@@ -50,23 +59,36 @@ export function useKeepAwake(refs: {
     [keepAwakeRef, setKeepAwakeState],
   );
 
+  // Re-assert the device we last played on so Spotify keeps it active. Records
+  // whether it was found (asleep = not found). Shared by the 15s loop and the
+  // manual "Check again" button.
+  const keepAliveOnce = useCallback(async () => {
+    const target = deviceNameRef.current;
+    if (!keepAwakeRef.current || !target) return;
+    try {
+      const match = (await getDevices()).find((d) => d.name === target);
+      if (match) {
+        await transferPlayback(match.id, false);
+        setAsleep(false);
+      } else {
+        setAsleep(true);
+      }
+    } catch {
+      setAsleep(true);
+    }
+  }, [deviceNameRef, keepAwakeRef]);
+
   useEffect(() => {
     const id = setInterval(() => {
       const p = phaseRef.current;
       const idle = p === 'paused' || p === 'gap' || p === 'held' || p === 'ended';
-      const target = deviceNameRef.current;
-      if (!idle || hijackedRef.current || !keepAwakeRef.current || !target) return;
-      void (async () => {
-        try {
-          const match = (await getDevices()).find((d) => d.name === target);
-          if (match) await transferPlayback(match.id, false);
-        } catch {
-          /* device unreachable — the no-device recovery banner handles that */
-        }
-      })();
+      if (!idle || hijackedRef.current) return;
+      void keepAliveOnce();
     }, KEEP_AWAKE_MS);
     return () => clearInterval(id);
-  }, [phaseRef, hijackedRef, keepAwakeRef, deviceNameRef]);
+  }, [phaseRef, hijackedRef, keepAliveOnce]);
 
-  return { keepAwake, syncDefault };
+  const recheck = useCallback(() => void keepAliveOnce(), [keepAliveOnce]);
+
+  return { keepAwake, asleep, recheck, syncDefault };
 }

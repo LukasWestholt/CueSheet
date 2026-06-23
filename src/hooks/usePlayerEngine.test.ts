@@ -524,4 +524,68 @@ describe('usePlayerEngine', () => {
     expect(result.current.phase).toBe('playing');
     expect(transferPlayback).not.toHaveBeenCalled();
   });
+
+  it('flags the keep-awake device asleep when it drops, and recovers on recheck', async () => {
+    setUserAgent(ANDROID_UA);
+    getPlaybackState.mockResolvedValue({
+      isPlaying: true,
+      progressMs: 1_000,
+      durationMs: 10_000,
+      trackUri: 'spotify:track:a',
+      deviceId: 'd',
+      deviceName: 'Pixel 7',
+      deviceType: null,
+      fetchedAt: Date.now(),
+    });
+    getDevices.mockResolvedValue([{ id: 'd', name: 'Pixel 7', is_active: false }]);
+    const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
+    await startAt(result, 0);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_100);
+    });
+    await act(async () => result.current.holdNow());
+
+    // The device drops off Connect → the keep-alive check can't find it.
+    getDevices.mockResolvedValue([]);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(16_000);
+    });
+    expect(result.current.deviceAsleep).toBe(true);
+
+    // It comes back (with a fresh id); a manual recheck re-asserts it.
+    getDevices.mockResolvedValue([{ id: 'd2', name: 'Pixel 7', is_active: false }]);
+    transferPlayback.mockClear();
+    await act(async () => {
+      result.current.recheckDevice();
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    expect(result.current.deviceAsleep).toBe(false);
+    expect(transferPlayback).toHaveBeenCalledWith('d2', false);
+  });
+
+  it('stops polling /me/player once the device is lost, then reconnects when it returns', async () => {
+    getPlaybackState.mockResolvedValue(null); // no active device
+    getDevices.mockResolvedValue([]);
+    const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
+    await startAt(result, 0);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_500); // two empty polls → device lost
+    });
+    expect(result.current.noDevice).toBe(true);
+
+    // While lost we watch /devices, not /me/player.
+    getPlaybackState.mockClear();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+    expect(getPlaybackState).not.toHaveBeenCalled();
+
+    // Device returns → auto-reconnect (replays the current track on it).
+    getDevices.mockResolvedValue([{ id: 'd', name: 'Tablet', is_active: true }]);
+    playTrack.mockClear();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_100);
+    });
+    expect(playTrack).toHaveBeenCalledWith('spotify:track:a', 'd', expect.any(Number));
+  });
 });

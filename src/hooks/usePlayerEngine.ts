@@ -52,6 +52,14 @@ export interface PlayerEngine {
   deviceName: string | null;
   /** Whether the keep-awake ping is on (defaults to the local-device heuristic). */
   keepAwake: boolean;
+  /** While keep-awake is on: the device wasn't found on the last check (asleep/offline). */
+  deviceAsleep: boolean;
+  /**
+   * Re-check the keep-awake device list now and re-assert it if it's back —
+   * WITHOUT resuming playback (we're paused between tracks). Contrast `recover`,
+   * which re-acquires a device and *replays* the current track.
+   */
+  recheckDevice: () => void;
   /** True when Spotify has no active device (the tablet dropped off Connect). */
   noDevice: boolean;
   /** True when another app/user took over the device and a different track is playing. */
@@ -73,7 +81,7 @@ export interface PlayerEngine {
   extendGap: (seconds: number) => void;
   holdNow: () => void; // the "pause permanently between tracks" button
   setAutoContinue: (v: boolean) => void;
-  /** Re-acquire a playback device and resume the current track. */
+  /** Re-acquire a playback device and *resume* the current track (replays it). */
   recover: () => void;
 }
 
@@ -106,15 +114,21 @@ export function usePlayerEngine(
   const lastPrevAtRef = useRef(0);
   const nullPollsRef = useRef(0);
   const wrongTrackPollsRef = useRef(0);
+  // Lets the poller call recover() (defined below) without re-subscribing, with
+  // a debounce so the 1s poll doesn't fire repeated reconnects while one is in
+  // flight (recover() clears noDevice only once it has resumed playback).
+  const recoverRef = useRef<() => void>(() => {});
+  const lastRecoverAtRef = useRef(0);
 
   deviceIdRef.current = deviceId;
 
   // Keep-awake setting + ping loop (its own focused hook).
-  const { keepAwake, syncDefault: syncKeepAwakeDefault } = useKeepAwake({
-    phaseRef,
-    hijackedRef,
-    deviceNameRef,
-  });
+  const {
+    keepAwake,
+    asleep: deviceAsleep,
+    recheck: recheckDevice,
+    syncDefault: syncKeepAwakeDefault,
+  } = useKeepAwake({ phaseRef, hijackedRef, deviceNameRef });
 
   const track = tracks[index];
 
@@ -162,6 +176,21 @@ export function usePlayerEngine(
     const poll = async () => {
       const active = ['playing', 'paused'].includes(phaseRef.current);
       if (!active) return;
+      // Device already lost: stop hitting /me/player (it just 204s) and watch
+      // the cheaper /devices list instead. When a device comes back, reconnect
+      // (debounced — recover() only clears noDevice once playback resumes).
+      if (noDeviceRef.current) {
+        try {
+          const back = (await getDevices()).length > 0;
+          if (back && !cancelled && Date.now() - lastRecoverAtRef.current > 5000) {
+            lastRecoverAtRef.current = Date.now();
+            recoverRef.current();
+          }
+        } catch {
+          /* still unreachable — keep waiting */
+        }
+        return;
+      }
       try {
         const snap = await getPlaybackState();
         if (cancelled) return;
@@ -398,6 +427,7 @@ export function usePlayerEngine(
       }
     })();
   }, [tracks, setNoDevice, setHijacked, setPhase, indexRef]);
+  recoverRef.current = recover; // so the poller can auto-reconnect when the device returns
 
   return {
     index,
@@ -409,6 +439,8 @@ export function usePlayerEngine(
     autoContinue,
     deviceName,
     keepAwake,
+    deviceAsleep,
+    recheckDevice,
     noDevice,
     hijacked,
     error,

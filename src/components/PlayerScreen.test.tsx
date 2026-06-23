@@ -48,6 +48,8 @@ function makeEngine(overrides: Partial<PlayerEngine> = {}): PlayerEngine {
     autoContinue: true,
     deviceName: 'Tablet',
     keepAwake: false,
+    deviceAsleep: false,
+    recheckDevice: vi.fn(),
     noDevice: false,
     hijacked: false,
     error: null,
