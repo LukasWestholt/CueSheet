@@ -1207,6 +1207,10 @@ details.routines[open] > summary.routines-head::after {
   background: var(--surface);
   text-align: left;
   padding: var(--space-4) var(--space-4);
+  /* The row is both a flex item (of .track-li) and a flex container (of
+     .track-meta). It needs min-width: 0 too, or Safari won't let it shrink
+     below its content and a long title overflows the row. */
+  min-width: 0;
 }
 .track-index {
   color: var(--muted);
