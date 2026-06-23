@@ -1663,6 +1663,26 @@ details.routines[open] > summary.routines-head::after {
   accent-color: var(--accent);
 }
 
+/* Volume ----------------------------------------------------------------- */
+.volume-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  color: var(--text-muted, var(--text));
+}
+.volume-row input[type='range'] {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--accent);
+}
+.volume-pct {
+  flex-shrink: 0;
+  min-width: 2.5em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Calibration ------------------------------------------------------------ */
 .calib-row {
   background: var(--surface);

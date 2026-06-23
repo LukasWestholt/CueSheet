@@ -4,13 +4,14 @@ import type { Track } from '../data/tracks';
 import type { PlaybackSnapshot } from '../spotify/api';
 
 // Mocked Spotify API (hoisted so the vi.mock factory can reference it).
-const { playTrack, pause, resume, getPlaybackState, getDevices, transferPlayback } = vi.hoisted(() => ({
+const { playTrack, pause, resume, getPlaybackState, getDevices, transferPlayback, setVolume } = vi.hoisted(() => ({
   playTrack: vi.fn(async () => {}),
   pause: vi.fn(async () => {}),
   resume: vi.fn(async () => {}),
   getPlaybackState: vi.fn<() => Promise<PlaybackSnapshot | null>>(),
   getDevices: vi.fn(async () => [] as { id: string; name: string; is_active: boolean }[]),
   transferPlayback: vi.fn(async () => {}),
+  setVolume: vi.fn(async () => {}),
 }));
 vi.mock('../spotify/api', () => ({
   playTrack,
@@ -19,6 +20,7 @@ vi.mock('../spotify/api', () => ({
   getPlaybackState,
   getDevices,
   transferPlayback,
+  setVolume,
 }));
 
 // Keep-awake override (null = follow the device heuristic). Controlled per test
@@ -45,7 +47,7 @@ function reportNearEnd(uri: string) {
     deviceId: 'd',
     deviceName: 'Tablet',
     deviceType: null,
-    fetchedAt: Date.now(),
+    volumePercent: null,    fetchedAt: Date.now(),
   }));
 }
 
@@ -175,7 +177,7 @@ describe('usePlayerEngine', () => {
       deviceId: 'd',
       deviceName: 'Tablet',
       deviceType: null,
-      fetchedAt: Date.now(),
+      volumePercent: null,      fetchedAt: Date.now(),
     }));
     const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
     await startAt(result, 0);
@@ -247,7 +249,7 @@ describe('usePlayerEngine', () => {
       deviceId: 'tablet',
       deviceName: 'Tablet',
       deviceType: null,
-      fetchedAt: Date.now(),
+      volumePercent: null,      fetchedAt: Date.now(),
     });
     playTrack.mockClear();
     await act(async () => {
@@ -268,7 +270,7 @@ describe('usePlayerEngine', () => {
       deviceId: 'd',
       deviceName: 'Tablet',
       deviceType: null,
-      fetchedAt: Date.now(),
+      volumePercent: null,      fetchedAt: Date.now(),
     });
     const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
     await startAt(result, 0);
@@ -291,7 +293,7 @@ describe('usePlayerEngine', () => {
       deviceId: 'd',
       deviceName: 'Tablet',
       deviceType: null,
-      fetchedAt: Date.now(),
+      volumePercent: null,      fetchedAt: Date.now(),
     });
     const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
     await startAt(result, 0);
@@ -309,7 +311,7 @@ describe('usePlayerEngine', () => {
       deviceId: 'tablet',
       deviceName: 'Tablet',
       deviceType: null,
-      fetchedAt: Date.now(),
+      volumePercent: null,      fetchedAt: Date.now(),
     });
     playTrack.mockClear();
     await act(async () => {
@@ -333,7 +335,7 @@ describe('usePlayerEngine', () => {
       deviceId: 'd',
       deviceName: 'Tablet',
       deviceType: null,
-      fetchedAt: Date.now(),
+      volumePercent: null,      fetchedAt: Date.now(),
     }));
     const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
     await startAt(result, 0);
@@ -368,7 +370,7 @@ describe('usePlayerEngine', () => {
       deviceId: 'd',
       deviceName: 'Tablet',
       deviceType: null,
-      fetchedAt: Date.now(),
+      volumePercent: null,      fetchedAt: Date.now(),
     }));
     const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
     await startAt(result, 0);
@@ -399,6 +401,7 @@ describe('usePlayerEngine', () => {
       deviceId: 'd',
       deviceName: 'Galaxy Tab', // doesn't match the UA by name
       deviceType: 'Smartphone', // …but the type matches an Android mobile UA
+      volumePercent: null,
       fetchedAt: Date.now(),
     });
     const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
@@ -419,7 +422,7 @@ describe('usePlayerEngine', () => {
       deviceId: 'd',
       deviceName: 'Pixel 7',
       deviceType: null,
-      fetchedAt: Date.now(),
+      volumePercent: null,      fetchedAt: Date.now(),
     });
     getDevices.mockResolvedValue([{ id: 'd', name: 'Pixel 7', is_active: false }]);
     const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
@@ -451,7 +454,7 @@ describe('usePlayerEngine', () => {
       deviceId: 'spk',
       deviceName: 'Living Room Speaker',
       deviceType: null,
-      fetchedAt: Date.now(),
+      volumePercent: null,      fetchedAt: Date.now(),
     });
     getDevices.mockResolvedValue([{ id: 'spk', name: 'Living Room Speaker', is_active: true }]);
     const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
@@ -482,7 +485,7 @@ describe('usePlayerEngine', () => {
       deviceId: 'spk',
       deviceName: 'Living Room Speaker',
       deviceType: null,
-      fetchedAt: Date.now(),
+      volumePercent: null,      fetchedAt: Date.now(),
     });
     getDevices.mockResolvedValue([{ id: 'spk', name: 'Living Room Speaker', is_active: true }]);
     const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
@@ -512,7 +515,7 @@ describe('usePlayerEngine', () => {
       deviceId: 'd',
       deviceName: 'Pixel 7',
       deviceType: null,
-      fetchedAt: Date.now(),
+      volumePercent: null,      fetchedAt: Date.now(),
     });
     getDevices.mockResolvedValue([{ id: 'd', name: 'Pixel 7', is_active: true }]);
     const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
@@ -535,7 +538,7 @@ describe('usePlayerEngine', () => {
       deviceId: 'd',
       deviceName: 'Pixel 7',
       deviceType: null,
-      fetchedAt: Date.now(),
+      volumePercent: null,      fetchedAt: Date.now(),
     });
     getDevices.mockResolvedValue([{ id: 'd', name: 'Pixel 7', is_active: false }]);
     const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));

@@ -11,7 +11,7 @@ function snap(over: Partial<PlaybackSnapshot> = {}): PlaybackSnapshot {
     deviceId: 'd',
     deviceName: 'Tablet',
     deviceType: null,
-    fetchedAt: 1_000_000,
+    volumePercent: null,    fetchedAt: 1_000_000,
     ...over,
   };
 }

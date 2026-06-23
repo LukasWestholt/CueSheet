@@ -9,7 +9,7 @@ import { useWakeLock } from '../hooks/useWakeLock';
 import { useCopyFlag } from '../hooks/useCopyFlag';
 import CallingDisplay from './CallingDisplay';
 import TapToTime from './TapToTime';
-import { SkipBack, SkipForward, Pause, Play, Link as LinkIcon, AlertTriangle } from './icons';
+import { SkipBack, SkipForward, Pause, Play, Volume, Link as LinkIcon, AlertTriangle } from './icons';
 import { trackPath } from '../nav/routes';
 import { sessionEstimate } from '../data/setlist';
 
@@ -294,6 +294,24 @@ export default function PlayerScreen({
         <button className="round" onClick={engine.next} aria-label="Next track">
           <SkipForward />
         </button>
+      </div>
+
+      {/* Speaker volume on the Connect device (no need to walk to the tablet). */}
+      <div className="volume-row">
+        <Volume size={18} />
+        <input
+          type="range"
+          min={0}
+          max={100}
+          step={1}
+          aria-label="Speaker volume"
+          value={engine.volumePercent ?? 0}
+          disabled={engine.volumePercent == null}
+          onChange={(e) => engine.setVolume(Number(e.target.value))}
+        />
+        <span className="muted volume-pct">
+          {engine.volumePercent == null ? '—' : `${engine.volumePercent}%`}
+        </span>
       </div>
 
       {/* Coach view: the full prepared order of steps — tap a step to jump there */}
