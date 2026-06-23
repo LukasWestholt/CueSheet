@@ -44,6 +44,7 @@ function reportNearEnd(uri: string) {
     trackUri: uri,
     deviceId: 'd',
     deviceName: 'Tablet',
+    deviceType: null,
     fetchedAt: Date.now(),
   }));
 }
@@ -59,6 +60,8 @@ async function startAt(result: { current: ReturnType<typeof usePlayerEngine> }, 
 const REAL_UA = navigator.userAgent;
 const ANDROID_UA =
   'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Mobile Safari/537.36';
+const ANDROID_FROZEN_UA =
+  'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Mobile Safari/537.36';
 function setUserAgent(ua: string) {
   Object.defineProperty(navigator, 'userAgent', { value: ua, configurable: true });
 }
@@ -171,6 +174,7 @@ describe('usePlayerEngine', () => {
       trackUri: 'spotify:track:a',
       deviceId: 'd',
       deviceName: 'Tablet',
+      deviceType: null,
       fetchedAt: Date.now(),
     }));
     const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
@@ -242,6 +246,7 @@ describe('usePlayerEngine', () => {
       trackUri: 'spotify:track:a',
       deviceId: 'tablet',
       deviceName: 'Tablet',
+      deviceType: null,
       fetchedAt: Date.now(),
     });
     playTrack.mockClear();
@@ -262,6 +267,7 @@ describe('usePlayerEngine', () => {
       trackUri: 'spotify:track:intruder',
       deviceId: 'd',
       deviceName: 'Tablet',
+      deviceType: null,
       fetchedAt: Date.now(),
     });
     const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
@@ -284,6 +290,7 @@ describe('usePlayerEngine', () => {
       trackUri: 'spotify:track:intruder',
       deviceId: 'd',
       deviceName: 'Tablet',
+      deviceType: null,
       fetchedAt: Date.now(),
     });
     const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
@@ -301,6 +308,7 @@ describe('usePlayerEngine', () => {
       trackUri: 'spotify:track:a',
       deviceId: 'tablet',
       deviceName: 'Tablet',
+      deviceType: null,
       fetchedAt: Date.now(),
     });
     playTrack.mockClear();
@@ -324,6 +332,7 @@ describe('usePlayerEngine', () => {
       trackUri: uri,
       deviceId: 'd',
       deviceName: 'Tablet',
+      deviceType: null,
       fetchedAt: Date.now(),
     }));
     const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
@@ -358,6 +367,7 @@ describe('usePlayerEngine', () => {
       trackUri: 'spotify:track:a',
       deviceId: 'd',
       deviceName: 'Tablet',
+      deviceType: null,
       fetchedAt: Date.now(),
     }));
     const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
@@ -379,6 +389,26 @@ describe('usePlayerEngine', () => {
     expect(pause).toHaveBeenCalled();
   });
 
+  it('defaults keep-awake on via device type when the UA gives no name hint', async () => {
+    setUserAgent(ANDROID_FROZEN_UA); // model frozen to "K" → no name hint
+    getPlaybackState.mockResolvedValue({
+      isPlaying: true,
+      progressMs: 1_000,
+      durationMs: 10_000,
+      trackUri: 'spotify:track:a',
+      deviceId: 'd',
+      deviceName: 'Galaxy Tab', // doesn't match the UA by name
+      deviceType: 'Smartphone', // …but the type matches an Android mobile UA
+      fetchedAt: Date.now(),
+    });
+    const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
+    await startAt(result, 0);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_100);
+    });
+    expect(result.current.keepAwake).toBe(true); // rescued by the type fallback
+  });
+
   it('keeps the device awake while held when it looks like this machine (UA heuristic)', async () => {
     setUserAgent(ANDROID_UA); // model "Pixel 7"
     getPlaybackState.mockResolvedValue({
@@ -388,6 +418,7 @@ describe('usePlayerEngine', () => {
       trackUri: 'spotify:track:a',
       deviceId: 'd',
       deviceName: 'Pixel 7',
+      deviceType: null,
       fetchedAt: Date.now(),
     });
     getDevices.mockResolvedValue([{ id: 'd', name: 'Pixel 7', is_active: false }]);
@@ -419,6 +450,7 @@ describe('usePlayerEngine', () => {
       trackUri: 'spotify:track:a',
       deviceId: 'spk',
       deviceName: 'Living Room Speaker',
+      deviceType: null,
       fetchedAt: Date.now(),
     });
     getDevices.mockResolvedValue([{ id: 'spk', name: 'Living Room Speaker', is_active: true }]);
@@ -449,6 +481,7 @@ describe('usePlayerEngine', () => {
       trackUri: 'spotify:track:a',
       deviceId: 'spk',
       deviceName: 'Living Room Speaker',
+      deviceType: null,
       fetchedAt: Date.now(),
     });
     getDevices.mockResolvedValue([{ id: 'spk', name: 'Living Room Speaker', is_active: true }]);
@@ -478,6 +511,7 @@ describe('usePlayerEngine', () => {
       trackUri: 'spotify:track:a',
       deviceId: 'd',
       deviceName: 'Pixel 7',
+      deviceType: null,
       fetchedAt: Date.now(),
     });
     getDevices.mockResolvedValue([{ id: 'd', name: 'Pixel 7', is_active: true }]);

@@ -10,6 +10,7 @@ function snap(over: Partial<PlaybackSnapshot> = {}): PlaybackSnapshot {
     trackUri: 'spotify:track:t',
     deviceId: 'd',
     deviceName: 'Tablet',
+    deviceType: null,
     fetchedAt: 1_000_000,
     ...over,
   };

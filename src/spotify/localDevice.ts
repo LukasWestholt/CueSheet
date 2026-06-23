@@ -33,12 +33,39 @@ export function deviceHintsFromUserAgent(ua: string): string[] {
   return hints;
 }
 
-/** True when `deviceName` plausibly names the same device this UA runs on. */
+/**
+ * Spotify device `type` values that plausibly correspond to the platform this
+ * UA runs on. Used as a *secondary* signal — `type` isn't unique (an account
+ * can have several smartphones), so it only helps when the name gives nothing
+ * (e.g. a privacy-frozen Android UA reporting the model as "K"). Returns [] for
+ * a platform Spotify wouldn't map cleanly.
+ */
+export function deviceTypesFromUserAgent(ua: string): string[] {
+  if (/\bAndroid\b/i.test(ua)) return /\bMobile\b/i.test(ua) ? ['Smartphone'] : ['Tablet', 'Smartphone'];
+  if (/\biPhone\b/i.test(ua)) return ['Smartphone'];
+  if (/\biPad\b/i.test(ua)) return ['Tablet'];
+  if (/\b(Macintosh|Mac OS X|Windows|Linux|CrOS)\b/i.test(ua)) return ['Computer'];
+  return [];
+}
+
+/**
+ * True when a Spotify device plausibly *is* the machine this UA runs on. The
+ * name is the strong signal (`deviceHintsFromUserAgent`); the device `type` is
+ * a secondary fallback for when the name yields no hint. Pass `deviceType` as
+ * null/undefined to match on name only.
+ */
 export function isLikelyLocalDevice(
   deviceName: string | null | undefined,
+  deviceType: string | null | undefined,
   userAgent: string,
 ): boolean {
-  if (!deviceName) return false;
-  const name = deviceName.toLowerCase();
-  return deviceHintsFromUserAgent(userAgent).some((h) => name.includes(h.toLowerCase()));
+  const name = deviceName?.toLowerCase();
+  const nameMatch =
+    name != null &&
+    deviceHintsFromUserAgent(userAgent).some((h) => name.includes(h.toLowerCase()));
+  if (nameMatch) return true;
+  if (!deviceType) return false;
+  return deviceTypesFromUserAgent(userAgent).some(
+    (t) => t.toLowerCase() === deviceType.toLowerCase(),
+  );
 }

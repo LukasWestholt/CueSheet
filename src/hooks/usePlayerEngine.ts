@@ -227,7 +227,7 @@ export function usePlayerEngine(
 
         snapshotRef.current = snap;
         setDeviceName(snap.deviceName);
-        syncKeepAwakeDefault(snap.deviceName);
+        syncKeepAwakeDefault(snap.deviceName, snap.deviceType);
         // If Spotify reports it stopped near the end, the track finished.
         if (
           phaseRef.current === 'playing' &&

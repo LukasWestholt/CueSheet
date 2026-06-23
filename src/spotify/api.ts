@@ -79,6 +79,8 @@ export interface PlaybackSnapshot {
   trackUri: string | null;
   deviceId: string | null;
   deviceName: string | null;
+  /** Spotify device type, e.g. "Smartphone"/"Tablet"/"Computer"/"Speaker". */
+  deviceType: string | null;
   fetchedAt: number;
 }
 
@@ -302,6 +304,7 @@ export async function getPlaybackState(): Promise<PlaybackSnapshot | null> {
     trackUri: data.item?.uri ?? null,
     deviceId: data.device?.id ?? null,
     deviceName: data.device?.name ?? null,
+    deviceType: data.device?.type ?? null,
     fetchedAt: Date.now(),
   };
 }

@@ -17,8 +17,8 @@ const KEEP_AWAKE_MS = 15000;
 export interface KeepAwake {
   /** Effective on/off (override, else the local-device heuristic default). */
   keepAwake: boolean;
-  /** Recompute the heuristic default from the currently active device name. */
-  syncDefault: (deviceName: string | null) => void;
+  /** Recompute the heuristic default from the currently active device. */
+  syncDefault: (deviceName: string | null, deviceType: string | null) => void;
 }
 
 /**
@@ -42,9 +42,9 @@ export function useKeepAwake(refs: {
   );
 
   const syncDefault = useCallback(
-    (deviceName: string | null) => {
+    (deviceName: string | null, deviceType: string | null) => {
       const effective =
-        overrideRef.current ?? isLikelyLocalDevice(deviceName, navigator.userAgent);
+        overrideRef.current ?? isLikelyLocalDevice(deviceName, deviceType, navigator.userAgent);
       if (effective !== keepAwakeRef.current) setKeepAwakeState(effective);
     },
     [keepAwakeRef, setKeepAwakeState],
