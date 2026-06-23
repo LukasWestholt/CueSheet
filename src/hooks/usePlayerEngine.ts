@@ -152,7 +152,21 @@ export function usePlayerEngine(
     [tracks, setIndex, setPhase],
   );
 
-  const enterGapOrEnd = useCallback(() => {
+  const enterGapOrEnd = useCallback((reason = 'unknown') => {
+    // DIAGNOSTIC: capture why/when the track was treated as ended, to chase the
+    // "stops 4-5s too early" report. Shows whether pos overshot, the poll was
+    // stale, or the duration was off. Remove once the root cause is found.
+    const snap = snapshotRef.current;
+    console.debug('[player] enterGapOrEnd', {
+      reason,
+      index: indexRef.current,
+      pos: snap ? Math.round(interpolatePosition(snap)) : null,
+      progressMs: snap?.progressMs ?? null,
+      durationMs: snap?.durationMs ?? null,
+      authoredDurationMs: tracks[indexRef.current]?.durationMs ?? null,
+      pollAgeMs: snap ? Date.now() - snap.fetchedAt : null,
+      isPlaying: snap?.isPlaying ?? null,
+    });
     // Stop the finished track ourselves, otherwise Spotify may loop it (repeat)
     // or roll into autoplay during the gap / after the routine ends.
     apiPause(deviceIdRef.current ?? undefined).catch(() => {});
@@ -168,7 +182,7 @@ export function usePlayerEngine(
     } else {
       setPhase('held');
     }
-  }, [tracks.length, gapSeconds, setPhase, indexRef, autoRef]);
+  }, [tracks, gapSeconds, setPhase, indexRef, autoRef]);
 
   // Poll Spotify for the authoritative playback state.
   useEffect(() => {
@@ -232,7 +246,7 @@ export function usePlayerEngine(
           // track and runs our gap / ends the routine.
           if (wasNearEnd) {
             wrongTrackPollsRef.current = 0;
-            enterGapOrEnd();
+            enterGapOrEnd('poller:autoplay-different-track');
             return;
           }
           wrongTrackPollsRef.current += 1;
@@ -250,7 +264,7 @@ export function usePlayerEngine(
         // the end = the device has repeat=track on and looped it (we lost the
         // pre-empt race). Treat it as the normal end rather than replaying.
         if (wasNearEnd && snap.progressMs < LOOP_RESTART_MS) {
-          enterGapOrEnd();
+          enterGapOrEnd('poller:loop-restart');
           return;
         }
 
@@ -264,7 +278,7 @@ export function usePlayerEngine(
           snap.durationMs > 0 &&
           snap.progressMs >= snap.durationMs - 2000
         ) {
-          enterGapOrEnd();
+          enterGapOrEnd('poller:stopped-near-end');
         }
       } catch {
         /* transient network error — keep extrapolating */
@@ -293,7 +307,7 @@ export function usePlayerEngine(
           setPositionMs(pos);
           setDurationMs(duration);
           if (duration > 0 && pos >= duration - END_GUARD_MS) {
-            enterGapOrEnd();
+            enterGapOrEnd('ticker:interpolated-end');
           }
         }
       } else if (p === 'gap') {
