@@ -400,6 +400,39 @@ button:disabled:active {
   padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-pill);
 }
+.topbar-end {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.topbar-user {
+  font-size: var(--text-sm);
+  color: var(--muted);
+  max-width: 12ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Premium gate ----------------------------------------------------------- */
+.premium-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--border-warn);
+  border-left: 3px solid var(--warn);
+  border-radius: var(--radius);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--text);
+  margin-bottom: var(--space-3);
+}
+.premium-banner svg {
+  flex-shrink: 0;
+  color: var(--warn);
+}
 
 /* Cards ------------------------------------------------------------------ */
 .card {

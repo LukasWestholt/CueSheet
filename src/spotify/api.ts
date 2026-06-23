@@ -308,6 +308,28 @@ export async function getTrackTempo(uri: string): Promise<number | null> {
   });
 }
 
+export interface SpotifyAccount {
+  /** Display name, or null when the account hasn't set one. */
+  displayName: string | null;
+  /** Subscription level: "premium", "free"/"open", or null when unknown. */
+  product: string | null;
+}
+
+/**
+ * The logged-in user's profile (display name + subscription level). `product`
+ * needs the `user-read-private` scope. Returns null on failure so callers treat
+ * the Premium check as inconclusive rather than blocking.
+ */
+export async function getCurrentUser(): Promise<SpotifyAccount | null> {
+  const res = await api('/me');
+  if (!res.ok) return null;
+  const data = await res.json();
+  return {
+    displayName: data.display_name ?? null,
+    product: data.product ?? null,
+  };
+}
+
 /** Returns the current playback snapshot, or null when no device is active. */
 export async function getPlaybackState(): Promise<PlaybackSnapshot | null> {
   const res = await api('/me/player');
