@@ -398,7 +398,7 @@ export default function PlayerScreen({
         )}
         <p className="hint">
           {bpmAuthored || firstBeatAuthored
-            ? 'Authored in tracks.ts (overrides tapping) — clear it there to calibrate by ear.'
+            ? 'This routine sets the BPM / first beat, which overrides tap calibration. Edit the routine to change it.'
             : 'Tap along to the beat a few times, Save, then tap “Mark first beat” on count 1. Saved per track on this device.'}
         </p>
       </div>
