@@ -3,13 +3,8 @@ import type { TrackInfo } from '../spotify/api';
 import { sessionEstimate } from '../data/setlist';
 import { DEFAULT_GAP_SECONDS } from '../hooks/usePlayerEngine';
 import { ArrowUp, ArrowDown, X, Play } from './icons';
+import { formatClock } from '../data/time';
 
-function fmtClock(ms: number): string {
-  const total = Math.max(0, Math.round(ms / 1000));
-  const m = Math.floor(total / 60);
-  const s = total % 60;
-  return `${m}:${s.toString().padStart(2, '0')}`;
-}
 function fmtMinutes(ms: number): string {
   return `${Math.max(0, Math.round(ms / 60000))} min`;
 }
@@ -57,7 +52,7 @@ export default function SetlistPanel({
             <li key={t.id} className="setlist-row">
               <span className="sl-pos">{i + 1}</span>
               <span className="sl-title">{title}</span>
-              {dur > 0 && <span className="sl-dur">{fmtClock(dur)}</span>}
+              {dur > 0 && <span className="sl-dur">{formatClock(dur)}</span>}
               <span className="sl-ops">
                 <button className="icon-btn" onClick={() => onMove(i, -1)} disabled={i === 0} aria-label="Move up">
                   <ArrowUp size={18} />

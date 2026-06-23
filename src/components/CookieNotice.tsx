@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { readFlag, writeFlag } from '../data/storage';
 
 // One-time dismissible storage notice. The app stores only strictly-necessary
 // functional data (Spotify tokens + preferences) in localStorage — no tracking
@@ -7,24 +8,12 @@ import { useState } from 'react';
 // tjf.installDismissed). "Details" opens the full Impressum/privacy modal.
 const KEY = 'tjf.storageNoticeDismissed';
 
-function wasDismissed(): boolean {
-  try {
-    return localStorage.getItem(KEY) === '1';
-  } catch {
-    return false;
-  }
-}
-
 export default function CookieNotice({ onLearnMore }: { onLearnMore: () => void }) {
-  const [dismissed, setDismissed] = useState(wasDismissed);
+  const [dismissed, setDismissed] = useState(() => readFlag(KEY));
   if (dismissed) return null;
 
   const dismiss = () => {
-    try {
-      localStorage.setItem(KEY, '1');
-    } catch {
-      // Private mode / storage disabled: just hide it for this session.
-    }
+    writeFlag(KEY, true);
     setDismissed(true);
   };
 

@@ -1,42 +1,26 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Track } from '../data/tracks';
-import { buildCallings, beatsForStep } from '../data/beats';
-import { bpmFromTaps } from '../data/calibration';
+import { buildCallings } from '../data/beats';
+import { formatClock, formatLong } from '../data/time';
 import { usePlayerEngine } from '../hooks/usePlayerEngine';
 import { useTrackMeta } from '../hooks/useTrackMeta';
 import { useCalibration } from '../hooks/useCalibration';
 import { useWakeLock } from '../hooks/useWakeLock';
 import { useCopyFlag } from '../hooks/useCopyFlag';
+import { useSyncOffset } from '../hooks/useSyncOffset';
 import CallingDisplay from './CallingDisplay';
 import TapToTime from './TapToTime';
-import { SkipBack, SkipForward, Pause, Play, Volume, Link as LinkIcon, AlertTriangle } from './icons';
+import PlayerControls from './player/PlayerControls';
+import StepTimeline from './player/StepTimeline';
+import SyncOffsetSlider from './player/SyncOffsetSlider';
+import VolumeSlider from './player/VolumeSlider';
+import CalibrationPanel from './player/CalibrationPanel';
+import GapOverlay from './player/GapOverlay';
+import HeldOverlay from './player/HeldOverlay';
+import DeviceBanners from './player/DeviceBanners';
+import { Pause, Link as LinkIcon, AlertTriangle } from './icons';
 import { trackPath } from '../nav/routes';
 import { sessionEstimate } from '../data/setlist';
-
-const OFFSET_KEY = 'tjf.syncOffsetMs';
-const TAP_RESET_MS = 2000; // start a fresh tap series after this gap
-
-function fmt(ms: number): string {
-  const total = Math.max(0, Math.round(ms / 1000));
-  const m = Math.floor(total / 60);
-  const s = total % 60;
-  return `${m}:${s.toString().padStart(2, '0')}`;
-}
-
-/** Shared "the playback device went to sleep" message (held overlay + lost banner). */
-function deviceOfflineMessage(name: string | null): string {
-  return `${name ?? 'The playback device'} is offline — wake it up (open Spotify on it). It reconnects automatically once it’s back.`;
-}
-
-/** Like fmt but with an hours field for long session totals (H:MM:SS). */
-function fmtLong(ms: number): string {
-  const total = Math.max(0, Math.round(ms / 1000));
-  const h = Math.floor(total / 3600);
-  const m = Math.floor((total % 3600) / 60);
-  const s = total % 60;
-  const mm = h > 0 ? String(m).padStart(2, '0') : String(m);
-  return `${h > 0 ? `${h}:` : ''}${mm}:${s.toString().padStart(2, '0')}`;
-}
 
 export default function PlayerScreen({
   tracks,
@@ -66,14 +50,7 @@ export default function PlayerScreen({
   useWakeLock(true);
 
   const [tapping, setTapping] = useState(false);
-
-  // Sync offset compensates for Bluetooth speaker latency (display vs. audible).
-  const [offsetMs, setOffsetMs] = useState<number>(() =>
-    Number(localStorage.getItem(OFFSET_KEY) ?? '0'),
-  );
-  useEffect(() => {
-    localStorage.setItem(OFFSET_KEY, String(offsetMs));
-  }, [offsetMs]);
+  const [offsetMs, setOffsetMs] = useSyncOffset();
 
   // Kick off playback once when the screen opens — or attach to the running
   // track when resuming a session after a reload.
@@ -112,6 +89,7 @@ export default function PlayerScreen({
     });
     setTapping(false);
   };
+
   // Session (setlist) progress estimate. Refine the current track's duration
   // with the live value from Spotify when we have it.
   const sessionView = (() => {
@@ -126,54 +104,10 @@ export default function PlayerScreen({
   const duration = engine.durationMs || meta.durationMs;
   const progressPct = duration > 0 ? Math.min(100, (engine.positionMs / duration) * 100) : 0;
 
-  // Where the active BPM / first beat come from (authored wins over a tap).
-  const bpmAuthored = track.bpm != null;
-  const firstBeatAuthored = track.firstBeatSec != null;
-  const bpmSource = bpmAuthored
-    ? 'authored'
-    : cal?.bpm != null
-      ? 'tapped'
-      : meta.bpm != null
-        ? 'Spotify'
-        : null;
-  const firstBeatSource = firstBeatAuthored
-    ? 'authored'
-    : cal?.firstBeatSec != null
-      ? 'tapped'
-      : 'default';
-
-  // --- Tap tempo + downbeat calibration --------------------------------------
-  const tapsRef = useRef<number[]>([]);
-  const [tapBpm, setTapBpm] = useState<number | null>(null);
   const [linkCopied, copyText] = useCopyFlag();
-
   // Copy a shareable deep link to this track's detail page.
   const copyLink = () =>
     copyText(window.location.origin + trackPath(track.id, import.meta.env.BASE_URL));
-
-  const onTap = () => {
-    const now = performance.now();
-    const taps = tapsRef.current;
-    if (taps.length && now - taps[taps.length - 1] > TAP_RESET_MS) taps.length = 0;
-    taps.push(now);
-    if (taps.length > 8) taps.shift();
-    setTapBpm(bpmFromTaps(taps));
-  };
-  const saveTappedBpm = () => {
-    if (tapBpm) updateCal({ bpm: tapBpm });
-    tapsRef.current = [];
-    setTapBpm(null);
-  };
-  const markFirstBeat = () => updateCal({ firstBeatSec: Math.max(0, positionSeconds) });
-
-  const playLabel =
-    engine.phase === 'playing'
-      ? 'Pause'
-      : engine.phase === 'paused'
-        ? 'Resume'
-        : engine.phase === 'ended'
-          ? 'Replay'
-          : 'Play';
 
   // Which calling row is active (for the coach timeline highlight).
   let activeRow = -1;
@@ -182,16 +116,9 @@ export default function PlayerScreen({
     else break;
   }
 
-  // Keep the active step centered in the scrollable "Prepared steps" list.
-  const stepListRef = useRef<HTMLOListElement | null>(null);
-  const activeRowRef = useRef<HTMLLIElement | null>(null);
-  useEffect(() => {
-    const li = activeRowRef.current;
-    const ol = stepListRef.current;
-    if (!li || !ol) return;
-    const target = li.offsetTop - (ol.clientHeight - li.offsetHeight) / 2;
-    ol.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
-  }, [activeRow]);
+  // Seek so a tapped step becomes the audible "now": the sync offset is
+  // subtracted because positionSeconds = (rawPosition + offset).
+  const seekToCalling = (timeSeconds: number) => engine.seekTo(timeSeconds * 1000 - offsetMs);
 
   return (
     <div className="player">
@@ -208,7 +135,7 @@ export default function PlayerScreen({
             Setlist · {engine.index + 1}/{sessionView.count}
           </span>
           <span className="muted">
-            ~{fmtLong(sessionView.remainingMs)} left · {fmtLong(sessionView.totalMs)} total
+            ~{formatLong(sessionView.remainingMs)} left · {formatLong(sessionView.totalMs)} total
           </span>
         </div>
       )}
@@ -235,33 +162,13 @@ export default function PlayerScreen({
 
       {engine.error && <p className="error">{engine.error}</p>}
 
-      {engine.noDevice && (
-        <div className="device-lost">
-          <span>{deviceOfflineMessage(engine.deviceName)}</span>
-          <div className="device-lost-actions">
-            <button className="ghost" onClick={onBack}>
-              Devices
-            </button>
-            <button className="primary" onClick={engine.recover}>
-              Reconnect
-            </button>
-          </div>
-        </div>
-      )}
-
-      {engine.hijacked && !engine.noDevice && (
-        <div className="device-lost">
-          <span>
-            Another app took over playback — a different track is playing. Take back
-            control of this device:
-          </span>
-          <div className="device-lost-actions">
-            <button className="primary" onClick={engine.recover}>
-              Take back control
-            </button>
-          </div>
-        </div>
-      )}
+      <DeviceBanners
+        noDevice={engine.noDevice}
+        hijacked={engine.hijacked}
+        deviceName={engine.deviceName}
+        onBack={onBack}
+        onRecover={engine.recover}
+      />
 
       <CallingDisplay
         callings={callings}
@@ -274,71 +181,29 @@ export default function PlayerScreen({
           <div className="progress-fill" style={{ width: `${progressPct}%` }} />
         </div>
         <div className="progress-times">
-          <span>{fmt(engine.positionMs)}</span>
-          <span>{fmt(duration)}</span>
+          <span>{formatClock(engine.positionMs)}</span>
+          <span>{formatClock(duration)}</span>
         </div>
       </div>
 
-      <div className="controls">
-        <button className="round" onClick={engine.prev} aria-label="Previous track">
-          <SkipBack />
-        </button>
-        <button
-          className="round primary xl"
-          onClick={
-            engine.phase === 'idle' ? () => engine.start(engine.index) : engine.togglePlayPause
-          }
-        >
-          {playLabel}
-        </button>
-        <button className="round" onClick={engine.next} aria-label="Next track">
-          <SkipForward />
-        </button>
-      </div>
+      <PlayerControls
+        phase={engine.phase}
+        onPrev={engine.prev}
+        onNext={engine.next}
+        onPlayPause={
+          engine.phase === 'idle' ? () => engine.start(engine.index) : engine.togglePlayPause
+        }
+      />
 
-      {/* Speaker volume on the Connect device (no need to walk to the tablet). */}
-      <div className="volume-row">
-        <Volume size={18} />
-        <input
-          type="range"
-          min={0}
-          max={100}
-          step={1}
-          aria-label="Speaker volume"
-          value={engine.volumePercent ?? 0}
-          disabled={engine.volumePercent == null}
-          onChange={(e) => engine.setVolume(Number(e.target.value))}
-        />
-        <span className="muted volume-pct">
-          {engine.volumePercent == null ? '—' : `${engine.volumePercent}%`}
-        </span>
-      </div>
+      <VolumeSlider volumePercent={engine.volumePercent} onChange={engine.setVolume} />
 
-      {/* Coach view: the full prepared order of steps — tap a step to jump there */}
-      <section className="timeline">
-        <h3>Prepared steps</h3>
-        <ol ref={stepListRef}>
-          {callings.map((c, i) => (
-            <li key={i} ref={i === activeRow ? activeRowRef : null}>
-              <button
-                type="button"
-                className={`row-jump${i === activeRow ? ' row-active' : ''}`}
-                // Seek so this step becomes the audible "now": the sync offset is
-                // subtracted because positionSeconds = (rawPosition + offset).
-                onClick={() => engine.seekTo(c.time * 1000 - offsetMs)}
-                disabled={engine.phase !== 'playing' && engine.phase !== 'paused'}
-              >
-                <span className="row-time">
-                  <span className="row-secs">{fmt(c.time * 1000)}</span>
-                  <span className="row-beats">{beatsForStep(track.steps[i]?.measures ?? 0)} beats</span>
-                </span>
-                <span className="row-step">{c.step}</span>
-                {c.cue && <span className="row-cue">{c.cue}</span>}
-              </button>
-            </li>
-          ))}
-        </ol>
-      </section>
+      <StepTimeline
+        callings={callings}
+        steps={track.steps}
+        activeRow={activeRow}
+        phase={engine.phase}
+        onSeek={seekToCalling}
+      />
 
       <div className="continue-row">
         <label className="toggle-row">
@@ -355,73 +220,17 @@ export default function PlayerScreen({
         </button>
       </div>
 
-      <div className="sync-row">
-        <div className="sync-head">
-          <span>Sync offset</span>
-          <span className="muted">
-            {offsetMs > 0 ? '+' : ''}
-            {offsetMs} ms
-          </span>
-        </div>
-        <input
-          type="range"
-          min={-1500}
-          max={1500}
-          step={50}
-          value={offsetMs}
-          onChange={(e) => setOffsetMs(Number(e.target.value))}
-        />
-        <p className="hint">
-          Nudge if the called step is ahead of / behind what you hear on the speaker.
-        </p>
-      </div>
+      <SyncOffsetSlider offsetMs={offsetMs} onChange={setOffsetMs} />
 
-      {/* Tap-tempo calibration (Spotify's tempo endpoints are gone) */}
-      <div className="calib-row">
-        <div className="sync-head">
-          <span>Tempo &amp; first beat</span>
-          <span className="muted">
-            {meta.bpm ? `${Math.round(meta.bpm)} BPM` : 'no BPM'}
-            {bpmSource ? ` (${bpmSource})` : ''} ·{' '}
-            {`1st @ ${meta.firstBeatSec.toFixed(2)}s (${firstBeatSource})`}
-          </span>
-        </div>
-        <div className="calib-actions">
-          <button className="tap-btn" onClick={onTap}>
-            Tap tempo
-            <span className="tap-bpm">{tapBpm ? `${tapBpm}` : '—'}</span>
-          </button>
-          <button
-            className="ghost"
-            onClick={saveTappedBpm}
-            disabled={!tapBpm || bpmAuthored}
-          >
-            Save BPM
-          </button>
-          <button
-            className="ghost"
-            onClick={markFirstBeat}
-            disabled={
-              firstBeatAuthored ||
-              (engine.phase !== 'playing' && engine.phase !== 'paused')
-            }
-          >
-            Mark first beat
-          </button>
-        </div>
-        {cal && (
-          <div className="calib-foot">
-            <button className="link" onClick={clearCal}>
-              Clear
-            </button>
-          </div>
-        )}
-        <p className="hint">
-          {bpmAuthored || firstBeatAuthored
-            ? 'This routine sets the BPM / first beat, which overrides tap calibration. Edit the routine to change it.'
-            : 'Tap along to the beat a few times, Save, then tap “Mark first beat” on count 1. Saved per track on this device.'}
-        </p>
-      </div>
+      <CalibrationPanel
+        track={track}
+        meta={meta}
+        cal={cal}
+        phase={engine.phase}
+        positionSeconds={positionSeconds}
+        updateCal={updateCal}
+        clearCal={clearCal}
+      />
 
       {canTapTime && (
         <button className="hold-btn" onClick={() => setTapping(true)}>
@@ -429,51 +238,24 @@ export default function PlayerScreen({
         </button>
       )}
 
-      {/* Gap / held overlays */}
       {engine.phase === 'gap' && (
-        <div className="overlay">
-          <div className="overlay-card">
-            <span className="muted">Next track in</span>
-            <span className="gap-num">{engine.gapRemaining}</span>
-            <button className="add-time" onClick={() => engine.extendGap(5)}>
-              +5s
-            </button>
-            <div className="overlay-actions">
-              <button className="ghost" onClick={engine.holdNow}>
-                Hold
-              </button>
-              <button className="primary" onClick={engine.skipGap}>
-                Start now
-              </button>
-            </div>
-          </div>
-        </div>
+        <GapOverlay
+          gapRemaining={engine.gapRemaining}
+          onExtend={engine.extendGap}
+          onHold={engine.holdNow}
+          onSkip={engine.skipGap}
+        />
       )}
 
       {engine.phase === 'held' && (
-        <div className="overlay">
-          <div className="overlay-card">
-            <span className="muted">Paused between tracks</span>
-            <button className="primary big" onClick={engine.skipGap}>
-              Continue <Play size={18} />
-            </button>
-            {engine.keepAwake &&
-              engine.deviceName &&
-              (engine.deviceAsleep ? (
-                <div className="keepawake-offline">
-                  <span className="hint">{deviceOfflineMessage(engine.deviceName)}</span>
-                  <button className="link" onClick={engine.recheckDevice}>
-                    Check again
-                  </button>
-                </div>
-              ) : (
-                <span className="hint">Keeping {engine.deviceName} awake</span>
-              ))}
-            <button className="link" onClick={onBack}>
-              End session · back to list
-            </button>
-          </div>
-        </div>
+        <HeldOverlay
+          keepAwake={engine.keepAwake}
+          deviceName={engine.deviceName}
+          deviceAsleep={engine.deviceAsleep}
+          onContinue={engine.skipGap}
+          onRecheck={engine.recheckDevice}
+          onBack={onBack}
+        />
       )}
 
       {tapping && meta.bpm != null && (
@@ -488,7 +270,7 @@ export default function PlayerScreen({
       )}
 
       <div className="debug">
-        phase: {engine.phase} · raw {fmt(engine.positionMs)} · device{' '}
+        phase: {engine.phase} · raw {formatClock(engine.positionMs)} · device{' '}
         {engine.deviceName ?? '—'}
       </div>
     </div>

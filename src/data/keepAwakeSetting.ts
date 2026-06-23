@@ -6,42 +6,28 @@
 //   manual=true  → use `value` (the explicit on/off the coach picked)
 // Shared by the Settings panel (the writer) and the engine's useKeepAwake hook.
 
+import { readFlag, writeFlag } from './storage';
+
 const VALUE_KEY = 'tjf.keepAwake';
 const MANUAL_KEY = 'tjf.keepAwakeManual';
 
-function readBool(key: string): boolean {
-  try {
-    return localStorage.getItem(key) === '1';
-  } catch {
-    return false;
-  }
-}
-
-function writeBool(key: string, v: boolean): void {
-  try {
-    localStorage.setItem(key, v ? '1' : '0');
-  } catch {
-    /* storage unavailable — the choice just won't persist this session */
-  }
-}
-
 /** Has the coach explicitly chosen, overriding the automatic (heuristic) default? */
 export function isKeepAwakeManual(): boolean {
-  return readBool(MANUAL_KEY);
+  return readFlag(MANUAL_KEY);
 }
 
 /** The on/off value to show in Settings: the explicit choice, else the auto default (on). */
 export function loadKeepAwake(): boolean {
-  return isKeepAwakeManual() ? readBool(VALUE_KEY) : true;
+  return isKeepAwakeManual() ? readFlag(VALUE_KEY) : true;
 }
 
 /** Persist an explicit on/off — this marks the setting as a manual override. */
 export function saveKeepAwake(value: boolean): void {
-  writeBool(VALUE_KEY, value);
-  writeBool(MANUAL_KEY, true);
+  writeFlag(VALUE_KEY, value);
+  writeFlag(MANUAL_KEY, true);
 }
 
 /** The explicit override for the engine, or null to follow the heuristic default. */
 export function loadKeepAwakeOverride(): boolean | null {
-  return isKeepAwakeManual() ? readBool(VALUE_KEY) : null;
+  return isKeepAwakeManual() ? readFlag(VALUE_KEY) : null;
 }

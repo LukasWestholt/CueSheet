@@ -36,3 +36,40 @@ export function removeKey(key: string): void {
     /* ignore */
   }
 }
+
+/** Reads a boolean flag stored as '1'/'0' (absent/unreadable → false). */
+export function readFlag(key: string): boolean {
+  try {
+    return localStorage.getItem(key) === '1';
+  } catch {
+    return false;
+  }
+}
+
+/** Stores a boolean flag as '1'/'0'; no-op if storage is unavailable. */
+export function writeFlag(key: string, value: boolean): void {
+  try {
+    localStorage.setItem(key, value ? '1' : '0');
+  } catch {
+    /* storage unavailable — value just won't persist this session */
+  }
+}
+
+/** Reads a raw string, returning `fallback` when absent or unreadable. */
+export function readString(key: string, fallback = ''): string {
+  try {
+    return localStorage.getItem(key) ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+/** Stores a raw string; an empty value removes the key. No-op if unavailable. */
+export function writeString(key: string, value: string): void {
+  try {
+    if (value === '') localStorage.removeItem(key);
+    else localStorage.setItem(key, value);
+  } catch {
+    /* storage unavailable — value just won't persist this session */
+  }
+}

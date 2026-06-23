@@ -1,14 +1,8 @@
 import type { Track } from '../data/tracks';
 import type { TrackInfo } from '../spotify/api';
 import { cleanTitle } from '../data/title';
+import { formatClock } from '../data/time';
 import { Star, Music, Check, Plus, Pen } from './icons';
-
-function formatDuration(ms: number): string {
-  const total = Math.round(ms / 1000);
-  const m = Math.floor(total / 60);
-  const s = total % 60;
-  return `${m}:${s.toString().padStart(2, '0')}`;
-}
 
 export interface TrackItem {
   track: Track;
@@ -93,7 +87,7 @@ export default function TrackList({
                 {t.wip && <span className="badge badge-wip">WIP</span>}
                 <span className="badge">{t.steps.length} steps</span>
                 {durationMs != null && (
-                  <span className="track-time">{formatDuration(durationMs)}</span>
+                  <span className="track-time">{formatClock(durationMs)}</span>
                 )}
               </span>
             </button>

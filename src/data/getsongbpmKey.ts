@@ -7,25 +7,17 @@
 // so a coach can bookmark a link that re-applies their key on any device. We
 // persist it and strip the param from the visible URL (the bookmark keeps it).
 
+import { readString, writeString } from './storage';
+
 const KEY = 'tjf.getsongbpmKey';
 const URL_PARAM = 'getsongbpm_key';
 
 export function loadGetsongbpmKey(): string {
-  try {
-    return localStorage.getItem(KEY) ?? '';
-  } catch {
-    return '';
-  }
+  return readString(KEY);
 }
 
 export function saveGetsongbpmKey(key: string): void {
-  try {
-    const trimmed = key.trim();
-    if (trimmed) localStorage.setItem(KEY, trimmed);
-    else localStorage.removeItem(KEY);
-  } catch {
-    /* storage unavailable — the key just won't persist this session */
-  }
+  writeString(KEY, key.trim());
 }
 
 /** A bookmarkable URL that re-applies the given key on any device. */

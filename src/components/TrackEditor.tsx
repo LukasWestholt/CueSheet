@@ -7,6 +7,7 @@ import { getBpmByIsrc } from '../beatdata/deezer';
 import { bpmAdvice, bpmLevelClass } from '../data/bpmAdvice';
 import { checkRoutineLength, lengthWarning } from '../data/routineLength';
 import { POPULAR_TRACKS, type PopularTrack } from '../data/popularTracks';
+import { formatClock } from '../data/time';
 import { ArrowUp, ArrowDown, X } from './icons';
 
 const TRACK_URI_RE = /^spotify:track:[A-Za-z0-9]{22}$/;
@@ -15,11 +16,6 @@ const TRACK_URI_RE = /^spotify:track:[A-Za-z0-9]{22}$/;
 const hasHalfCount = (measures: number) => Math.round(measures * 2) % 2 === 1;
 /** Default (and max) half-count position: just before the closing count-in. */
 const naturalHalfPos = (measures: number) => Math.max(0, Math.floor(measures) - 1);
-
-function fmtDuration(ms: number): string {
-  const total = Math.round(ms / 1000);
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
-}
 
 function blankTrack(): Track {
   return {
@@ -247,7 +243,7 @@ export default function TrackEditor({
                       <span className="sr-title">{r.title}</span>
                       <span className="sr-artist">{r.artist}</span>
                     </span>
-                    <span className="sr-dur">{fmtDuration(r.durationMs)}</span>
+                    <span className="sr-dur">{formatClock(r.durationMs)}</span>
                   </button>
                   <button
                     className={`sr-bpm-btn ${bpm != null ? bpmLevelClass(bpmAdvice(bpm).level) : ''}`}
@@ -345,8 +341,8 @@ export default function TrackEditor({
         {showLength &&
           (lengthCheck.status === 'ok' ? (
             <p className="length-note ok-note">
-              ✓ Routine ≈ {fmtDuration(lengthCheck.routineEndSec * 1000)} of{' '}
-              {fmtDuration(lengthCheck.trackDurationSec * 1000)}
+              ✓ Routine ≈ {formatClock(lengthCheck.routineEndSec * 1000)} of{' '}
+              {formatClock(lengthCheck.trackDurationSec * 1000)}
             </p>
           ) : (
             <p className="length-note warning">⚠ {lengthWarning(lengthCheck)}</p>

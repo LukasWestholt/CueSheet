@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useInstallPrompt } from '../hooks/useInstallPrompt';
+import { readFlag, writeFlag } from '../data/storage';
 
 const DISMISS_KEY = 'tjf.installDismissed';
 
@@ -10,14 +11,12 @@ const DISMISS_KEY = 'tjf.installDismissed';
  */
 export default function InstallPrompt() {
   const { canInstall, iosHint, promptInstall } = useInstallPrompt();
-  const [dismissed, setDismissed] = useState(
-    () => localStorage.getItem(DISMISS_KEY) === '1',
-  );
+  const [dismissed, setDismissed] = useState(() => readFlag(DISMISS_KEY));
 
   if (dismissed || (!canInstall && !iosHint)) return null;
 
   const dismiss = () => {
-    localStorage.setItem(DISMISS_KEY, '1');
+    writeFlag(DISMISS_KEY, true);
     setDismissed(true);
   };
 

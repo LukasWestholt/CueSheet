@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { TRACKS } from '../data/tracks';
 import { buildCallings } from '../data/beats';
 import CallingDisplay from './CallingDisplay';
+import { formatClock } from '../data/time';
 import { Play, Check } from './icons';
 
 /**
@@ -11,11 +12,6 @@ import { Play, Check } from './icons';
  * the rebrand (orange/green), Barlow Condensed display font, and 4/8 spacing
  * can be checked on a phone without logging in. Not part of the shipped flow.
  */
-function fmt(sec: number): string {
-  const s = Math.max(0, Math.floor(sec));
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-}
-
 type Overlay = 'none' | 'gap' | 'held';
 
 export default function PlayerPreview() {
@@ -81,8 +77,8 @@ export default function PlayerPreview() {
             <div className="progress-fill" style={{ width: `${progressPct}%` }} />
           </div>
           <div className="progress-times">
-            <span>{fmt(pos)}</span>
-            <span>{fmt(durationSec)}</span>
+            <span>{formatClock(pos * 1000)}</span>
+            <span>{formatClock(durationSec * 1000)}</span>
           </div>
         </div>
 
