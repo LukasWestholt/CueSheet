@@ -47,6 +47,7 @@ function makeEngine(overrides: Partial<PlayerEngine> = {}): PlayerEngine {
     gapRemaining: 0,
     autoContinue: true,
     deviceName: 'Tablet',
+    keepAwake: false,
     noDevice: false,
     hijacked: false,
     error: null,

@@ -1,7 +1,7 @@
 import type { Track } from '../data/tracks';
 import type { TrackInfo } from '../spotify/api';
 import { cleanTitle } from '../data/title';
-import { Star, Music, Check, Plus } from './icons';
+import { Star, Music, Check, Plus, Pen } from './icons';
 
 function formatDuration(ms: number): string {
   const total = Math.round(ms / 1000);
@@ -99,8 +99,13 @@ export default function TrackList({
               </span>
             </button>
             {onEdit && (
-              <button className="track-edit" onClick={() => onEdit(i)}>
-                Edit
+              <button
+                className="track-edit"
+                onClick={() => onEdit(i)}
+                aria-label="Edit routine"
+                title="Edit routine"
+              >
+                <Pen size={18} />
               </button>
             )}
           </li>

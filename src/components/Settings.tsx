@@ -4,6 +4,7 @@ import {
   saveGetsongbpmKey,
   getsongbpmKeyUrl,
 } from '../data/getsongbpmKey';
+import { loadKeepAwake, saveKeepAwake } from '../data/keepAwakeSetting';
 import { testGetsongbpmKey } from '../beatdata/getsongbpm';
 import { GETSONGBPM_URL, REPO_URL } from '../links';
 import { X, Settings as SettingsIcon } from './icons';
@@ -13,6 +14,7 @@ import { X, Settings as SettingsIcon } from './icons';
 export default function Settings() {
   const [key, setKey] = useState(loadGetsongbpmKey);
   const [savedKey, setSavedKey] = useState(loadGetsongbpmKey);
+  const [keepAwake, setKeepAwake] = useState<boolean>(loadKeepAwake);
   const [helpOpen, setHelpOpen] = useState(false);
   const [test, setTest] = useState<
     { state: 'idle' | 'testing' } | { state: 'ok' } | { state: 'fail'; reason: string }
@@ -36,6 +38,10 @@ export default function Settings() {
   const onKeyChange = (value: string) => {
     setKey(value);
     setTest({ state: 'idle' });
+  };
+  const onKeepAwakeChange = (value: boolean) => {
+    setKeepAwake(value);
+    saveKeepAwake(value);
   };
 
   const dirty = key.trim() !== savedKey;
@@ -99,6 +105,18 @@ export default function Settings() {
           </p>
         )}
       </div>
+
+      <label className="toggle-row" style={{ marginTop: 'var(--space-4)' }}>
+        <span>
+          Keep playback device awake
+          <small className="muted"> · re-asserts your device between tracks so Spotify doesn’t drop it</small>
+        </span>
+        <input
+          type="checkbox"
+          checked={keepAwake}
+          onChange={(e) => onKeepAwakeChange(e.target.checked)}
+        />
+      </label>
 
       {savedKey && (
         <p className="hint">

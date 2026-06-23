@@ -4,14 +4,29 @@ import type { Track } from '../data/tracks';
 import type { PlaybackSnapshot } from '../spotify/api';
 
 // Mocked Spotify API (hoisted so the vi.mock factory can reference it).
-const { playTrack, pause, resume, getPlaybackState, getDevices } = vi.hoisted(() => ({
+const { playTrack, pause, resume, getPlaybackState, getDevices, transferPlayback } = vi.hoisted(() => ({
   playTrack: vi.fn(async () => {}),
   pause: vi.fn(async () => {}),
   resume: vi.fn(async () => {}),
   getPlaybackState: vi.fn<() => Promise<PlaybackSnapshot | null>>(),
   getDevices: vi.fn(async () => [] as { id: string; name: string; is_active: boolean }[]),
+  transferPlayback: vi.fn(async () => {}),
 }));
-vi.mock('../spotify/api', () => ({ playTrack, pause, resume, getPlaybackState, getDevices }));
+vi.mock('../spotify/api', () => ({
+  playTrack,
+  pause,
+  resume,
+  getPlaybackState,
+  getDevices,
+  transferPlayback,
+}));
+
+// Keep-awake override (null = follow the device heuristic). Controlled per test
+// instead of localStorage, which jsdom doesn't provide.
+const { loadKeepAwakeOverride } = vi.hoisted(() => ({
+  loadKeepAwakeOverride: vi.fn<() => boolean | null>(() => null),
+}));
+vi.mock('../data/keepAwakeSetting', () => ({ loadKeepAwakeOverride }));
 
 import { usePlayerEngine } from './usePlayerEngine';
 
@@ -40,6 +55,14 @@ async function startAt(result: { current: ReturnType<typeof usePlayerEngine> }, 
   });
 }
 
+// The keep-awake heuristic reads navigator.userAgent; stub it per test.
+const REAL_UA = navigator.userAgent;
+const ANDROID_UA =
+  'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Mobile Safari/537.36';
+function setUserAgent(ua: string) {
+  Object.defineProperty(navigator, 'userAgent', { value: ua, configurable: true });
+}
+
 beforeEach(() => {
   vi.useFakeTimers();
   playTrack.mockClear();
@@ -49,10 +72,14 @@ beforeEach(() => {
   getPlaybackState.mockResolvedValue(null);
   getDevices.mockReset();
   getDevices.mockResolvedValue([]);
+  transferPlayback.mockClear();
+  loadKeepAwakeOverride.mockReset();
+  loadKeepAwakeOverride.mockReturnValue(null);
 });
 
 afterEach(() => {
   vi.useRealTimers();
+  setUserAgent(REAL_UA);
 });
 
 describe('usePlayerEngine', () => {
@@ -350,5 +377,117 @@ describe('usePlayerEngine', () => {
     expect(result.current.phase).toBe('gap');
     expect(result.current.hijacked).toBe(false);
     expect(pause).toHaveBeenCalled();
+  });
+
+  it('keeps the device awake while held when it looks like this machine (UA heuristic)', async () => {
+    setUserAgent(ANDROID_UA); // model "Pixel 7"
+    getPlaybackState.mockResolvedValue({
+      isPlaying: true,
+      progressMs: 1_000,
+      durationMs: 10_000,
+      trackUri: 'spotify:track:a',
+      deviceId: 'd',
+      deviceName: 'Pixel 7',
+      fetchedAt: Date.now(),
+    });
+    getDevices.mockResolvedValue([{ id: 'd', name: 'Pixel 7', is_active: false }]);
+    const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
+    await startAt(result, 0);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_100);
+    });
+    // The active device matches this UA → flagged as our keep-awake device.
+    expect(result.current.keepAwake).toBe(true); // default on for our own device
+
+    await act(async () => {
+      result.current.holdNow();
+    });
+    expect(result.current.phase).toBe('held');
+    transferPlayback.mockClear();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(16_000);
+    });
+    expect(transferPlayback).toHaveBeenCalledWith('d', false);
+  });
+
+  it('does not keep alive a device that is not this machine', async () => {
+    setUserAgent(ANDROID_UA);
+    getPlaybackState.mockResolvedValue({
+      isPlaying: true,
+      progressMs: 1_000,
+      durationMs: 10_000,
+      trackUri: 'spotify:track:a',
+      deviceId: 'spk',
+      deviceName: 'Living Room Speaker',
+      fetchedAt: Date.now(),
+    });
+    getDevices.mockResolvedValue([{ id: 'spk', name: 'Living Room Speaker', is_active: true }]);
+    const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
+    await startAt(result, 0);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_100);
+    });
+    expect(result.current.keepAwake).toBe(false); // default off — not our device
+
+    await act(async () => {
+      result.current.holdNow();
+    });
+    transferPlayback.mockClear();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(16_000);
+    });
+    expect(transferPlayback).not.toHaveBeenCalled();
+  });
+
+  it('an explicit override forces keep-alive on even for a non-local device', async () => {
+    setUserAgent(ANDROID_UA);
+    loadKeepAwakeOverride.mockReturnValue(true); // coach forced it on in Settings
+    getPlaybackState.mockResolvedValue({
+      isPlaying: true,
+      progressMs: 1_000,
+      durationMs: 10_000,
+      trackUri: 'spotify:track:a',
+      deviceId: 'spk',
+      deviceName: 'Living Room Speaker',
+      fetchedAt: Date.now(),
+    });
+    getDevices.mockResolvedValue([{ id: 'spk', name: 'Living Room Speaker', is_active: true }]);
+    const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
+    await startAt(result, 0);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_100);
+    });
+    expect(result.current.keepAwake).toBe(true); // override wins over the heuristic
+
+    await act(async () => {
+      result.current.holdNow();
+    });
+    transferPlayback.mockClear();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(16_000);
+    });
+    expect(transferPlayback).toHaveBeenCalledWith('spk', false);
+  });
+
+  it('does not ping while playing', async () => {
+    setUserAgent(ANDROID_UA);
+    getPlaybackState.mockResolvedValue({
+      isPlaying: true,
+      progressMs: 1_000,
+      durationMs: 600_000, // long track so it never ends during the test
+      trackUri: 'spotify:track:a',
+      deviceId: 'd',
+      deviceName: 'Pixel 7',
+      fetchedAt: Date.now(),
+    });
+    getDevices.mockResolvedValue([{ id: 'd', name: 'Pixel 7', is_active: true }]);
+    const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
+    await startAt(result, 0);
+    transferPlayback.mockClear();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(31_000);
+    });
+    expect(result.current.phase).toBe('playing');
+    expect(transferPlayback).not.toHaveBeenCalled();
   });
 });

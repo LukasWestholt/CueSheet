@@ -437,6 +437,9 @@ export default function PlayerScreen({
             <button className="primary big" onClick={engine.skipGap}>
               Continue <Play size={18} />
             </button>
+            {engine.keepAwake && engine.deviceName && (
+              <span className="hint">Keeping {engine.deviceName} awake</span>
+            )}
             <button className="link" onClick={onBack}>
               End session · back to list
             </button>

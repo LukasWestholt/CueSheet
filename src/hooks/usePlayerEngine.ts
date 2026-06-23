@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Track } from '../data/tracks';
 import { useStateRef } from './useStateRef';
+import { useKeepAwake } from './useKeepAwake';
 import { interpolatePosition } from '../playback/position';
 import { toast } from '../data/toast';
 import {
@@ -49,6 +50,8 @@ export interface PlayerEngine {
   gapRemaining: number;
   autoContinue: boolean;
   deviceName: string | null;
+  /** Whether the keep-awake ping is on (defaults to the local-device heuristic). */
+  keepAwake: boolean;
   /** True when Spotify has no active device (the tablet dropped off Connect). */
   noDevice: boolean;
   /** True when another app/user took over the device and a different track is playing. */
@@ -91,7 +94,9 @@ export function usePlayerEngine(
   const [positionMs, setPositionMs] = useState(0);
   const [durationMs, setDurationMs] = useState(0);
   const [gapRemaining, setGapRemaining] = useState(gapSeconds);
-  const [deviceName, setDeviceName] = useState<string | null>(null);
+  // deviceName has a ref so the keep-awake loop can read the device we last
+  // played on (its ping target, re-resolved by name since Spotify reassigns ids).
+  const [deviceName, setDeviceName, deviceNameRef] = useStateRef<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Pure refs (mutable values that never drive a render).
@@ -103,6 +108,13 @@ export function usePlayerEngine(
   const wrongTrackPollsRef = useRef(0);
 
   deviceIdRef.current = deviceId;
+
+  // Keep-awake setting + ping loop (its own focused hook).
+  const { keepAwake, syncDefault: syncKeepAwakeDefault } = useKeepAwake({
+    phaseRef,
+    hijackedRef,
+    deviceNameRef,
+  });
 
   const track = tracks[index];
 
@@ -215,6 +227,7 @@ export function usePlayerEngine(
 
         snapshotRef.current = snap;
         setDeviceName(snap.deviceName);
+        syncKeepAwakeDefault(snap.deviceName);
         // If Spotify reports it stopped near the end, the track finished.
         if (
           phaseRef.current === 'playing' &&
@@ -234,7 +247,7 @@ export function usePlayerEngine(
       cancelled = true;
       clearInterval(id);
     };
-  }, [enterGapOrEnd, tracks, setNoDevice, setHijacked, phaseRef, indexRef, noDeviceRef, hijackedRef]);
+  }, [enterGapOrEnd, tracks, setNoDevice, setHijacked, syncKeepAwakeDefault, phaseRef, indexRef, noDeviceRef, hijackedRef]);
 
   // High-frequency ticker: interpolate position, run the gap countdown.
   useEffect(() => {
@@ -395,6 +408,7 @@ export function usePlayerEngine(
     gapRemaining,
     autoContinue,
     deviceName,
+    keepAwake,
     noDevice,
     hijacked,
     error,
