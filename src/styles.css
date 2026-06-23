@@ -1212,11 +1212,6 @@ details.routines[open] > summary.routines-head::after {
      below its content and a long title overflows the row. */
   min-width: 0;
 }
-.track-index {
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-  width: 22px;
-}
 .track-meta {
   display: flex;
   flex-direction: column;

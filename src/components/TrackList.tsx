@@ -76,7 +76,6 @@ export default function TrackList({
               </div>
             )}
             <button className="track-row" onClick={() => onSelect(i)}>
-              <span className="track-index">{i + 1}</span>
               {info?.imageUrl ? (
                 <img className="track-art" src={info.imageUrl} alt="" loading="lazy" />
               ) : (
