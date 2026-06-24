@@ -200,7 +200,7 @@
     "id": "main-1-2",
     "_description": "130 beats Barbie Girl Tiesto",
     "spotifyUri": "spotify:track:4zPVMv84MMHehLNZYIS1Zv",
-    "firstBeatSec": 1,
+    "firstBeatSec": 1.3,
     "bpm": 130,
     "wip": true,
     "steps": [
@@ -212,7 +212,8 @@
       {
         "step": "Tip Toe",
         "cue": "",
-        "measures": 4.5
+        "measures": 4.5,
+        "halfPosition": 0
       },
       {
         "step": "Jogging",
@@ -1115,7 +1116,7 @@
     "id": "main-1-17",
     "_description": "Timber — Pitbull, Kesha",
     "spotifyUri": "spotify:track:3cHyrEgdyYRjgJKSOiOtcS",
-    "firstBeatSec": 0,
+    "firstBeatSec": 0.85,
     "bpm": 130,
     "wip": true,
     "steps": [
@@ -1856,8 +1857,8 @@
   {
     "id": "main-1-29",
     "_description": "I Want It That Way (2nd routine) — Backstreet Boys",
-    "spotifyUri": "spotify:track:47BBI51FKFwOMlIiX6m8ya",
-    "firstBeatSec": 0,
+    "spotifyUri": "spotify:track:3aCfUkxaUGOABeTBNyn5Fa",
+    "firstBeatSec": 1,
     "bpm": 124,
     "wip": true,
     "steps": [
