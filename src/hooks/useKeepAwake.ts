@@ -41,8 +41,10 @@ export function useKeepAwake(refs: {
   phaseRef: MutableRefObject<Phase>;
   hijackedRef: MutableRefObject<boolean>;
   deviceNameRef: MutableRefObject<string | null>;
+  /** The explicitly-selected device id, used to keep it warm before first play. */
+  deviceIdRef: MutableRefObject<string | null>;
 }): KeepAwake {
-  const { phaseRef, hijackedRef, deviceNameRef } = refs;
+  const { phaseRef, hijackedRef, deviceNameRef, deviceIdRef } = refs;
   // The coach's override (set in Settings, persisted), or null to follow the
   // local-device heuristic. Read once at mount; Settings lives in the list view,
   // so it's never changed while this hook (the player) is mounted.
@@ -74,35 +76,52 @@ export function useKeepAwake(refs: {
   // whether it was found (asleep = not found). Shared by the 15s loop and the
   // manual "Check again" button.
   const keepAliveOnce = useCallback(async () => {
-    const target = deviceNameRef.current;
-    if (!keepAwakeRef.current || !target) return;
+    const phase = phaseRef.current;
+    const betweenTracks = phase === 'gap' || phase === 'held' || phase === 'ended';
+    // On/off: 'paused' + between-tracks respect the learned local-device
+    // heuristic (keepAwakeRef, set from the poller). Pre-play 'idle' (a deep-
+    // linked detail page, before Play) has no learned device, so it follows an
+    // explicit override and otherwise defaults on — the coach is on a specific
+    // track with a selected device, so keep it warm.
+    const on = phase === 'idle' ? overrideRef.current !== false : keepAwakeRef.current;
+    if (!on) return;
     try {
-      const match = (await getDevices()).find((d) => d.name === target);
-      if (!match) {
+      const devices = await getDevices();
+      // Target the device we last played on (by name — ids churn on wake), else
+      // the explicitly-selected device (before we've played and learned a name).
+      const target =
+        (deviceNameRef.current
+          ? devices.find((d) => d.name === deviceNameRef.current)
+          : null) ??
+        (deviceIdRef.current ? devices.find((d) => d.id === deviceIdRef.current) : null);
+      if (!target) {
         setAsleep(true);
         return;
       }
       // 'silent' mode plays a silent track to hold the device (and a Bluetooth
-      // speaker) alive — but only between tracks. On a mid-track pause we must
-      // not start another track (it would lose the resume position), so there we
-      // fall back to the no-audio ping just like 'ping' mode.
-      const betweenTracks =
-        phaseRef.current === 'gap' || phaseRef.current === 'held' || phaseRef.current === 'ended';
+      // speaker) alive — but only between tracks. On a mid-track pause or pre-
+      // play idle we must not start a track (it would lose the resume position /
+      // start audio unprompted), so there we fall back to the no-audio ping.
       if (methodRef.current === 'silent' && betweenTracks && silentUriRef.current) {
-        await playTrack(silentUriRef.current, match.id);
+        await playTrack(silentUriRef.current, target.id);
       } else {
-        await transferPlayback(match.id, false);
+        await transferPlayback(target.id, false);
       }
       setAsleep(false);
     } catch {
       setAsleep(true);
     }
-  }, [deviceNameRef, keepAwakeRef, phaseRef]);
+  }, [deviceNameRef, deviceIdRef, keepAwakeRef, overrideRef, phaseRef]);
 
   useEffect(() => {
     const id = setInterval(() => {
       const p = phaseRef.current;
-      const idle = p === 'paused' || p === 'gap' || p === 'held' || p === 'ended';
+      // Fire whenever we're not actively driving playback: between/after tracks,
+      // a mid-track pause, AND pre-play 'idle' (a detail page before Play).
+      // 'loading' is excluded — a transfer there would cancel the play we just
+      // sent.
+      const idle =
+        p === 'idle' || p === 'paused' || p === 'gap' || p === 'held' || p === 'ended';
       if (!idle || hijackedRef.current) return;
       void keepAliveOnce();
     }, KEEP_AWAKE_MS);

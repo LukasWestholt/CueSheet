@@ -138,7 +138,7 @@ export function usePlayerEngine(
     asleep: deviceAsleep,
     recheck: recheckDevice,
     syncDefault: syncKeepAwakeDefault,
-  } = useKeepAwake({ phaseRef, hijackedRef, deviceNameRef });
+  } = useKeepAwake({ phaseRef, hijackedRef, deviceNameRef, deviceIdRef });
 
   const track = tracks[index];
 

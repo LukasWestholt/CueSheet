@@ -582,6 +582,39 @@ describe('usePlayerEngine', () => {
     expect(playTrack).not.toHaveBeenCalled();
   });
 
+  it('keeps the selected device warm before the first track (idle / detail view)', async () => {
+    getDevices.mockResolvedValue([
+      { id: 'dev', name: 'Tablet', is_active: false },
+    ]);
+    const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
+    await act(async () => {
+      result.current.select(0); // detail page: idle, not yet playing
+    });
+    expect(result.current.phase).toBe('idle');
+    transferPlayback.mockClear();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(16_000);
+    });
+    // No name learned yet → it targets the explicitly-selected device id.
+    expect(transferPlayback).toHaveBeenCalledWith('dev', false);
+  });
+
+  it('does not keep awake in idle when keep-awake is explicitly off', async () => {
+    loadKeepAwakeOverride.mockReturnValue(false); // coach turned it off in Settings
+    getDevices.mockResolvedValue([
+      { id: 'dev', name: 'Tablet', is_active: false },
+    ]);
+    const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
+    await act(async () => {
+      result.current.select(0);
+    });
+    transferPlayback.mockClear();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(16_000);
+    });
+    expect(transferPlayback).not.toHaveBeenCalled();
+  });
+
   it('does not ping while playing', async () => {
     setUserAgent(ANDROID_UA);
     getPlaybackState.mockResolvedValue({
