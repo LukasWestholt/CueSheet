@@ -265,10 +265,12 @@ export default function PlayerScreen({
       {engine.phase === 'held' && (
         <HeldOverlay
           keepAwake={engine.keepAwake}
+          silent={engine.keepAwakeMethod === 'silent'}
           deviceName={engine.deviceName}
           deviceAsleep={engine.deviceAsleep}
           onContinue={engine.skipGap}
           onRecheck={engine.recheckDevice}
+          onStopSilent={() => engine.setKeepAwakeMethod('ping')}
           onBack={onBack}
         />
       )}

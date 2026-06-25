@@ -49,6 +49,8 @@ function makeEngine(overrides: Partial<PlayerEngine> = {}): PlayerEngine {
     deviceName: 'Tablet',
     volumePercent: 50,
     keepAwake: false,
+    keepAwakeMethod: 'ping',
+    setKeepAwakeMethod: vi.fn(),
     deviceAsleep: false,
     recheckDevice: vi.fn(),
     noDevice: false,
@@ -145,6 +147,21 @@ describe('PlayerScreen held overlay', () => {
 
     fireEvent.click(screen.getByText('End session · back to list'));
     expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('explains the silent track and can stop it from the overlay', () => {
+    state.engine = makeEngine({ phase: 'held', keepAwake: true, keepAwakeMethod: 'silent' });
+    renderPlayer();
+    expect(screen.getByText(/Playing a silent track on Tablet/)).toBeTruthy();
+    fireEvent.click(screen.getByText('Stop the silent track'));
+    expect(state.engine.setKeepAwakeMethod).toHaveBeenCalledWith('ping');
+  });
+
+  it('shows the plain keep-awake line for the ping method (no silent notice)', () => {
+    state.engine = makeEngine({ phase: 'held', keepAwake: true, keepAwakeMethod: 'ping' });
+    renderPlayer();
+    expect(screen.getByText('Keeping Tablet awake')).toBeTruthy();
+    expect(screen.queryByText('Stop the silent track')).toBeNull();
   });
 });
 

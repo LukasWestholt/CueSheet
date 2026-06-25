@@ -4,17 +4,23 @@ import { deviceOfflineMessage } from './messages';
 /** "Paused between tracks" overlay, with keep-awake / device-asleep status. */
 export default function HeldOverlay({
   keepAwake,
+  silent,
   deviceName,
   deviceAsleep,
   onContinue,
   onRecheck,
+  onStopSilent,
   onBack,
 }: {
   keepAwake: boolean;
+  /** True when keep-awake is holding the device by playing a silent track. */
+  silent: boolean;
   deviceName: string | null;
   deviceAsleep: boolean;
   onContinue: () => void;
   onRecheck: () => void;
+  /** Switch keep-awake off the silent track (back to the no-audio ping). */
+  onStopSilent: () => void;
   onBack: () => void;
 }) {
   return (
@@ -31,6 +37,16 @@ export default function HeldOverlay({
               <span className="hint">{deviceOfflineMessage(deviceName)}</span>
               <button className="link" onClick={onRecheck}>
                 Check again
+              </button>
+            </div>
+          ) : silent ? (
+            <div className="keepawake-silent">
+              <span className="hint">
+                Playing a silent track on {deviceName} to keep it ready — Spotify shows it
+                as “now playing”.
+              </span>
+              <button className="link" onClick={onStopSilent}>
+                Stop the silent track
               </button>
             </div>
           ) : (

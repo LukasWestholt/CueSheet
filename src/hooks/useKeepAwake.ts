@@ -5,7 +5,11 @@ import {
   loadKeepAwakeMethod,
   loadKeepAwakeOverride,
   loadSilentTrackUri,
+  saveKeepAwakeMethod,
+  type KeepAwakeMethod,
 } from '../data/keepAwakeSetting';
+import { readFlag, writeFlag } from '../data/storage';
+import { toast } from '../data/toast';
 import { useStateRef } from './useStateRef';
 import type { Phase } from './usePlayerEngine';
 
@@ -20,11 +24,31 @@ import type { Phase } from './usePlayerEngine';
 // rescue a privacy-frozen Android UA), which wins.
 const KEEP_AWAKE_MS = 15000;
 
+// One-time "a silent track is playing" notice. The silent keep-awake method
+// makes Spotify show "Silence …" as now-playing, which is confusing without
+// context — so the first time it ever fires we explain it (and where to turn it
+// off). Module-level + a persisted flag so it's once per browser, not per mount.
+const SILENT_NOTICE_KEY = 'tjf.silentNoticeShown';
+let silentNoticeShown = false;
+function notifySilentOnce(deviceName: string | null): void {
+  if (silentNoticeShown || readFlag(SILENT_NOTICE_KEY)) return;
+  silentNoticeShown = true;
+  writeFlag(SILENT_NOTICE_KEY, true);
+  toast(
+    `Keep-awake is playing a silent track on ${deviceName ?? 'the device'} so it stays ` +
+      'ready between songs — Spotify shows it as “now playing”. Turn it off any time in Settings.',
+  );
+}
+
 export interface KeepAwake {
   /** Effective on/off (override, else the local-device heuristic default). */
   keepAwake: boolean;
   /** True when keep-awake is on but the device wasn't found on the last check (asleep/offline). */
   asleep: boolean;
+  /** The active keep-awake method ('ping' = no audio, 'silent' = plays a silent track). */
+  method: KeepAwakeMethod;
+  /** Switch the method live (persists + takes effect this session, no remount). */
+  setMethod: (m: KeepAwakeMethod) => void;
   /** Re-check the device list now (and re-assert it if it's back). For a manual "Check again". */
   recheck: () => void;
   /** Recompute the heuristic default from the currently active device. */
@@ -49,10 +73,10 @@ export function useKeepAwake(refs: {
   // local-device heuristic. Read once at mount; Settings lives in the list view,
   // so it's never changed while this hook (the player) is mounted.
   const overrideRef = useRef<boolean | null>(loadKeepAwakeOverride());
-  // Keep-awake method + silent-track URI, read once at mount like the override
-  // (Settings lives in the list view, so they don't change while the player —
-  // and this hook — is mounted).
-  const methodRef = useRef(loadKeepAwakeMethod());
+  // Keep-awake method (held in state so the player can flip it live — e.g. the
+  // "stop the silent track" link in the held overlay — and the UI reacts). The
+  // silent-track URI is read once at mount (it isn't toggled from the player).
+  const [method, setMethodState, methodRef] = useStateRef<KeepAwakeMethod>(loadKeepAwakeMethod());
   const silentUriRef = useRef(loadSilentTrackUri());
   const [keepAwake, setKeepAwakeState, keepAwakeRef] = useStateRef<boolean>(
     overrideRef.current ?? false,
@@ -104,6 +128,7 @@ export function useKeepAwake(refs: {
       // start audio unprompted), so there we fall back to the no-audio ping.
       if (methodRef.current === 'silent' && betweenTracks && silentUriRef.current) {
         await playTrack(silentUriRef.current, target.id);
+        notifySilentOnce(target.name);
       } else {
         await transferPlayback(target.id, false);
       }
@@ -111,7 +136,19 @@ export function useKeepAwake(refs: {
     } catch {
       setAsleep(true);
     }
-  }, [deviceNameRef, deviceIdRef, keepAwakeRef, overrideRef, phaseRef]);
+  }, [deviceNameRef, deviceIdRef, keepAwakeRef, methodRef, overrideRef, phaseRef, silentUriRef]);
+
+  // Switch the method live (the held overlay's "stop the silent track"). Leaving
+  // 'silent' re-asserts the device now (play:false) so a silent track playing
+  // between tracks pauses immediately, rather than only on the next 15s tick.
+  const setMethod = useCallback(
+    (m: KeepAwakeMethod) => {
+      saveKeepAwakeMethod(m);
+      setMethodState(m);
+      if (m !== 'silent') void keepAliveOnce();
+    },
+    [setMethodState, keepAliveOnce],
+  );
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -130,5 +167,5 @@ export function useKeepAwake(refs: {
 
   const recheck = useCallback(() => void keepAliveOnce(), [keepAliveOnce]);
 
-  return { keepAwake, asleep, recheck, syncDefault };
+  return { keepAwake, asleep, method, setMethod, recheck, syncDefault };
 }

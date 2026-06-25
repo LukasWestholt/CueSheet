@@ -1876,11 +1876,15 @@ details.routines[open] > summary.routines-head::after {
   gap: var(--space-4);
   min-width: 240px;
 }
-.keepawake-offline {
+.keepawake-offline,
+.keepawake-silent {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--space-1);
+}
+.keepawake-silent .hint {
+  text-align: center;
 }
 .gap-num {
   font-family: var(--font-display);

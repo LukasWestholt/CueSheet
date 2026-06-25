@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Track } from '../data/tracks';
 import { useStateRef } from './useStateRef';
 import { useKeepAwake } from './useKeepAwake';
+import type { KeepAwakeMethod } from '../data/keepAwakeSetting';
 import { interpolatePosition } from '../playback/position';
 import { toast } from '../data/toast';
 import {
@@ -55,6 +56,10 @@ export interface PlayerEngine {
   volumePercent: number | null;
   /** Whether the keep-awake ping is on (defaults to the local-device heuristic). */
   keepAwake: boolean;
+  /** The active keep-awake method ('ping' = no audio, 'silent' = plays a silent track). */
+  keepAwakeMethod: KeepAwakeMethod;
+  /** Switch the keep-awake method live (e.g. stop the silent track from the overlay). */
+  setKeepAwakeMethod: (m: KeepAwakeMethod) => void;
   /** While keep-awake is on: the device wasn't found on the last check (asleep/offline). */
   deviceAsleep: boolean;
   /**
@@ -136,6 +141,8 @@ export function usePlayerEngine(
   const {
     keepAwake,
     asleep: deviceAsleep,
+    method: keepAwakeMethod,
+    setMethod: setKeepAwakeMethod,
     recheck: recheckDevice,
     syncDefault: syncKeepAwakeDefault,
   } = useKeepAwake({ phaseRef, hijackedRef, deviceNameRef, deviceIdRef });
@@ -484,6 +491,8 @@ export function usePlayerEngine(
     deviceName,
     volumePercent,
     keepAwake,
+    keepAwakeMethod,
+    setKeepAwakeMethod,
     deviceAsleep,
     recheckDevice,
     noDevice,
