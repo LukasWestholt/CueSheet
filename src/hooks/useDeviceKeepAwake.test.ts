@@ -7,11 +7,6 @@ const { getDevices, transferPlayback } = vi.hoisted(() => ({
 }));
 vi.mock('../spotify/api', () => ({ getDevices, transferPlayback }));
 
-const { isLikelyLocalDevice } = vi.hoisted(() => ({
-  isLikelyLocalDevice: vi.fn<() => boolean>(() => false),
-}));
-vi.mock('../spotify/localDevice', () => ({ isLikelyLocalDevice }));
-
 const { loadKeepAwake } = vi.hoisted(() => ({ loadKeepAwake: vi.fn<() => boolean>(() => true) }));
 vi.mock('../data/keepAwakeSetting', () => ({ loadKeepAwake }));
 
@@ -32,8 +27,6 @@ beforeEach(() => {
   getDevices.mockResolvedValue([]);
   transferPlayback.mockReset();
   transferPlayback.mockResolvedValue(undefined);
-  isLikelyLocalDevice.mockReset();
-  isLikelyLocalDevice.mockReturnValue(false);
   loadKeepAwake.mockReset();
   loadKeepAwake.mockReturnValue(true);
 });
@@ -51,7 +44,17 @@ describe('useDeviceKeepAwake', () => {
     expect(transferPlayback).toHaveBeenCalledWith('tab', false);
   });
 
-  it('does nothing — not even a device lookup — while inactive', async () => {
+  it('does nothing — not even a device lookup — without a selected device', async () => {
+    getDevices.mockResolvedValue([device('act', { is_active: true })]);
+    renderHook(() => useDeviceKeepAwake(null, true));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(20_000);
+    });
+    expect(getDevices).not.toHaveBeenCalled();
+    expect(transferPlayback).not.toHaveBeenCalled();
+  });
+
+  it('does nothing while inactive (the player view owns the device)', async () => {
     renderHook(() => useDeviceKeepAwake('tab', false));
     await act(async () => {
       await vi.advanceTimersByTimeAsync(20_000);
@@ -60,23 +63,23 @@ describe('useDeviceKeepAwake', () => {
     expect(transferPlayback).not.toHaveBeenCalled();
   });
 
+  it('does not transfer to the selected device when it is gone from Connect', async () => {
+    getDevices.mockResolvedValue([device('other')]); // 'tab' not present
+    renderHook(() => useDeviceKeepAwake('tab', true));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    expect(transferPlayback).not.toHaveBeenCalled();
+  });
+
   it('skips when keep-awake is turned off in Settings', async () => {
     loadKeepAwake.mockReturnValue(false);
-    getDevices.mockResolvedValue([device('tab', { is_active: true })]);
+    getDevices.mockResolvedValue([device('tab')]);
     renderHook(() => useDeviceKeepAwake('tab', true));
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1);
     });
     expect(getDevices).not.toHaveBeenCalled();
-  });
-
-  it('falls back to the active device when none is explicitly selected', async () => {
-    getDevices.mockResolvedValue([device('idle1'), device('act', { is_active: true })]);
-    renderHook(() => useDeviceKeepAwake(null, true));
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(1);
-    });
-    expect(transferPlayback).toHaveBeenCalledWith('act', false);
   });
 
   it('re-asserts on every interval', async () => {
