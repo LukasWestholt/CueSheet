@@ -44,6 +44,7 @@
   --warn: #facc15;
   --danger: #ef4444;
   --ring-bg: #273141;
+  --ring-bg-alt: #324056; /* alternating measure-arc shade on the countdown ring */
 
   /* ---- Typography ------------------------------------------------------- */
   --font-display: 'Barlow Condensed', 'Roboto Condensed', 'Arial Narrow',
@@ -1506,6 +1507,13 @@ details.routines[open] > summary.routines-head::after {
   line-height: var(--leading-tight);
   letter-spacing: 0.01em;
   text-transform: uppercase;
+  transition: font-size 0.2s ease, opacity 0.2s ease;
+}
+/* During the closing "4 3 2 →move" count-in the current step recedes (shrinks +
+   dims) so attention shifts to the announced next move. */
+.calling-display.announcing .now .step {
+  font-size: var(--text-xl);
+  opacity: 0.5;
 }
 .step-next {
   font-family: var(--font-display);
@@ -1563,6 +1571,11 @@ details.routines[open] > summary.routines-head::after {
    colour is reserved for the closing "4 3 2" count-in above. */
 .ring-num.beat {
   color: var(--text);
+}
+/* The measure downbeat (the "1" of each eight, shown as the measure number) is
+   set off in the accent colour so the start of every Takt stands out. */
+.ring-num.measure {
+  color: var(--accent);
 }
 
 /* Count-in: emphasise the next move so the coach calls "3, 2, 1, <move>". */
@@ -1678,6 +1691,15 @@ details.routines[open] > summary.routines-head::after {
   width: 22px;
   height: 22px;
   accent-color: var(--accent);
+}
+/* The keep-awake "silent track" sub-option nested under its toggle. */
+.keep-awake-method {
+  margin: var(--space-2) 0 0 var(--space-3);
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--surface-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
 /* Sync ------------------------------------------------------------------- */

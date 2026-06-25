@@ -84,6 +84,11 @@
           "exclusiveMinimum": 0,
           "multipleOf": 0.5,
           "description": "Length of this step in measures (8-counts). Halves allowed."
+        },
+        "halfPosition": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Only meaningful when `measures` ends in .5: how many full measures precede the orphan half (4/8) count. 0 = the half is counted at the front; omitted = just before the closing count-in. Must be an integer in [0, floor(measures) - 1]. Affects only the count display, not the derived timeline."
         }
       }
     }

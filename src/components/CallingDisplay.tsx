@@ -1,6 +1,27 @@
 import type { Calling } from '../data/tracks';
 import { resolveCallings, humanBeat } from '../data/callings';
 
+/**
+ * Builds a conic-gradient that splits the ring's track into `measures` arcs,
+ * shading them in alternating tones so the step's length ("N Takte") is visible
+ * at a glance. The progress sweep is layered on top of this, so the alternating
+ * arcs show through in the still-to-come (unfilled) part of the ring. Returns a
+ * solid track for steps shorter than 2 measures (nothing to subdivide).
+ */
+function measureTrackGradient(measures: number): string {
+  const A = 'var(--ring-bg)';
+  const B = 'var(--ring-bg-alt)';
+  if (!Number.isFinite(measures) || measures <= 1) return `conic-gradient(${A} 0 100%)`;
+  const segments = Math.ceil(measures);
+  const stops: string[] = [];
+  for (let k = 0; k < segments; k++) {
+    const start = ((k / measures) * 100).toFixed(2);
+    const end = (Math.min((k + 1) / measures, 1) * 100).toFixed(2);
+    stops.push(`${k % 2 === 0 ? A : B} ${start}% ${end}%`);
+  }
+  return `conic-gradient(${stops.join(', ')})`;
+}
+
 // The ring is a human 8-count: the coach counts "1 2 3 4 5 6 7 8, 2 2 3 4 …"
 // (first beat of each eight = the measure number), then closes each step with
 // "4 3 2 →move" — see humanBeat. Without a BPM we can't count beats, so it
@@ -60,6 +81,17 @@ export default function CallingDisplay({
   // the conic sweep flows each 100ms tick instead of jumping a whole percent.
   const ringPct = Math.round(segmentProgress * 10000) / 100;
 
+  // Shade the ring's track into the current step's measures ("Takte"), so its
+  // length is visible at a glance. The accent progress sweep is layered on top,
+  // leaving the alternating arcs showing through the unfilled remainder.
+  const ringMeasures =
+    current && current.measures != null && Number.isFinite(current.measures)
+      ? current.measures
+      : 0;
+  const ringBackground =
+    `conic-gradient(var(--accent) ${ringPct}%, transparent ${ringPct}%), ` +
+    measureTrackGradient(ringMeasures);
+
   return (
     <div
       className={`calling-display ${announcing ? 'announcing' : ''} ${
@@ -73,18 +105,17 @@ export default function CallingDisplay({
       </div>
 
       <div className={`countdown ${announcing ? 'imminent' : ''}`}>
-        <div
-          className="ring"
-          style={{
-            background: `conic-gradient(var(--accent) ${ringPct}%, var(--ring-bg) ${ringPct}%)`,
-          }}
-        >
+        <div className="ring" style={{ background: ringBackground }}>
           <div className="ring-inner">
             {beat ? (
               beat.mode === 'announce' ? (
                 <span className="ring-num count">→</span>
               ) : beat.count !== null ? (
-                <span className={`ring-num ${beat.mode === 'countdown' ? 'count' : 'beat'}`}>
+                <span
+                  className={`ring-num ${
+                    beat.mode === 'countdown' ? 'count' : beat.downbeat ? 'measure' : 'beat'
+                  }`}
+                >
                   {beat.count}
                 </span>
               ) : (

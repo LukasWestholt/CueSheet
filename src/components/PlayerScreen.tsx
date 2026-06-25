@@ -18,7 +18,7 @@ import CalibrationPanel from './player/CalibrationPanel';
 import GapOverlay from './player/GapOverlay';
 import HeldOverlay from './player/HeldOverlay';
 import DeviceBanners from './player/DeviceBanners';
-import { Pause, Link as LinkIcon, AlertTriangle } from './icons';
+import { Pause, Link as LinkIcon, AlertTriangle, Pen } from './icons';
 import { trackPath } from '../nav/routes';
 import { sessionEstimate } from '../data/setlist';
 
@@ -30,6 +30,7 @@ export default function PlayerScreen({
   session,
   onBack,
   onUpdateTrack,
+  onEdit,
 }: {
   tracks: Track[];
   startIndex: number;
@@ -45,6 +46,8 @@ export default function PlayerScreen({
   onBack: () => void;
   /** Persist edits to a track (used by tap-to-time). */
   onUpdateTrack?: (index: number, track: Track) => void;
+  /** Open the routine editor for a track (the detail-page pen button). */
+  onEdit?: (trackId: string) => void;
 }) {
   const engine = usePlayerEngine(tracks, deviceId);
   useWakeLock(true);
@@ -126,7 +129,19 @@ export default function PlayerScreen({
         <button className="link" onClick={onBack}>
           ‹ Tracks
         </button>
-        <span className="device-tag">{engine.deviceName ?? 'No device'}</span>
+        <div className="topbar-end">
+          <span className="device-tag">{engine.deviceName ?? 'No device'}</span>
+          {onEdit && (
+            <button
+              className="icon-btn"
+              onClick={() => onEdit(track.id)}
+              aria-label="Edit routine"
+              title="Edit routine"
+            >
+              <Pen size={18} />
+            </button>
+          )}
+        </div>
       </header>
 
       {sessionView && (

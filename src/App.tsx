@@ -148,6 +148,13 @@ export default function App() {
     }
   }, [pendingTrackId, tracks]);
 
+  // Land at the top whenever the screen changes (open a track, go back to the
+  // list, enter the editor) — a deep-linked or re-opened view shouldn't inherit
+  // the previous screen's scroll position.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [view, selectedIndex]);
+
   // Keep the view in sync with browser back/forward (no pushState here).
   useEffect(() => {
     const onPop = () => {
@@ -270,6 +277,10 @@ export default function App() {
           }
           onBack={goList}
           onUpdateTrack={(_i, t) => updateTrack(t)}
+          onEdit={(id) => {
+            const i = tracks.findIndex((t) => t.id === id);
+            if (i >= 0) openEditor(i);
+          }}
         />
       )}
       <SiteFooter />

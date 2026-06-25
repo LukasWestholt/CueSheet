@@ -1,17 +1,23 @@
 import { useCallback, useEffect, useRef, useState, type MutableRefObject } from 'react';
-import { getDevices, transferPlayback } from '../spotify/api';
+import { getDevices, playTrack, transferPlayback } from '../spotify/api';
 import { isLikelyLocalDevice } from '../spotify/localDevice';
-import { loadKeepAwakeOverride } from '../data/keepAwakeSetting';
+import {
+  loadKeepAwakeMethod,
+  loadKeepAwakeOverride,
+  loadSilentTrackUri,
+} from '../data/keepAwakeSetting';
 import { useStateRef } from './useStateRef';
 import type { Phase } from './usePlayerEngine';
 
 // Keep-awake: while we're paused between tracks, Spotify eventually marks the
 // Connect device "inactive" and drops it. To prevent that we periodically
-// re-assert it (transferPlayback, play:false → no audio). The setting lives in
-// keepAwakeSetting.ts (a Settings toggle is the only writer): it defaults to
-// following isLikelyLocalDevice (a user-agent → device-name heuristic) — on for
-// our own device, off otherwise — unless the coach has set an explicit on/off
-// (e.g. to rescue a privacy-frozen Android UA), which wins.
+// re-assert it. Two methods (keepAwakeSetting.ts, set in Settings): the default
+// 'ping' re-asserts with transferPlayback (play:false → no audio); 'silent'
+// instead plays a silent track between tracks, which also keeps a Bluetooth
+// speaker connected (it drops after a pause). On/off defaults to following
+// isLikelyLocalDevice (a user-agent → device-name heuristic) — on for our own
+// device, off otherwise — unless the coach has set an explicit on/off (e.g. to
+// rescue a privacy-frozen Android UA), which wins.
 const KEEP_AWAKE_MS = 15000;
 
 export interface KeepAwake {
@@ -41,6 +47,11 @@ export function useKeepAwake(refs: {
   // local-device heuristic. Read once at mount; Settings lives in the list view,
   // so it's never changed while this hook (the player) is mounted.
   const overrideRef = useRef<boolean | null>(loadKeepAwakeOverride());
+  // Keep-awake method + silent-track URI, read once at mount like the override
+  // (Settings lives in the list view, so they don't change while the player —
+  // and this hook — is mounted).
+  const methodRef = useRef(loadKeepAwakeMethod());
+  const silentUriRef = useRef(loadSilentTrackUri());
   const [keepAwake, setKeepAwakeState, keepAwakeRef] = useStateRef<boolean>(
     overrideRef.current ?? false,
   );
@@ -67,16 +78,26 @@ export function useKeepAwake(refs: {
     if (!keepAwakeRef.current || !target) return;
     try {
       const match = (await getDevices()).find((d) => d.name === target);
-      if (match) {
-        await transferPlayback(match.id, false);
-        setAsleep(false);
-      } else {
+      if (!match) {
         setAsleep(true);
+        return;
       }
+      // 'silent' mode plays a silent track to hold the device (and a Bluetooth
+      // speaker) alive — but only between tracks. On a mid-track pause we must
+      // not start another track (it would lose the resume position), so there we
+      // fall back to the no-audio ping just like 'ping' mode.
+      const betweenTracks =
+        phaseRef.current === 'gap' || phaseRef.current === 'held' || phaseRef.current === 'ended';
+      if (methodRef.current === 'silent' && betweenTracks && silentUriRef.current) {
+        await playTrack(silentUriRef.current, match.id);
+      } else {
+        await transferPlayback(match.id, false);
+      }
+      setAsleep(false);
     } catch {
       setAsleep(true);
     }
-  }, [deviceNameRef, keepAwakeRef]);
+  }, [deviceNameRef, keepAwakeRef, phaseRef]);
 
   useEffect(() => {
     const id = setInterval(() => {

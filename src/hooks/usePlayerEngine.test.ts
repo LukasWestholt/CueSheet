@@ -23,12 +23,18 @@ vi.mock('../spotify/api', () => ({
   setVolume,
 }));
 
-// Keep-awake override (null = follow the device heuristic). Controlled per test
-// instead of localStorage, which jsdom doesn't provide.
-const { loadKeepAwakeOverride } = vi.hoisted(() => ({
+// Keep-awake override (null = follow the device heuristic) + method. Controlled
+// per test instead of localStorage, which jsdom doesn't provide.
+const { loadKeepAwakeOverride, loadKeepAwakeMethod, loadSilentTrackUri } = vi.hoisted(() => ({
   loadKeepAwakeOverride: vi.fn<() => boolean | null>(() => null),
+  loadKeepAwakeMethod: vi.fn<() => 'ping' | 'silent'>(() => 'ping'),
+  loadSilentTrackUri: vi.fn<() => string>(() => 'spotify:track:silentdefault0000000000'),
 }));
-vi.mock('../data/keepAwakeSetting', () => ({ loadKeepAwakeOverride }));
+vi.mock('../data/keepAwakeSetting', () => ({
+  loadKeepAwakeOverride,
+  loadKeepAwakeMethod,
+  loadSilentTrackUri,
+}));
 
 import { usePlayerEngine } from './usePlayerEngine';
 
@@ -80,6 +86,10 @@ beforeEach(() => {
   transferPlayback.mockClear();
   loadKeepAwakeOverride.mockReset();
   loadKeepAwakeOverride.mockReturnValue(null);
+  loadKeepAwakeMethod.mockReset();
+  loadKeepAwakeMethod.mockReturnValue('ping');
+  loadSilentTrackUri.mockReset();
+  loadSilentTrackUri.mockReturnValue('spotify:track:silentdefault0000000000');
 });
 
 afterEach(() => {
@@ -503,6 +513,73 @@ describe('usePlayerEngine', () => {
       await vi.advanceTimersByTimeAsync(16_000);
     });
     expect(transferPlayback).toHaveBeenCalledWith('spk', false);
+  });
+
+  it('plays a silent track (not a ping) between tracks when the method is "silent"', async () => {
+    setUserAgent(ANDROID_UA);
+    loadKeepAwakeOverride.mockReturnValue(true);
+    loadKeepAwakeMethod.mockReturnValue('silent');
+    loadSilentTrackUri.mockReturnValue('spotify:track:silent123');
+    getPlaybackState.mockResolvedValue({
+      isPlaying: true,
+      progressMs: 1_000,
+      durationMs: 10_000,
+      trackUri: 'spotify:track:a',
+      deviceId: 'spk',
+      deviceName: 'Living Room Speaker',
+      deviceType: null,
+      volumePercent: null,
+      fetchedAt: Date.now(),
+    });
+    getDevices.mockResolvedValue([{ id: 'spk', name: 'Living Room Speaker', is_active: true }]);
+    const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
+    await startAt(result, 0);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_100);
+    });
+    await act(async () => {
+      result.current.holdNow(); // pause permanently between tracks → 'held'
+    });
+    playTrack.mockClear();
+    transferPlayback.mockClear();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(16_000);
+    });
+    expect(playTrack).toHaveBeenCalledWith('spotify:track:silent123', 'spk');
+    expect(transferPlayback).not.toHaveBeenCalled();
+  });
+
+  it('still pings (no silent track) on a mid-track pause even in "silent" mode', async () => {
+    setUserAgent(ANDROID_UA);
+    loadKeepAwakeOverride.mockReturnValue(true);
+    loadKeepAwakeMethod.mockReturnValue('silent');
+    loadSilentTrackUri.mockReturnValue('spotify:track:silent123');
+    getPlaybackState.mockResolvedValue({
+      isPlaying: true,
+      progressMs: 1_000,
+      durationMs: 600_000, // long track so it never ends during the test
+      trackUri: 'spotify:track:a',
+      deviceId: 'spk',
+      deviceName: 'Living Room Speaker',
+      deviceType: null,
+      volumePercent: null,
+      fetchedAt: Date.now(),
+    });
+    getDevices.mockResolvedValue([{ id: 'spk', name: 'Living Room Speaker', is_active: true }]);
+    const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
+    await startAt(result, 0);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_100);
+      result.current.togglePlayPause(); // pause mid-track → 'paused'
+    });
+    expect(result.current.phase).toBe('paused');
+    playTrack.mockClear();
+    transferPlayback.mockClear();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(16_000);
+    });
+    expect(transferPlayback).toHaveBeenCalledWith('spk', false);
+    expect(playTrack).not.toHaveBeenCalled();
   });
 
   it('does not ping while playing', async () => {
