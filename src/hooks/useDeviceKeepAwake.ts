@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { getDevices, transferPlayback } from '../spotify/api';
+import { getDevices, getPlaybackState, transferPlayback } from '../spotify/api';
 import { loadKeepAwake } from '../data/keepAwakeSetting';
 
 const KEEP_AWAKE_MS = 15000;
@@ -16,6 +16,11 @@ const KEEP_AWAKE_MS = 15000;
  * keeping a device awake means seizing it on Connect, and we don't want to grab
  * one the coach didn't choose. No selection → it does nothing.
  *
+ * Crucially it **never touches a device that's already playing**: `transferPlayback`
+ * with play:false would PAUSE the current track. So if Spotify reports playback
+ * is live (e.g. the coach left a track playing and walked back to the list), the
+ * ping is skipped — a playing device is already awake.
+ *
  * Yields entirely while `active` is false — the player view owns the device then
  * (its `useKeepAwake` handles playing + between-tracks + the pre-play idle), so
  * the two loops never both touch the device.
@@ -29,6 +34,10 @@ export function useDeviceKeepAwake(selectedDeviceId: string | null, active: bool
       // an active screen here) takes effect within a cycle, no remount needed.
       if (!loadKeepAwake()) return;
       try {
+        // Never pause a live track: a transfer with play:false would stop it.
+        // If anything is playing, the device is already awake — leave it be.
+        const snap = await getPlaybackState();
+        if (cancelled || snap?.isPlaying) return;
         const devices = await getDevices();
         if (cancelled) return;
         // Only the explicitly-selected device — and only while it's actually

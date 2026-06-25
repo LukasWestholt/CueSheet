@@ -1,11 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 
-const { getDevices, transferPlayback } = vi.hoisted(() => ({
+const { getDevices, getPlaybackState, transferPlayback } = vi.hoisted(() => ({
   getDevices: vi.fn(),
+  getPlaybackState: vi.fn(),
   transferPlayback: vi.fn(),
 }));
-vi.mock('../spotify/api', () => ({ getDevices, transferPlayback }));
+vi.mock('../spotify/api', () => ({ getDevices, getPlaybackState, transferPlayback }));
 
 const { loadKeepAwake } = vi.hoisted(() => ({ loadKeepAwake: vi.fn<() => boolean>(() => true) }));
 vi.mock('../data/keepAwakeSetting', () => ({ loadKeepAwake }));
@@ -25,6 +26,8 @@ beforeEach(() => {
   vi.useFakeTimers();
   getDevices.mockReset();
   getDevices.mockResolvedValue([]);
+  getPlaybackState.mockReset();
+  getPlaybackState.mockResolvedValue(null); // nothing playing by default
   transferPlayback.mockReset();
   transferPlayback.mockResolvedValue(undefined);
   loadKeepAwake.mockReset();
@@ -52,6 +55,27 @@ describe('useDeviceKeepAwake', () => {
     });
     expect(getDevices).not.toHaveBeenCalled();
     expect(transferPlayback).not.toHaveBeenCalled();
+  });
+
+  it('never pauses a live track — skips the ping while playback is active', async () => {
+    // The coach left a track playing and walked back to the list.
+    getPlaybackState.mockResolvedValue({
+      isPlaying: true,
+      progressMs: 1_000,
+      durationMs: 60_000,
+      trackUri: 'spotify:track:a',
+      deviceId: 'tab',
+      deviceName: 'tab',
+      deviceType: 'Tablet',
+      volumePercent: 50,
+      fetchedAt: Date.now(),
+    });
+    getDevices.mockResolvedValue([device('tab', { is_active: true })]);
+    renderHook(() => useDeviceKeepAwake('tab', true));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(31_000); // several ticks
+    });
+    expect(transferPlayback).not.toHaveBeenCalled(); // would have paused the track
   });
 
   it('does nothing while inactive (the player view owns the device)', async () => {
