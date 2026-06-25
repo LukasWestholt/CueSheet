@@ -32,6 +32,12 @@ const NO_DEVICE_NULLS = 2; // consecutive empty polls before declaring the devic
 const HIJACK_POLLS = 3; // consecutive wrong-track polls before declaring a hijack
 const END_AUTOPLAY_WINDOW_MS = 1500; // a track change/restart this close to the end = the track ending, not a hijack
 const LOOP_RESTART_MS = 2000; // same track back within this of the start (after being near the end) = a repeat=track loop
+// On entering an idle/between-tracks phase, kick the keep-alive once after this
+// short settle (instead of waiting up to a full KEEP_AWAKE_MS tick), so the
+// silent track / ping starts promptly. The delay lets enterGapOrEnd's
+// fire-and-forget pause land first, so it can't race ahead and pause a silent
+// track we're about to start.
+const KEEP_AWAKE_KICKOFF_MS = 1000;
 
 /** Default inter-track gap (seconds). Exported so session estimates stay in sync. */
 export const DEFAULT_GAP_SECONDS = 10;
@@ -342,6 +348,22 @@ export function usePlayerEngine(
     }, TICK_MS);
     return () => clearInterval(id);
   }, [enterGapOrEnd, playIndex, tracks, phaseRef, indexRef, noDeviceRef, hijackedRef]);
+
+  // Kick the keep-alive once right after we enter an idle/between-tracks phase,
+  // so the silent track / device ping starts within ~1s of a track ending (or of
+  // opening a detail view) instead of waiting up to a full KEEP_AWAKE_MS tick.
+  // The steady-state interval (inside useKeepAwake) is unchanged.
+  useEffect(() => {
+    const idle =
+      phase === 'idle' ||
+      phase === 'paused' ||
+      phase === 'gap' ||
+      phase === 'held' ||
+      phase === 'ended';
+    if (!idle || hijacked) return;
+    const t = setTimeout(() => recheckDevice(), KEEP_AWAKE_KICKOFF_MS);
+    return () => clearTimeout(t);
+  }, [phase, hijacked, recheckDevice]);
 
   // ---- Controls ----------------------------------------------------------
   const start = useCallback((i: number) => void playIndex(i), [playIndex]);

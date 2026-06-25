@@ -585,6 +585,38 @@ describe('usePlayerEngine', () => {
     expect(playTrack).not.toHaveBeenCalled();
   });
 
+  it('starts the keep-awake silent track promptly on entering held (no 15s wait)', async () => {
+    loadKeepAwakeOverride.mockReturnValue(true);
+    loadKeepAwakeMethod.mockReturnValue('silent');
+    loadSilentTrackUri.mockReturnValue('spotify:track:silent123');
+    getPlaybackState.mockResolvedValue({
+      isPlaying: true,
+      progressMs: 1_000,
+      durationMs: 10_000,
+      trackUri: 'spotify:track:a',
+      deviceId: 'spk',
+      deviceName: 'Living Room Speaker',
+      deviceType: null,
+      volumePercent: null,
+      fetchedAt: Date.now(),
+    });
+    getDevices.mockResolvedValue([{ id: 'spk', name: 'Living Room Speaker', is_active: true }]);
+    const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
+    await startAt(result, 0);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_100);
+    });
+    playTrack.mockClear();
+    await act(async () => {
+      result.current.holdNow();
+    });
+    // Past the ~1s kickoff but far short of the 15s steady-state interval.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_200);
+    });
+    expect(playTrack).toHaveBeenCalledWith('spotify:track:silent123', 'spk');
+  });
+
   it('setKeepAwakeMethod("ping") persists and stops the silent track at once', async () => {
     loadKeepAwakeOverride.mockReturnValue(true);
     loadKeepAwakeMethod.mockReturnValue('silent');
