@@ -68,6 +68,9 @@ export interface BeatDisplay {
   mode: BeatMode;
   /** Emphasise the upcoming move — true through the whole closing window. */
   announcing: boolean;
+  /** True when `count` is a measure downbeat (the "1" of an eight) — the count
+   *  shows the measure ordinal there, so the UI can colour it distinctly. */
+  downbeat: boolean;
 }
 
 /**
@@ -92,29 +95,40 @@ export function humanBeat(
   beatsToNext: number | null,
   step?: { measures: number; halfPosition?: number },
 ): BeatDisplay {
-  if (beatsToNext === null) return { count: null, mode: 'end', announcing: false };
+  if (beatsToNext === null)
+    return { count: null, mode: 'end', announcing: false, downbeat: false };
 
   // Closing window: the last COUNT_FROM × BEATS_PER_COUNT beats before the switch.
   const closing = Math.ceil(beatsToNext / BEATS_PER_COUNT);
   if (closing <= COUNT_FROM) {
     // "4 3 2" are spoken; the would-be "1" beat announces the move instead.
-    if (closing <= 1) return { count: null, mode: 'announce', announcing: true };
-    return { count: closing, mode: 'countdown', announcing: true };
+    if (closing <= 1)
+      return { count: null, mode: 'announce', announcing: true, downbeat: false };
+    return { count: closing, mode: 'countdown', announcing: true, downbeat: false };
   }
 
   // Running 8-count: the downbeat of each measure shows the measure ordinal.
   const beat = Math.max(0, Math.floor(beatsElapsed));
-  const count =
+  const { count, downbeat } =
     step && Number.isFinite(step.measures)
       ? runningCount(beat, step.measures, step.halfPosition)
       : plainCount(beat);
-  return { count, mode: 'count', announcing: false };
+  return { count, mode: 'count', announcing: false, downbeat };
+}
+
+/** One running-count beat: the number to show + whether it's a measure downbeat. */
+interface RunningBeat {
+  count: number;
+  downbeat: boolean;
 }
 
 /** Plain 8-count alignment: 1..8 with the measure number on each downbeat. */
-function plainCount(beat: number): number {
+function plainCount(beat: number): RunningBeat {
   const pos = beat % BEATS_PER_MEASURE;
-  return pos === 0 ? Math.floor(beat / BEATS_PER_MEASURE) + 1 : pos + 1;
+  return {
+    count: pos === 0 ? Math.floor(beat / BEATS_PER_MEASURE) + 1 : pos + 1,
+    downbeat: pos === 0,
+  };
 }
 
 interface BeatGroup {
@@ -153,12 +167,12 @@ export function preCloseGroups(measures: number, halfPosition?: number): BeatGro
   return groups;
 }
 
-function runningCount(beat: number, measures: number, halfPosition?: number): number {
+function runningCount(beat: number, measures: number, halfPosition?: number): RunningBeat {
   let acc = 0;
   for (const g of preCloseGroups(measures, halfPosition)) {
     if (beat < acc + g.len) {
       const pos = beat - acc;
-      return pos === 0 ? g.label : pos + 1;
+      return { count: pos === 0 ? g.label : pos + 1, downbeat: pos === 0 };
     }
     acc += g.len;
   }

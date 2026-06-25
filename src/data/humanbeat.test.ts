@@ -3,7 +3,12 @@ import { humanBeat, preCloseGroups } from './callings';
 
 describe('humanBeat', () => {
   it('reports end of track when there is no next step', () => {
-    expect(humanBeat(3, null)).toEqual({ count: null, mode: 'end', announcing: false });
+    expect(humanBeat(3, null)).toEqual({
+      count: null,
+      mode: 'end',
+      announcing: false,
+      downbeat: false,
+    });
   });
 
   it('counts the running 8-count with the measure number on each downbeat', () => {
@@ -19,6 +24,16 @@ describe('humanBeat', () => {
     // Measure 3 downbeat
     expect(humanBeat(16, far)).toMatchObject({ count: 3, mode: 'count' });
     expect(humanBeat(17, far)).toMatchObject({ count: 2, mode: 'count' });
+  });
+
+  it('flags measure downbeats so the count can be coloured distinctly', () => {
+    const far = 100;
+    expect(humanBeat(0, far).downbeat).toBe(true); // measure 1 "1"
+    expect(humanBeat(1, far).downbeat).toBe(false); // "2"
+    expect(humanBeat(8, far).downbeat).toBe(true); // measure 2 "2"
+    expect(humanBeat(16, far).downbeat).toBe(true); // measure 3 "3"
+    // closing count-in numbers are not downbeats
+    expect(humanBeat(30, 6).downbeat).toBe(false);
   });
 
   it('a half measure falls out as a short "N 2 3 4" group', () => {
@@ -40,9 +55,10 @@ describe('humanBeat', () => {
   });
 
   it('never shows "1" — the final 2 beats announce the move instead', () => {
-    expect(humanBeat(34, 2)).toEqual({ count: null, mode: 'announce', announcing: true });
-    expect(humanBeat(35.5, 0.5)).toEqual({ count: null, mode: 'announce', announcing: true });
-    expect(humanBeat(36, 0)).toEqual({ count: null, mode: 'announce', announcing: true });
+    const announce = { count: null, mode: 'announce', announcing: true, downbeat: false };
+    expect(humanBeat(34, 2)).toEqual(announce);
+    expect(humanBeat(35.5, 0.5)).toEqual(announce);
+    expect(humanBeat(36, 0)).toEqual(announce);
   });
 
   it('is not announcing while still in the running count', () => {

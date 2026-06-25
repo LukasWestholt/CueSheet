@@ -5,6 +5,7 @@ import { type Track } from './data/tracks';
 import { parsePath, trackPath, listPath } from './nav/routes';
 import { DEFAULT_GAP_SECONDS } from './hooks/usePlayerEngine';
 import { useOnline } from './hooks/useOnline';
+import { useDeviceKeepAwake } from './hooks/useDeviceKeepAwake';
 import { useAuthSession } from './hooks/useAuthSession';
 import { useRoutineSources } from './hooks/useRoutineSources';
 import { useFavorites } from './hooks/useFavorites';
@@ -69,6 +70,10 @@ export default function App() {
   } = useRoutineSources({ onListReplaced: resetSelection });
   const { favorites, toggleFavorite } = useFavorites();
   const setlist = useSetlist(tracks);
+
+  // Keep the playback device awake on the non-player screens (list/editor/seed)
+  // so it's ready before the first track. The player view owns the device itself.
+  useDeviceKeepAwake(deviceId, loggedIn && online && view !== 'player');
 
   const startSession = () => {
     if (setlist.sessionTracks.length === 0) return;
@@ -147,6 +152,13 @@ export default function App() {
       setPendingTrackId(null);
     }
   }, [pendingTrackId, tracks]);
+
+  // Land at the top whenever the screen changes (open a track, go back to the
+  // list, enter the editor) — a deep-linked or re-opened view shouldn't inherit
+  // the previous screen's scroll position.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [view, selectedIndex]);
 
   // Keep the view in sync with browser back/forward (no pushState here).
   useEffect(() => {
@@ -270,6 +282,10 @@ export default function App() {
           }
           onBack={goList}
           onUpdateTrack={(_i, t) => updateTrack(t)}
+          onEdit={(id) => {
+            const i = tracks.findIndex((t) => t.id === id);
+            if (i >= 0) openEditor(i);
+          }}
         />
       )}
       <SiteFooter />

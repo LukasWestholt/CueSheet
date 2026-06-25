@@ -49,6 +49,10 @@ export default function TrackEditor({
     initial ? structuredClone(initial) : blankTrack(),
   );
   const [picked, setPicked] = useState<Set<string>>(new Set());
+  // Raw text buffer for the First beat field so an in-progress decimal like
+  // "1.0" isn't normalised back to "1" mid-typing (which would swallow the
+  // trailing zero and block values such as "1.05").
+  const [firstBeatText, setFirstBeatText] = useState(() => numField(draft.firstBeatSec));
 
   // Spotify track search (debounced) to fill the URI without pasting.
   const [query, setQuery] = useState('');
@@ -310,9 +314,12 @@ export default function TrackEditor({
               type="number"
               inputMode="decimal"
               step="0.1"
-              value={numField(draft.firstBeatSec)}
+              value={firstBeatText}
               placeholder="0"
-              onChange={(e) => patch({ firstBeatSec: parseOptionalNum(e.target.value) })}
+              onChange={(e) => {
+                setFirstBeatText(e.target.value);
+                patch({ firstBeatSec: parseOptionalNum(e.target.value) });
+              }}
             />
           </label>
         </div>

@@ -6,10 +6,26 @@
 //   manual=true  → use `value` (the explicit on/off the coach picked)
 // Shared by the Settings panel (the writer) and the engine's useKeepAwake hook.
 
-import { readFlag, writeFlag } from './storage';
+import { readFlag, writeFlag, readString, writeString } from './storage';
 
 const VALUE_KEY = 'tjf.keepAwake';
 const MANUAL_KEY = 'tjf.keepAwakeManual';
+const METHOD_KEY = 'tjf.keepAwakeMethod';
+const SILENT_URI_KEY = 'tjf.silentTrackUri';
+
+/**
+ * How keep-awake holds the device active between tracks:
+ *   'ping'   — a no-audio API ping (transferPlayback play:false). The default.
+ *   'silent' — actually play a silent track on the device. Keeps a Bluetooth
+ *              speaker connected (it would otherwise drop after a pause) and the
+ *              device awake more reliably than a ping, at the cost of "playing"
+ *              an inaudible track between tracks. Only used between tracks, never
+ *              on a mid-track pause (which would lose the resume position).
+ */
+export type KeepAwakeMethod = 'ping' | 'silent';
+
+/** Default silent track played in 'silent' mode: "Silence 10 Minutes" (10 min). */
+export const DEFAULT_SILENT_TRACK_URI = 'spotify:track:3mkOlbSv5RYadx0JsjTrKq';
 
 /** Has the coach explicitly chosen, overriding the automatic (heuristic) default? */
 export function isKeepAwakeManual(): boolean {
@@ -30,4 +46,24 @@ export function saveKeepAwake(value: boolean): void {
 /** The explicit override for the engine, or null to follow the heuristic default. */
 export function loadKeepAwakeOverride(): boolean | null {
   return isKeepAwakeManual() ? readFlag(VALUE_KEY) : null;
+}
+
+/** The keep-awake method (defaults to 'ping' — the original no-audio behaviour). */
+export function loadKeepAwakeMethod(): KeepAwakeMethod {
+  return readString(METHOD_KEY) === 'silent' ? 'silent' : 'ping';
+}
+
+/** Persist the keep-awake method. */
+export function saveKeepAwakeMethod(method: KeepAwakeMethod): void {
+  writeString(METHOD_KEY, method);
+}
+
+/** The track URI to play in 'silent' mode — an override, else the default silent track. */
+export function loadSilentTrackUri(): string {
+  return readString(SILENT_URI_KEY).trim() || DEFAULT_SILENT_TRACK_URI;
+}
+
+/** Persist a silent-track URI override (empty clears it → back to the default). */
+export function saveSilentTrackUri(uri: string): void {
+  writeString(SILENT_URI_KEY, uri.trim());
 }

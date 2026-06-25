@@ -4,7 +4,16 @@ import {
   saveGetsongbpmKey,
   getsongbpmKeyUrl,
 } from '../data/getsongbpmKey';
-import { loadKeepAwake, saveKeepAwake } from '../data/keepAwakeSetting';
+import {
+  loadKeepAwake,
+  saveKeepAwake,
+  loadKeepAwakeMethod,
+  saveKeepAwakeMethod,
+  loadSilentTrackUri,
+  saveSilentTrackUri,
+  DEFAULT_SILENT_TRACK_URI,
+  type KeepAwakeMethod,
+} from '../data/keepAwakeSetting';
 import { testGetsongbpmKey } from '../beatdata/getsongbpm';
 import { GETSONGBPM_URL, REPO_URL } from '../links';
 import { X, Settings as SettingsIcon } from './icons';
@@ -15,6 +24,8 @@ export default function Settings() {
   const [key, setKey] = useState(loadGetsongbpmKey);
   const [savedKey, setSavedKey] = useState(loadGetsongbpmKey);
   const [keepAwake, setKeepAwake] = useState<boolean>(loadKeepAwake);
+  const [keepAwakeMethod, setKeepAwakeMethod] = useState<KeepAwakeMethod>(loadKeepAwakeMethod);
+  const [silentUri, setSilentUri] = useState<string>(loadSilentTrackUri);
   const [helpOpen, setHelpOpen] = useState(false);
   const [test, setTest] = useState<
     { state: 'idle' | 'testing' } | { state: 'ok' } | { state: 'fail'; reason: string }
@@ -42,6 +53,15 @@ export default function Settings() {
   const onKeepAwakeChange = (value: boolean) => {
     setKeepAwake(value);
     saveKeepAwake(value);
+  };
+  const onMethodChange = (silent: boolean) => {
+    const method: KeepAwakeMethod = silent ? 'silent' : 'ping';
+    setKeepAwakeMethod(method);
+    saveKeepAwakeMethod(method);
+  };
+  const onSilentUriChange = (uri: string) => {
+    setSilentUri(uri);
+    saveSilentTrackUri(uri);
   };
 
   const dirty = key.trim() !== savedKey;
@@ -117,6 +137,56 @@ export default function Settings() {
           onChange={(e) => onKeepAwakeChange(e.target.checked)}
         />
       </label>
+
+      {keepAwake && (
+        <div className="keep-awake-method">
+          <label className="toggle-row">
+            <span>
+              Play a silent track instead of an API ping
+              <small className="muted">
+                {' '}
+                · keeps a Bluetooth speaker connected between tracks (it would
+                otherwise drop after a pause). Only runs between tracks, never
+                mid-song.
+              </small>
+            </span>
+            <input
+              type="checkbox"
+              checked={keepAwakeMethod === 'silent'}
+              onChange={(e) => onMethodChange(e.target.checked)}
+            />
+          </label>
+          {keepAwakeMethod === 'silent' && (
+            <div className="field" style={{ marginTop: 'var(--space-2)' }}>
+              <span>
+                Silent track URI
+                <small className="muted"> · defaults to a 10-minute silent track</small>
+              </span>
+              <div className="field-row">
+                <input
+                  className="search-input"
+                  type="text"
+                  value={silentUri}
+                  placeholder={DEFAULT_SILENT_TRACK_URI}
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  onChange={(e) => onSilentUriChange(e.target.value.trim())}
+                  style={{ flex: 1 }}
+                />
+                {silentUri !== DEFAULT_SILENT_TRACK_URI && (
+                  <button
+                    className="link"
+                    onClick={() => onSilentUriChange(DEFAULT_SILENT_TRACK_URI)}
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {savedKey && (
         <p className="hint">

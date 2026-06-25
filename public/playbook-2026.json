@@ -130,7 +130,6 @@
     "id": "main-1-1",
     "_description": "119 beats Love Story",
     "spotifyUri": "spotify:track:3CeCwYWvdfXbZLXFhBrbnf",
-    "firstBeatSec": 0,
     "bpm": 119,
     "wip": true,
     "steps": [
@@ -261,7 +260,6 @@
     "id": "main-1-3",
     "_description": "Everybody (Backstreet's Back) — Backstreet Boys",
     "spotifyUri": "spotify:track:1di1BEgJYzPvXUuinsYJGP",
-    "firstBeatSec": 0,
     "bpm": 108,
     "wip": true,
     "steps": [
@@ -331,7 +329,6 @@
     "id": "main-1-4",
     "_description": "Whatever — Kygo, Ava Max",
     "spotifyUri": "spotify:track:0LMwmV37RCmBO2so0szAFs",
-    "firstBeatSec": 0,
     "bpm": 108,
     "wip": true,
     "steps": [
@@ -386,7 +383,6 @@
     "id": "main-1-5",
     "_description": "No Lie — Sean Paul, Dua Lipa",
     "spotifyUri": "spotify:track:48QmG1dfvMuYLxMPt7KSRA",
-    "firstBeatSec": 0,
     "bpm": 102,
     "wip": true,
     "steps": [
@@ -441,7 +437,6 @@
     "id": "main-1-6",
     "_description": "Rockabye — Clean Bandit, Anne-Marie, Sean Paul",
     "spotifyUri": "spotify:track:3fvY2U1AzW0diYF0hnBbKt",
-    "firstBeatSec": 0,
     "bpm": 102,
     "wip": true,
     "steps": [
@@ -521,7 +516,6 @@
     "id": "main-1-7",
     "_description": "Let Me Love You — DJ Snake, Justin Bieber",
     "spotifyUri": "spotify:track:0lYBSQXN6rCTvUZvg9S0lU",
-    "firstBeatSec": 0,
     "bpm": 100,
     "wip": true,
     "steps": [
@@ -586,7 +580,6 @@
     "id": "main-1-8",
     "_description": "Narcotic - Radio Edit — Liquido",
     "spotifyUri": "spotify:track:6esrIQuXxZaThJbYtPIppl",
-    "firstBeatSec": 0,
     "bpm": 102,
     "wip": true,
     "steps": [
@@ -646,7 +639,6 @@
     "id": "main-1-9",
     "_description": "Gib Ihm — Shirin David",
     "spotifyUri": "spotify:track:5iIgIxtMNeogKaFUfvuAbs",
-    "firstBeatSec": 0,
     "bpm": 98,
     "wip": true,
     "steps": [
@@ -701,7 +693,6 @@
     "id": "main-1-10",
     "_description": "Friendships (Lost My Love) — Pascal Letoublon, Leony",
     "spotifyUri": "spotify:track:0lQ2obtzmAsJu9xk3D6FqH",
-    "firstBeatSec": 0,
     "bpm": 120,
     "wip": true,
     "steps": [
@@ -756,7 +747,6 @@
     "id": "main-1-11",
     "_description": "Breaking Free - High School Mix — Max David",
     "spotifyUri": "spotify:track:0UTjl5acoBcNiDWAHoLVCU",
-    "firstBeatSec": 0,
     "bpm": 128,
     "wip": true,
     "steps": [
@@ -816,7 +806,6 @@
     "id": "main-1-12",
     "_description": "The Bad Touch — Bloodhound Gang",
     "spotifyUri": "spotify:track:5EYdTPdJD74r9EVZBztqGG",
-    "firstBeatSec": 0,
     "bpm": 123,
     "wip": true,
     "steps": [
@@ -881,7 +870,6 @@
     "id": "main-1-13",
     "_description": "Where The Lights Are Low — Toby Romeo, Felix Jaehn, FAULHABER",
     "spotifyUri": "spotify:track:0Cnb8XdGDMHAmIRBUJMkIS",
-    "firstBeatSec": 0,
     "bpm": 124,
     "wip": true,
     "steps": [
@@ -941,7 +929,6 @@
     "id": "main-1-14",
     "_description": "Head & Heart — Joel Corry, MNEK",
     "spotifyUri": "spotify:track:6cx06DFPPHchuUAcTxznu9",
-    "firstBeatSec": 0,
     "bpm": 123,
     "wip": true,
     "steps": [
@@ -1006,7 +993,6 @@
     "id": "main-1-15",
     "_description": "Piece Of Your Heart — MEDUZA, Goodboys",
     "spotifyUri": "spotify:track:1DFD5Fotzgn6yYXkYsKiGs",
-    "firstBeatSec": 0,
     "bpm": 124,
     "wip": true,
     "steps": [
@@ -1066,7 +1052,6 @@
     "id": "main-1-16",
     "_description": "I Want It That Way — Backstreet Boys",
     "spotifyUri": "spotify:track:47BBI51FKFwOMlIiX6m8ya",
-    "firstBeatSec": 0,
     "bpm": 124,
     "wip": true,
     "steps": [
@@ -1181,7 +1166,6 @@
     "id": "main-1-18",
     "_description": "If You Really Love Me (How Will I Know) — David Guetta, MistaJam, John Newman",
     "spotifyUri": "spotify:track:5TnF44IQRsopRNa63BEyFd",
-    "firstBeatSec": 0,
     "bpm": 123,
     "wip": true,
     "steps": [
@@ -1251,7 +1235,6 @@
     "id": "main-1-19",
     "_description": "Titanium — David Guetta, Sia",
     "spotifyUri": "spotify:track:0TDLuuLlV54CkRRUOahJb4",
-    "firstBeatSec": 0,
     "bpm": 126,
     "wip": true,
     "steps": [
@@ -1311,7 +1294,6 @@
     "id": "main-1-20",
     "_description": "Rather Be — Clean Bandit, Jess Glynne",
     "spotifyUri": "spotify:track:3s4U7OHV7gnj42VV72eSZ6",
-    "firstBeatSec": 0,
     "bpm": 121,
     "wip": true,
     "steps": [
@@ -1381,7 +1363,6 @@
     "id": "main-1-21",
     "_description": "Safe and Sound — Capital Cities",
     "spotifyUri": "spotify:track:5JVbvCHX10U2pLa5DEqGav",
-    "firstBeatSec": 0,
     "bpm": 118,
     "wip": true,
     "steps": [
@@ -1446,7 +1427,6 @@
     "id": "main-1-22",
     "_description": "Juice — Lizzo",
     "spotifyUri": "spotify:track:0k664IuFwVP557Gnx7RhIl",
-    "firstBeatSec": 0,
     "bpm": 120,
     "wip": true,
     "steps": [
@@ -1501,7 +1481,6 @@
     "id": "main-1-23",
     "_description": "The Business — Tiësto",
     "spotifyUri": "spotify:track:6f3Slt0GbA2bPZlz0aIFXN",
-    "firstBeatSec": 0,
     "bpm": 120,
     "wip": true,
     "steps": [
@@ -1546,7 +1525,6 @@
     "id": "main-1-24",
     "_description": "Coco Jamboo — Mr. President",
     "spotifyUri": "spotify:track:3T1n5twZgndJrapVU0xai4",
-    "firstBeatSec": 0,
     "bpm": 123,
     "wip": true,
     "steps": [
@@ -1608,7 +1586,6 @@
     "id": "main-1-25",
     "_description": "All Around The World (La La La) — R3HAB, A Touch Of Class",
     "spotifyUri": "spotify:track:02itaCXOdC54J0ISjqqFAp",
-    "firstBeatSec": 0,
     "bpm": 130,
     "wip": true,
     "steps": [
@@ -1668,7 +1645,6 @@
     "id": "main-1-26",
     "_description": "Party Till We Die — MAKJ, Timmy Trumpet, Andrew W.K.",
     "spotifyUri": "spotify:track:5AEs83CYoPApEjYEJGbTuJ",
-    "firstBeatSec": 0,
     "bpm": 128,
     "wip": true,
     "steps": [
@@ -1728,7 +1704,6 @@
     "id": "main-1-27",
     "_description": "Be My Lover - 2023 Mix — Hypaton, David Guetta, La Bouche",
     "spotifyUri": "spotify:track:2aQpISWUBToaF84DDiTeRV",
-    "firstBeatSec": 0,
     "bpm": 123,
     "wip": true,
     "steps": [
@@ -1793,7 +1768,6 @@
     "id": "main-1-28",
     "_description": "Freed From Desire — Gala, Molella, Phil Jay",
     "spotifyUri": "spotify:track:3u5N55tHf7hXATSQrjBh2q",
-    "firstBeatSec": 0,
     "bpm": 129,
     "wip": true,
     "steps": [
