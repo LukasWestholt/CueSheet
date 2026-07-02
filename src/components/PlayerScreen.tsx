@@ -22,7 +22,7 @@ import DeviceBanners from './player/DeviceBanners';
 import { Pause, Link as LinkIcon, AlertTriangle, Pen, Maximize } from './icons';
 import { trackPath } from '../nav/routes';
 import { sessionEstimate } from '../data/setlist';
-import { loadHaptic, saveHaptic, hapticSupported } from '../data/hapticSetting';
+import { loadHaptic } from '../data/hapticSetting';
 import { useHapticCue } from '../hooks/useHapticCue';
 
 export default function PlayerScreen({
@@ -137,16 +137,11 @@ export default function PlayerScreen({
     else break;
   }
 
-  // Haptic cue on step change (Android only — iOS Safari has no Vibration API,
-  // so the toggle is hidden there). Opt-in; the setting is shared with the
-  // list-view Settings panel via data/hapticSetting.
-  const canHaptic = hapticSupported();
-  const [haptic, setHaptic] = useState(loadHaptic);
-  const toggleHaptic = (v: boolean) => {
-    setHaptic(v);
-    saveHaptic(v);
-  };
-  useHapticCue(activeRow, canHaptic && haptic && engine.phase === 'playing');
+  // Haptic cue on step change (opt-in, set in the list-view Settings panel;
+  // read once at mount — Settings can't change while the player is open).
+  // useHapticCue itself no-ops where the Vibration API is missing (iOS).
+  const [haptic] = useState(loadHaptic);
+  useHapticCue(activeRow, haptic && engine.phase === 'playing');
 
   // Seek so a tapped step becomes the audible "now": the sync offset is
   // subtracted because positionSeconds = (rawPosition + offset).
@@ -298,16 +293,6 @@ export default function PlayerScreen({
             onChange={(e) => engine.setAutoContinue(e.target.checked)}
           />
         </label>
-        {canHaptic && (
-          <label className="toggle-row" title="Vibrate when the step changes">
-            <span>Vibrate on step change</span>
-            <input
-              type="checkbox"
-              checked={haptic}
-              onChange={(e) => toggleHaptic(e.target.checked)}
-            />
-          </label>
-        )}
         {/* End the current song now and hold before the next track */}
         <button className="hold-btn" onClick={engine.holdNow}>
           <Pause size={18} /> End track &amp; hold

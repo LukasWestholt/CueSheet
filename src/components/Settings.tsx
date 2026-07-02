@@ -198,7 +198,7 @@ export default function Settings() {
         <label className="toggle-row" style={{ marginTop: 'var(--space-4)' }}>
           <span>
             Vibrate on step change
-            <small className="muted"> · a short buzz on each move while playing (also toggleable in the player)</small>
+            <small className="muted"> · a short buzz on each move while playing</small>
           </span>
           <input
             type="checkbox"

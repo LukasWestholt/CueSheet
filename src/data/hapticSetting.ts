@@ -1,7 +1,7 @@
-// The vibrate-on-step-change setting, shared by the player's toggle and the
-// list-view Settings panel. Opt-in: off until the coach enables it. Only
-// meaningful where the Vibration API exists (Android — iOS Safari lacks it),
-// so callers hide their toggle behind `hapticSupported()`.
+// The vibrate-on-step-change setting: toggled in the list-view Settings panel,
+// read by the player. Opt-in: off until the coach enables it. Only meaningful
+// where the Vibration API exists (Android — iOS Safari lacks it), so the
+// Settings toggle hides behind `hapticSupported()`.
 import { readString, writeString } from './storage';
 
 const KEY = 'tjf.haptic';
