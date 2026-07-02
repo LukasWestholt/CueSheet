@@ -8,10 +8,11 @@ export const SPOTIFY_CLIENT_ID: string = import.meta.env.VITE_SPOTIFY_CLIENT_ID 
 // BASE_URL always has a trailing slash, so there's no separator before 'callback'.
 export const REDIRECT_URI: string = `${window.location.origin}${import.meta.env.BASE_URL}callback`;
 
+// Note: 'user-read-currently-playing' is deliberately absent — current-track
+// reads go through GET /me/player, already covered by user-read-playback-state.
 export const SCOPES: string[] = [
   'user-read-playback-state',
   'user-modify-playback-state',
-  'user-read-currently-playing',
   // Reads the account profile (display name + Premium status) for the
   // Premium gate. See getCurrentUser() / GET /me.
   'user-read-private',
