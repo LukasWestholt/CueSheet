@@ -380,6 +380,7 @@ export default function TrackEditor({
               className="step-name"
               value={s.step}
               placeholder="Move"
+              list="tjf-step-names"
               onChange={(e) => setStep(i, { step: e.target.value })}
             />
             <input
@@ -428,6 +429,41 @@ export default function TrackEditor({
                 <X size={18} />
               </button>
             </div>
+            {(() => {
+              // Known-move suggestions: when the typed name matches the library,
+              // offer its other frequent cues/measures as one-tap chips (the
+              // library computes them ranked; before this they were discarded).
+              const entry = library.find((e) => e.step === s.step.trim());
+              if (!entry) return null;
+              const cueSugs = entry.cues.filter((c) => c !== (s.cue ?? '').trim()).slice(0, 3);
+              const measureSugs = entry.measures.filter((m) => m !== s.measures).slice(0, 3);
+              if (cueSugs.length === 0 && measureSugs.length === 0) return null;
+              return (
+                <div className="step-suggest">
+                  <span className="hint">elsewhere:</span>
+                  {cueSugs.map((c) => (
+                    <button
+                      key={`c:${c}`}
+                      type="button"
+                      className="chip"
+                      onClick={() => setStep(i, { cue: c })}
+                    >
+                      “{c}”
+                    </button>
+                  ))}
+                  {measureSugs.map((m) => (
+                    <button
+                      key={`m:${m}`}
+                      type="button"
+                      className="chip"
+                      onClick={() => setStep(i, { measures: m, halfPosition: undefined })}
+                    >
+                      {m} ×8
+                    </button>
+                  ))}
+                </div>
+              );
+            })()}
             {hasHalfCount(s.measures) && naturalHalfPos(s.measures) >= 1 && (
               <label className="step-half-row">
                 <span>Half-count (4/8) is counted</span>
@@ -458,6 +494,14 @@ export default function TrackEditor({
       <button className="ghost add-step" onClick={addStep}>
         + Add step
       </button>
+      {/* Native autocomplete for the step-name inputs (all known moves). */}
+      {library.length > 0 && (
+        <datalist id="tjf-step-names">
+          {library.map((e) => (
+            <option key={e.step} value={e.step} />
+          ))}
+        </datalist>
+      )}
 
       {library.length > 0 && (
         <section className="library">

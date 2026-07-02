@@ -1074,6 +1074,15 @@ details.routines[open] > summary.routines-head::after {
 .step-measures {
   text-align: center;
 }
+/* Known-move suggestions (cues/measures seen elsewhere for this move) — a
+   chip sub-row spanning the whole step grid. */
+.step-suggest {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
 /* Half-count placement — a sub-row spanning the whole step grid, shown only
    when a step's measures end in .5 and there's a real choice of position. */
 .step-half-row {
