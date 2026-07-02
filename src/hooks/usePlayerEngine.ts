@@ -21,7 +21,7 @@ export type Phase =
   | 'loading' // sent play command, waiting for first state
   | 'playing'
   | 'paused' // paused mid-track by the user
-  | 'gap' // 20s countdown between tracks
+  | 'gap' // inter-track countdown (gapSeconds, default 10s)
   | 'held' // permanently paused between tracks (auto-continue cancelled)
   | 'ended'; // last track finished, nothing queued
 

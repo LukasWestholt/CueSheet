@@ -9,10 +9,17 @@ import type { ResolvedMeta } from '../data/meta';
 // mock the hooks PlayerScreen depends on and feed it a controlled engine. This
 // also keeps the Spotify network modules (pulled in by the real hooks) out of
 // the test entirely.
-const state = vi.hoisted(() => ({ engine: null as unknown as PlayerEngine }));
+const state = vi.hoisted(() => ({
+  engine: null as unknown as PlayerEngine,
+  engineArgs: [] as unknown[][],
+}));
 
 vi.mock('../hooks/usePlayerEngine', () => ({
-  usePlayerEngine: () => state.engine,
+  usePlayerEngine: (...args: unknown[]) => {
+    state.engineArgs.push(args);
+    return state.engine;
+  },
+  DEFAULT_GAP_SECONDS: 10,
 }));
 vi.mock('../hooks/useWakeLock', () => ({ useWakeLock: () => {} }));
 vi.mock('../hooks/useCalibration', () => ({
@@ -96,6 +103,7 @@ beforeEach(() => {
     clear: () => store.clear(),
   });
   state.engine = makeEngine();
+  state.engineArgs = [];
 });
 afterEach(() => {
   cleanup();
@@ -162,6 +170,20 @@ describe('PlayerScreen held overlay', () => {
     renderPlayer();
     expect(screen.getByText('Keeping Tablet awake')).toBeTruthy();
     expect(screen.queryByText('Stop the silent track')).toBeNull();
+  });
+});
+
+describe('PlayerScreen gap length wiring', () => {
+  it('passes the session gap to the engine and shows it in the label', () => {
+    renderPlayer({ session: { durationsMs: [60_000], gapSeconds: 20 } });
+    expect(state.engineArgs[state.engineArgs.length - 1]?.[2]).toBe(20);
+    expect(screen.getByText('Auto-continue (20s gap)')).toBeTruthy();
+  });
+
+  it('falls back to the default gap outside a session', () => {
+    renderPlayer();
+    expect(state.engineArgs[state.engineArgs.length - 1]?.[2]).toBe(10);
+    expect(screen.getByText('Auto-continue (10s gap)')).toBeTruthy();
   });
 });
 

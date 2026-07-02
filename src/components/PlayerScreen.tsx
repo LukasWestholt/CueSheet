@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Track } from '../data/tracks';
 import { buildCallings } from '../data/beats';
 import { formatClock, formatLong } from '../data/time';
-import { usePlayerEngine } from '../hooks/usePlayerEngine';
+import { usePlayerEngine, DEFAULT_GAP_SECONDS } from '../hooks/usePlayerEngine';
 import { useTrackMeta } from '../hooks/useTrackMeta';
 import { useCalibration } from '../hooks/useCalibration';
 import { useWakeLock } from '../hooks/useWakeLock';
@@ -49,7 +49,10 @@ export default function PlayerScreen({
   /** Open the routine editor for a track (the detail-page pen button). */
   onEdit?: (trackId: string) => void;
 }) {
-  const engine = usePlayerEngine(tracks, deviceId);
+  // The session's gap must reach the engine, or the countdown would run the
+  // default while the session estimate uses the authored value.
+  const gapSeconds = session?.gapSeconds ?? DEFAULT_GAP_SECONDS;
+  const engine = usePlayerEngine(tracks, deviceId, gapSeconds);
   useWakeLock(true);
 
   const [tapping, setTapping] = useState(false);
@@ -222,7 +225,7 @@ export default function PlayerScreen({
 
       <div className="continue-row">
         <label className="toggle-row">
-          <span>Auto-continue (20s gap)</span>
+          <span>Auto-continue ({gapSeconds}s gap)</span>
           <input
             type="checkbox"
             checked={engine.autoContinue}
