@@ -23,7 +23,8 @@ import { Pause, Link as LinkIcon, AlertTriangle, Pen, Maximize } from './icons';
 import { trackPath } from '../nav/routes';
 import { sessionEstimate } from '../data/setlist';
 import { mirrorCue } from '../data/mirror';
-import { readFlag, writeFlag, readString, writeString } from '../data/storage';
+import { readFlag, writeFlag } from '../data/storage';
+import { loadHaptic, saveHaptic, hapticSupported } from '../data/hapticSetting';
 import { useHapticCue } from '../hooks/useHapticCue';
 
 export default function PlayerScreen({
@@ -158,14 +159,15 @@ export default function PlayerScreen({
   }
 
   // Haptic cue on step change (Android only — iOS Safari has no Vibration API,
-  // so the toggle is hidden there). Opt-in: off until the coach enables it.
-  const hapticSupported = typeof navigator !== 'undefined' && 'vibrate' in navigator;
-  const [haptic, setHaptic] = useState(() => readString('tjf.haptic', '0') === '1');
+  // so the toggle is hidden there). Opt-in; the setting is shared with the
+  // list-view Settings panel via data/hapticSetting.
+  const canHaptic = hapticSupported();
+  const [haptic, setHaptic] = useState(loadHaptic);
   const toggleHaptic = (v: boolean) => {
     setHaptic(v);
-    writeString('tjf.haptic', v ? '1' : '0');
+    saveHaptic(v);
   };
-  useHapticCue(activeRow, hapticSupported && haptic && engine.phase === 'playing');
+  useHapticCue(activeRow, canHaptic && haptic && engine.phase === 'playing');
 
   // Seek so a tapped step becomes the audible "now": the sync offset is
   // subtracted because positionSeconds = (rawPosition + offset).
@@ -325,7 +327,7 @@ export default function PlayerScreen({
             onChange={(e) => toggleMirror(e.target.checked)}
           />
         </label>
-        {hapticSupported && (
+        {canHaptic && (
           <label className="toggle-row" title="Vibrate when the step changes">
             <span>Vibrate on step change</span>
             <input

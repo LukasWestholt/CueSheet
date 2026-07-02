@@ -14,6 +14,7 @@ import {
   DEFAULT_SILENT_TRACK_URI,
   type KeepAwakeMethod,
 } from '../data/keepAwakeSetting';
+import { loadHaptic, saveHaptic, hapticSupported } from '../data/hapticSetting';
 import { testGetsongbpmKey } from '../beatdata/getsongbpm';
 import { GETSONGBPM_URL, REPO_URL } from '../links';
 import { X, Settings as SettingsIcon } from './icons';
@@ -26,6 +27,7 @@ export default function Settings() {
   const [keepAwake, setKeepAwake] = useState<boolean>(loadKeepAwake);
   const [keepAwakeMethod, setKeepAwakeMethod] = useState<KeepAwakeMethod>(loadKeepAwakeMethod);
   const [silentUri, setSilentUri] = useState<string>(loadSilentTrackUri);
+  const [haptic, setHaptic] = useState<boolean>(loadHaptic);
   const [helpOpen, setHelpOpen] = useState(false);
   const [test, setTest] = useState<
     { state: 'idle' | 'testing' } | { state: 'ok' } | { state: 'fail'; reason: string }
@@ -62,6 +64,10 @@ export default function Settings() {
   const onSilentUriChange = (uri: string) => {
     setSilentUri(uri);
     saveSilentTrackUri(uri);
+  };
+  const onHapticChange = (value: boolean) => {
+    setHaptic(value);
+    saveHaptic(value);
   };
 
   const dirty = key.trim() !== savedKey;
@@ -186,6 +192,20 @@ export default function Settings() {
             </div>
           )}
         </div>
+      )}
+
+      {hapticSupported() && (
+        <label className="toggle-row" style={{ marginTop: 'var(--space-4)' }}>
+          <span>
+            Vibrate on step change
+            <small className="muted"> · a short buzz on each move while playing (also toggleable in the player)</small>
+          </span>
+          <input
+            type="checkbox"
+            checked={haptic}
+            onChange={(e) => onHapticChange(e.target.checked)}
+          />
+        </label>
       )}
 
       {savedKey && (
