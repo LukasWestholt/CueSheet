@@ -96,7 +96,7 @@ export default function CallingDisplay({
     <div
       className={`calling-display ${announcing ? 'announcing' : ''} ${
         altFrame ? 'announcing-alt' : ''
-      }`}
+      } ${beat?.downbeat && !announcing ? 'downbeat' : ''}`}
     >
       <div className="now">
         <span className="label">NOW</span>

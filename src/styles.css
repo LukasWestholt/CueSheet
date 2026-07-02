@@ -1593,6 +1593,22 @@ details.routines[open] > summary.routines-head::after {
   color: var(--accent);
 }
 
+/* Downbeat flash: the whole card lifts on the "1" of each eight and fades back
+   over the following beats — the count stays readable across a studio. Fast
+   attack, slow release; the base transition below is the release. */
+.calling-display {
+  transition: filter 0.45s ease-out;
+}
+.calling-display.downbeat {
+  filter: brightness(1.25);
+  transition: filter 0.05s ease-in;
+}
+@media (prefers-reduced-motion: reduce) {
+  .calling-display.downbeat {
+    filter: none;
+  }
+}
+
 /* Count-in: emphasise the next move so the coach calls "3, 2, 1, <move>". */
 .calling-display.announcing {
   outline: 3px solid var(--accent);

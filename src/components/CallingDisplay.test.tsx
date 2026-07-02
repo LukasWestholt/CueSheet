@@ -41,6 +41,17 @@ describe('CallingDisplay', () => {
     expect(screen.getByText('s')).toBeTruthy();
   });
 
+  it('flags the card with .downbeat on the "1" of an eight, not mid-count', () => {
+    // 120 BPM → 0.5s/beat. Position 0 = beat 1 of the step (a downbeat);
+    // position 0.6 = beat 2 (no downbeat).
+    const { container, rerender } = render(
+      <CallingDisplay callings={callings} positionSeconds={0} bpm={120} />,
+    );
+    expect(container.querySelector('.calling-display.downbeat')).not.toBeNull();
+    rerender(<CallingDisplay callings={callings} positionSeconds={0.6} bpm={120} />);
+    expect(container.querySelector('.calling-display.downbeat')).toBeNull();
+  });
+
   it('announces the move (→, not "1") in the final beats of the close', () => {
     // position 9 → 1s to next; at 120 BPM that's 2 beats → the "1" beat, which
     // we replace with the move announcement rather than a counted "1".
