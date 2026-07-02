@@ -111,9 +111,18 @@ export default function PlayerScreen({
   const progressPct = duration > 0 ? Math.min(100, (engine.positionMs / duration) * 100) : 0;
 
   const [linkCopied, copyText] = useCopyFlag();
-  // Copy a shareable deep link to this track's detail page.
-  const copyLink = () =>
-    copyText(window.location.origin + trackPath(track.id, import.meta.env.BASE_URL));
+  // Share a deep link to this track's detail page: native share sheet where
+  // the Web Share API exists (iOS Safari 14.5+, Android), clipboard otherwise.
+  const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+  const shareLink = () => {
+    const url = window.location.origin + trackPath(track.id, import.meta.env.BASE_URL);
+    if (canShare) {
+      // Rejection = user closed the sheet; nothing to handle.
+      navigator.share({ title: meta.title, url }).catch(() => {});
+    } else {
+      copyText(url);
+    }
+  };
 
   // Which calling row is active (for the coach timeline highlight).
   let activeRow = -1;
@@ -174,9 +183,13 @@ export default function PlayerScreen({
             <AlertTriangle size={16} /> Work in progress — timings may be off.
           </p>
         )}
-        <button className="link copy-link" onClick={copyLink}>
+        <button className="link copy-link" onClick={shareLink}>
           <LinkIcon size={16} />
-          {linkCopied ? 'Link copied!' : 'Copy link to this track'}
+          {canShare
+            ? 'Share this track'
+            : linkCopied
+              ? 'Link copied!'
+              : 'Copy link to this track'}
         </button>
       </div>
 
