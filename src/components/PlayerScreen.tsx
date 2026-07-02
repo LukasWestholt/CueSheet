@@ -22,8 +22,6 @@ import DeviceBanners from './player/DeviceBanners';
 import { Pause, Link as LinkIcon, AlertTriangle, Pen, Maximize } from './icons';
 import { trackPath } from '../nav/routes';
 import { sessionEstimate } from '../data/setlist';
-import { mirrorCue } from '../data/mirror';
-import { readFlag, writeFlag } from '../data/storage';
 import { loadHaptic, saveHaptic, hapticSupported } from '../data/hapticSetting';
 import { useHapticCue } from '../hooks/useHapticCue';
 
@@ -88,25 +86,6 @@ export default function PlayerScreen({
   const callings = useMemo(
     () => (meta.bpm ? buildCallings(track.steps, meta.firstBeatSec, meta.bpm) : []),
     [track, meta.bpm, meta.firstBeatSec],
-  );
-
-  // Mirrored calling (coach faces the class): swap left/right in the displayed
-  // step names/cues. Display-only — timing and the stored routine are untouched.
-  const [mirror, setMirror] = useState(() => readFlag('tjf.mirror'));
-  const toggleMirror = (v: boolean) => {
-    setMirror(v);
-    writeFlag('tjf.mirror', v);
-  };
-  const displayCallings = useMemo(
-    () =>
-      mirror
-        ? callings.map((c) => ({
-            ...c,
-            step: mirrorCue(c.step),
-            cue: c.cue ? mirrorCue(c.cue) : c.cue,
-          }))
-        : callings,
-    [callings, mirror],
   );
 
   const positionSeconds = (engine.positionMs + offsetMs) / 1000;
@@ -268,7 +247,7 @@ export default function PlayerScreen({
       />
 
       <CallingDisplay
-        callings={displayCallings}
+        callings={callings}
         positionSeconds={positionSeconds}
         bpm={meta.bpm ?? undefined}
       />
@@ -303,7 +282,7 @@ export default function PlayerScreen({
       <VolumeSlider volumePercent={engine.volumePercent} onChange={engine.setVolume} />
 
       <StepTimeline
-        callings={displayCallings}
+        callings={callings}
         steps={track.steps}
         activeRow={activeRow}
         phase={engine.phase}
@@ -317,14 +296,6 @@ export default function PlayerScreen({
             type="checkbox"
             checked={engine.autoContinue}
             onChange={(e) => engine.setAutoContinue(e.target.checked)}
-          />
-        </label>
-        <label className="toggle-row" title="Swap left/right in cues — the coach faces the class">
-          <span>Mirror L/R</span>
-          <input
-            type="checkbox"
-            checked={mirror}
-            onChange={(e) => toggleMirror(e.target.checked)}
           />
         </label>
         {canHaptic && (
@@ -364,7 +335,7 @@ export default function PlayerScreen({
       {stage && (
         <div className="stage" onClick={() => setStage(false)}>
           <CallingDisplay
-            callings={displayCallings}
+            callings={callings}
             positionSeconds={positionSeconds}
             bpm={meta.bpm ?? undefined}
           />
