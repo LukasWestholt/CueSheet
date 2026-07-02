@@ -230,6 +230,14 @@ export default function PlayerScreen({
       <div className="progress">
         <div className="progress-bar">
           <div className="progress-fill" style={{ width: `${progressPct}%` }} />
+          {/* Step boundaries as tick marks, so "where does the chorus land"
+              reads off the bar. Sync offset applies (same clock as seeking). */}
+          {duration > 0 &&
+            callings.map((c, i) => {
+              const pct = ((c.time * 1000 - offsetMs) / duration) * 100;
+              if (pct <= 0 || pct >= 100) return null;
+              return <span key={i} className="progress-tick" style={{ left: `${pct}%` }} />;
+            })}
         </div>
         <div className="progress-times">
           <span>{formatClock(engine.positionMs)}</span>

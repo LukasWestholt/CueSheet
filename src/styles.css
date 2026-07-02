@@ -46,6 +46,15 @@
   --ring-bg: #273141;
   --ring-bg-alt: #324056; /* alternating measure-arc shade on the countdown ring */
 
+  /* Section tones for the coach timeline (cues used as section labels — equal
+     cues share a tone; keep in sync with SECTION_PALETTE_SIZE in sections.ts). */
+  --section-0: #38bdf8;
+  --section-1: #a78bfa;
+  --section-2: #34d399;
+  --section-3: #f472b6;
+  --section-4: #facc15;
+  --section-5: #fb923c;
+
   /* ---- Typography ------------------------------------------------------- */
   --font-display: 'Barlow Condensed', 'Roboto Condensed', 'Arial Narrow',
     system-ui, sans-serif;
@@ -1643,10 +1652,20 @@ details.routines[open] > summary.routines-head::after {
 
 /* Progress --------------------------------------------------------------- */
 .progress-bar {
+  position: relative; /* anchors the step tick marks */
   height: 6px;
   background: var(--surface-2);
   border-radius: var(--radius-pill);
   overflow: hidden;
+}
+/* Step boundaries on the progress bar. */
+.progress-tick {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: rgba(255, 255, 255, 0.35);
 }
 .progress-fill {
   height: 100%;
@@ -1855,6 +1874,13 @@ details.routines[open] > summary.routines-head::after {
 .row-jump:not(:disabled):active {
   background: var(--surface-2);
 }
+/* Section edge: an inset bar (not border) so coloured rows don't shift. */
+.row-jump.section-0 { box-shadow: inset 3px 0 0 var(--section-0); }
+.row-jump.section-1 { box-shadow: inset 3px 0 0 var(--section-1); }
+.row-jump.section-2 { box-shadow: inset 3px 0 0 var(--section-2); }
+.row-jump.section-3 { box-shadow: inset 3px 0 0 var(--section-3); }
+.row-jump.section-4 { box-shadow: inset 3px 0 0 var(--section-4); }
+.row-jump.section-5 { box-shadow: inset 3px 0 0 var(--section-5); }
 .row-jump:disabled {
   cursor: default;
 }

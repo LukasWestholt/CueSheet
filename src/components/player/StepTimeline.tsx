@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type { Calling, StepCalling } from '../../data/tracks';
 import type { Phase } from '../../hooks/usePlayerEngine';
 import { beatsForStep } from '../../data/beats';
 import { formatClock } from '../../data/time';
+import { assignSections } from '../../data/sections';
 
 /**
  * Coach view: the full prepared order of steps. Highlights the active row, keeps
@@ -37,6 +38,10 @@ export default function StepTimeline({
   // hasn't pressed Play) and loading stay non-seekable.
   const seekable = phase !== 'idle' && phase !== 'loading';
 
+  // Cues double as section labels ("intro"/"chorus"/…): equal cues share a
+  // colour so the song's structure shows in the row edge.
+  const sections = useMemo(() => assignSections(callings.map((c) => c.cue)), [callings]);
+
   return (
     <section className="timeline">
       <h3>Prepared steps</h3>
@@ -45,7 +50,9 @@ export default function StepTimeline({
           <li key={i} ref={i === activeRow ? activeRowRef : null}>
             <button
               type="button"
-              className={`row-jump${i === activeRow ? ' row-active' : ''}`}
+              className={`row-jump${i === activeRow ? ' row-active' : ''}${
+                sections[i] != null ? ` section-${sections[i]}` : ''
+              }`}
               onClick={() => onSeek(c.time)}
               disabled={!seekable}
             >
