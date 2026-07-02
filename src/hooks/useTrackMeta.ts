@@ -3,8 +3,7 @@ import type { Track } from '../data/tracks';
 import type { Calibration } from '../data/calibration';
 import { resolveTrackMeta, type FetchedMeta, type ResolvedMeta } from '../data/meta';
 import { getFirstBeatSec, getTrackInfo, getTrackTempo } from '../spotify/api';
-import { getBpmByIsrc } from '../beatdata/deezer';
-import { getBpmByTitleArtist } from '../beatdata/getsongbpm';
+import { lookupBpm } from '../beatdata/bpmLookup';
 
 /**
  * Fetches the metadata a track doesn't author itself: title/artist/duration
@@ -31,18 +30,16 @@ export function useTrackMeta(track: Track, calibration?: Calibration | null): Re
               imageUrl: info.imageUrl,
           });
         // Best-effort BPM when not authored — Spotify's own tempo endpoint is
-        // usually 403. Try Deezer first (keyless, by ISRC), then fall back to
-        // GetSongBPM (by title/artist) for the many tracks Deezer reports as
-        // bpm:0. Don't clobber a BPM already set; calibration still overrides.
+        // usually 403; lookupBpm chains Deezer → GetSongBPM. Don't clobber a
+        // BPM already set; calibration still overrides.
         if (track.bpm == null) {
-          (async () => {
-            const bpm =
-              (info.isrc ? await getBpmByIsrc(info.isrc) : null) ??
-              (await getBpmByTitleArtist(info.title, info.artist));
-            if (bpm != null && active) {
-              setFetched((prev) => (prev.bpm != null ? prev : { ...prev, bpm }));
-            }
-          })().catch(() => {});
+          lookupBpm(info)
+            .then((bpm) => {
+              if (bpm != null && active) {
+                setFetched((prev) => (prev.bpm != null ? prev : { ...prev, bpm }));
+              }
+            })
+            .catch(() => {});
         }
       })
       .catch(() => {});

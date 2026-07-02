@@ -3,7 +3,7 @@ import type { Track, StepCalling } from '../data/tracks';
 import type { StepLibraryEntry } from '../data/stepLibrary';
 import { validateTracks } from '../data/validateTracks';
 import { getTrackInfo, searchTracks, type TrackSearchResult } from '../spotify/api';
-import { getBpmByIsrc } from '../beatdata/deezer';
+import { lookupBpm } from '../beatdata/bpmLookup';
 import { bpmAdvice, bpmLevelClass } from '../data/bpmAdvice';
 import { checkRoutineLength, lengthWarning } from '../data/routineLength';
 import { POPULAR_TRACKS, type PopularTrack } from '../data/popularTracks';
@@ -78,8 +78,8 @@ export default function TrackEditor({
     };
   }, [query]);
 
-  // Lazily look up each result's BPM from Deezer (by ISRC). Absent key = still
-  // loading; null = no data; number = BPM.
+  // Lazily look up each result's BPM (Deezer → GetSongBPM via lookupBpm).
+  // Absent key = still loading; null = no data; number = BPM.
   const [bpmByUri, setBpmByUri] = useState<Record<string, number | null>>({});
   useEffect(() => {
     setBpmByUri({});
@@ -88,15 +88,14 @@ export default function TrackEditor({
     const set = (uri: string, bpm: number | null) =>
       active && setBpmByUri((m) => ({ ...m, [uri]: bpm }));
     for (const r of results) {
-      if (!r.isrc) set(r.uri, null);
-      else getBpmByIsrc(r.isrc).then((bpm) => set(r.uri, bpm)).catch(() => set(r.uri, null));
+      lookupBpm(r).then((bpm) => set(r.uri, bpm)).catch(() => set(r.uri, null));
     }
     return () => {
       active = false;
     };
   }, [results]);
 
-  // Recommend a BPM for the currently-set track (Deezer, by ISRC).
+  // Recommend a BPM for the currently-set track (Deezer → GetSongBPM).
   // undefined = looking up, null = none found, number = recommendation.
   const [recBpm, setRecBpm] = useState<number | null | undefined>(null);
   // Track duration from Spotify, used for the routine-length check below.
@@ -114,7 +113,7 @@ export default function TrackEditor({
       getTrackInfo(uri)
         .then((info) => {
           if (active) setFetchedDurationMs(info?.durationMs ?? null);
-          return info?.isrc ? getBpmByIsrc(info.isrc) : null;
+          return info ? lookupBpm(info) : null;
         })
         .then((bpm) => active && setRecBpm(bpm))
         .catch(() => {

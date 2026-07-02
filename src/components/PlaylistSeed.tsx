@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Track } from '../data/tracks';
 import { getPlaylistTracks, type PlaylistTrack } from '../spotify/api';
-import { getBpmByIsrc } from '../beatdata/deezer';
+import { lookupBpm } from '../beatdata/bpmLookup';
 import { bpmAdvice, bpmLevelClass } from '../data/bpmAdvice';
 
 export default function PlaylistSeed({
@@ -38,7 +38,7 @@ export default function PlaylistSeed({
     }
   };
 
-  // Lazily look up each track's BPM (Deezer, by ISRC).
+  // Lazily look up each track's BPM (Deezer → GetSongBPM via lookupBpm).
   useEffect(() => {
     setBpmByUri({});
     if (items.length === 0) return;
@@ -46,8 +46,7 @@ export default function PlaylistSeed({
     const set = (uri: string, bpm: number | null) =>
       active && setBpmByUri((m) => ({ ...m, [uri]: bpm }));
     for (const t of items) {
-      if (!t.isrc) set(t.uri, null);
-      else getBpmByIsrc(t.isrc).then((bpm) => set(t.uri, bpm)).catch(() => set(t.uri, null));
+      lookupBpm(t).then((bpm) => set(t.uri, bpm)).catch(() => set(t.uri, null));
     }
     return () => {
       active = false;
