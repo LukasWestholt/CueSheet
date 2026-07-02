@@ -40,6 +40,17 @@ export default defineConfig({
         icons: [
           { src: 'icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' },
         ],
+        // Home-screen long-press shortcut (Android/desktop; iOS ignores it).
+        // Relative URL → resolves against the manifest scope, so it works on
+        // sub-path deploys too. /session opens the saved setlist ready to play.
+        shortcuts: [
+          {
+            name: 'Start setlist session',
+            short_name: 'Setlist',
+            description: 'Open your saved setlist ready to start',
+            url: 'session',
+          },
+        ],
       },
     }),
   ],

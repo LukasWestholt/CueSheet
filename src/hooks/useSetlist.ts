@@ -27,9 +27,11 @@ export function useSetlist(tracks: Track[]) {
   };
   const remove = (id: string) => persist(setlist.filter((x) => x !== id));
   const clear = () => persist([]);
+  /** Replace the whole queue (importing a shared '/session/…' link). */
+  const replace = (ids: string[]) => persist(ids);
 
   const setlistSet = useMemo(() => new Set(setlist), [setlist]);
   const sessionTracks = useMemo(() => resolveSetlist(setlist, tracks), [setlist, tracks]);
 
-  return { setlist, setlistSet, sessionTracks, toggle, move, remove, clear };
+  return { setlist, setlistSet, sessionTracks, toggle, move, remove, clear, replace };
 }

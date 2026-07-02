@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { IS_CONFIGURED } from './config';
 import { getPlaybackState, getTracksInfo, type TrackInfo } from './spotify/api';
 import { type Track } from './data/tracks';
-import { parsePath, trackPath, listPath } from './nav/routes';
+import { parsePath, trackPath, listPath, sessionPath } from './nav/routes';
+import { toast } from './data/toast';
 import { DEFAULT_GAP_SECONDS } from './hooks/usePlayerEngine';
 import { useOnline } from './hooks/useOnline';
 import { useDeviceKeepAwake } from './hooks/useDeviceKeepAwake';
@@ -36,6 +37,12 @@ export default function App() {
   const [pendingTrackId, setPendingTrackId] = useState<string | null>(() => {
     const r = parsePath(window.location.pathname, BASE);
     return r.name === 'track' ? r.id : null;
+  });
+  // Setlist ids from a deep link (/session/a,b,c — a shared class plan) waiting
+  // for the routine list. Empty array = the bare /session (saved setlist).
+  const [pendingSessionIds, setPendingSessionIds] = useState<string[] | null>(() => {
+    const r = parsePath(window.location.pathname, BASE);
+    return r.name === 'session' ? r.ids : null;
   });
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [trackInfos, setTrackInfos] = useState<Record<string, TrackInfo>>({});
@@ -78,8 +85,14 @@ export default function App() {
   const startSession = () => {
     if (setlist.sessionTracks.length === 0) return;
     setSessionActive(true);
+    setPlayerMode('start');
     setView('player');
-    window.history.pushState({}, '', listPath(BASE)); // a session has no per-track URL
+    // The session URL is its ordered id list — reload-safe and shareable.
+    window.history.pushState(
+      {},
+      '',
+      sessionPath(setlist.sessionTracks.map((t) => t.id), BASE),
+    );
   };
 
   const openTrack = (index: number, asResume = false) => {
@@ -152,6 +165,34 @@ export default function App() {
       setPendingTrackId(null);
     }
   }, [pendingTrackId, tracks]);
+
+  // Resolve a session deep link once the routine list is loaded. A shared id
+  // list (/session/a,b,c) is imported into the setlist (skipping unknown ids,
+  // with a toast); the bare /session (PWA shortcut) uses the saved setlist.
+  // Opens the session player in 'view' mode — positioned, Play to start.
+  useEffect(() => {
+    if (!pendingSessionIds || tracks.length === 0) return;
+    const shared = pendingSessionIds.length > 0;
+    const wanted = shared ? pendingSessionIds : setlist.setlist;
+    const known = wanted.filter((id) => tracks.some((t) => t.id === id));
+    setPendingSessionIds(null);
+    if (known.length === 0) {
+      if (shared) toast('None of the shared setlist tracks are in your routines.');
+      return;
+    }
+    if (shared) {
+      setlist.replace(known);
+      if (known.length < wanted.length) {
+        toast(
+          `${wanted.length - known.length} of ${wanted.length} shared setlist tracks ` +
+            "aren't in your routines and were skipped.",
+        );
+      }
+    }
+    setSessionActive(true);
+    setPlayerMode('view');
+    setView('player');
+  }, [pendingSessionIds, tracks, setlist]);
 
   // Land at the top whenever the screen changes (open a track, go back to the
   // list, enter the editor) — a deep-linked or re-opened view shouldn't inherit
@@ -269,7 +310,7 @@ export default function App() {
           tracks={sessionActive ? setlist.sessionTracks : tracks}
           startIndex={sessionActive ? 0 : selectedIndex}
           deviceId={deviceId}
-          mode={sessionActive ? 'start' : playerMode}
+          mode={playerMode}
           session={
             sessionActive
               ? {

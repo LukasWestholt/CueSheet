@@ -2,8 +2,10 @@ import type { Track } from '../data/tracks';
 import type { TrackInfo } from '../spotify/api';
 import { sessionEstimate } from '../data/setlist';
 import { DEFAULT_GAP_SECONDS } from '../hooks/usePlayerEngine';
-import { ArrowUp, ArrowDown, X, Play } from './icons';
+import { ArrowUp, ArrowDown, X, Play, Link as LinkIcon } from './icons';
 import { formatClock } from '../data/time';
+import { sessionPath } from '../nav/routes';
+import { useCopyFlag } from '../hooks/useCopyFlag';
 
 function fmtMinutes(ms: number): string {
   return `${Math.max(0, Math.round(ms / 60000))} min`;
@@ -29,7 +31,20 @@ export default function SetlistPanel({
   onClear: () => void;
   onStart: () => void;
 }) {
+  // Hooks must run unconditionally — the early return sits below them.
+  const [linkCopied, copyText] = useCopyFlag();
   if (tracks.length === 0) return null;
+
+  // Share the ordered setlist as a /session/a,b,c link (native sheet where the
+  // Web Share API exists, clipboard otherwise) — any coach with the same
+  // routine sources can open the whole class plan.
+  const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+  const shareSetlist = () => {
+    const url =
+      window.location.origin + sessionPath(tracks.map((t) => t.id), import.meta.env.BASE_URL);
+    if (canShare) navigator.share({ title: 'CueSheet setlist', url }).catch(() => {});
+    else copyText(url);
+  };
 
   const durations = tracks.map((t) => t.durationMs ?? infos[t.spotifyUri]?.durationMs ?? 0);
   const { totalMs } = sessionEstimate(durations, 0, 0, DEFAULT_GAP_SECONDS);
@@ -76,6 +91,9 @@ export default function SetlistPanel({
       <div className="setlist-actions">
         <button className="link" onClick={onClear}>
           Clear
+        </button>
+        <button className="link" onClick={shareSetlist}>
+          <LinkIcon size={16} /> {canShare ? 'Share' : linkCopied ? 'Copied!' : 'Copy link'}
         </button>
         <button className="primary" onClick={onStart}>
           Start session <Play size={16} />

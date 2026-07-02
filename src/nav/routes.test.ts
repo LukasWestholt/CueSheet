@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parsePath, trackPath, listPath } from './routes';
+import { parsePath, trackPath, listPath, sessionPath } from './routes';
 
 describe('parsePath', () => {
   it('maps / and unknown paths to the list', () => {
@@ -18,6 +18,39 @@ describe('parsePath', () => {
 
   it('decodes an encoded id', () => {
     expect(parsePath('/track/local%2Fabc')).toEqual({ name: 'track', id: 'local/abc' });
+  });
+});
+
+describe('session routes', () => {
+  it('parses a shared id list (with and without a trailing slash)', () => {
+    expect(parsePath('/session/a,b,c')).toEqual({ name: 'session', ids: ['a', 'b', 'c'] });
+    expect(parsePath('/session/a,b/')).toEqual({ name: 'session', ids: ['a', 'b'] });
+  });
+
+  it('parses the bare /session as an empty id list (saved setlist)', () => {
+    expect(parsePath('/session')).toEqual({ name: 'session', ids: [] });
+    expect(parsePath('/session/')).toEqual({ name: 'session', ids: [] });
+  });
+
+  it('decodes encoded ids and drops empty segments', () => {
+    expect(parsePath('/session/local%2Fabc,,b')).toEqual({
+      name: 'session',
+      ids: ['local/abc', 'b'],
+    });
+  });
+
+  it('sessionPath builds and round-trips (also under a base)', () => {
+    expect(sessionPath(['a', 'b'])).toBe('/session/a,b');
+    expect(sessionPath([])).toBe('/session');
+    expect(parsePath(sessionPath(['local/abc', 'b']))).toEqual({
+      name: 'session',
+      ids: ['local/abc', 'b'],
+    });
+    expect(sessionPath(['a'], '/CueSheet/')).toBe('/CueSheet/session/a');
+    expect(parsePath('/CueSheet/session/a', '/CueSheet/')).toEqual({
+      name: 'session',
+      ids: ['a'],
+    });
   });
 });
 

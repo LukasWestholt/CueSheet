@@ -9,7 +9,10 @@
 export type Route =
   | { name: 'list' }
   | { name: 'callback' }
-  | { name: 'track'; id: string };
+  | { name: 'track'; id: string }
+  /** A setlist session: ids from a shared '/session/a,b,c' link, or empty for
+      the bare '/session' (= the coach's own saved setlist, e.g. a PWA shortcut). */
+  | { name: 'session'; ids: string[] };
 
 /** Removes the deploy base prefix, yielding a root-relative path ('/...'). */
 function stripBase(pathname: string, base: string): string {
@@ -26,6 +29,13 @@ export function parsePath(pathname: string, base = '/'): Route {
   if (p === '/callback') return { name: 'callback' };
   const m = p.match(/^\/track\/([^/]+)\/?$/);
   if (m) return { name: 'track', id: decodeURIComponent(m[1]) };
+  const s = p.match(/^\/session(?:\/([^/]+))?\/?$/);
+  if (s) {
+    return {
+      name: 'session',
+      ids: s[1] ? s[1].split(',').filter(Boolean).map(decodeURIComponent) : [],
+    };
+  }
   return { name: 'list' };
 }
 
@@ -33,6 +43,17 @@ export function parsePath(pathname: string, base = '/'): Route {
 export function trackPath(id: string, base = '/'): string {
   const b = base.endsWith('/') ? base : `${base}/`;
   return `${b}track/${encodeURIComponent(id)}`;
+}
+
+/**
+ * Path for a setlist session, e.g. '/session/a,b,c' — an ordered id list, so a
+ * whole class plan is shareable with any coach who has the same routine
+ * sources. Empty ids → the bare '/session' (the saved setlist).
+ */
+export function sessionPath(ids: string[], base = '/'): string {
+  const b = base.endsWith('/') ? base : `${base}/`;
+  const list = ids.map(encodeURIComponent).join(',');
+  return `${b}session${list ? `/${list}` : ''}`;
 }
 
 /** The list/home path for the given base. */
