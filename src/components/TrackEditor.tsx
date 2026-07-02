@@ -5,7 +5,7 @@ import { validateTracks } from '../data/validateTracks';
 import { getTrackInfo, searchTracks, type TrackSearchResult } from '../spotify/api';
 import { lookupBpm } from '../beatdata/bpmLookup';
 import { bpmAdvice, bpmLevelClass } from '../data/bpmAdvice';
-import { checkRoutineLength, lengthWarning } from '../data/routineLength';
+import { checkRoutineLength, fitLastStepMeasures, lengthWarning } from '../data/routineLength';
 import { POPULAR_TRACKS, type PopularTrack } from '../data/popularTracks';
 import { formatClock } from '../data/time';
 import { ArrowUp, ArrowDown, X } from './icons';
@@ -351,7 +351,34 @@ export default function TrackEditor({
               {formatClock(lengthCheck.trackDurationSec * 1000)}
             </p>
           ) : (
-            <p className="length-note warning">⚠ {lengthWarning(lengthCheck)}</p>
+            <p className="length-note warning">
+              ⚠ {lengthWarning(lengthCheck)}
+              {(() => {
+                // One-tap fix: resize the last step so the routine lands at the
+                // track end (never past it).
+                const fit = fitLastStepMeasures(
+                  draft.steps,
+                  draft.firstBeatSec ?? 0,
+                  effBpm ?? null,
+                  effDurationMs,
+                );
+                if (fit == null) return null;
+                return (
+                  <button
+                    type="button"
+                    className="link"
+                    onClick={() =>
+                      setStep(draft.steps.length - 1, {
+                        measures: fit,
+                        halfPosition: undefined,
+                      })
+                    }
+                  >
+                    Fit last step ({fit} ×8)
+                  </button>
+                );
+              })()}
+            </p>
           ))}
         <label className="field">
           <span>Title (optional)</span>

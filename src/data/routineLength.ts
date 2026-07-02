@@ -52,6 +52,29 @@ export function checkRoutineLength(
   return { status, diffSec: diff, routineEndSec: end, trackDurationSec: dur };
 }
 
+/**
+ * The `measures` value that makes the LAST step end right at the track's end
+ * (snapped DOWN to 0.5 so the fix never overshoots — an unreachable calling is
+ * worse than a couple of spare seconds; min 0.5). Turns the length warning
+ * into a one-tap fix. Null when not computable (no BPM/duration/steps) or when
+ * the last step already has that value.
+ */
+export function fitLastStepMeasures(
+  steps: StepCalling[],
+  firstBeatSec: number,
+  bpm: number | null | undefined,
+  durationMs: number | null | undefined,
+): number | null {
+  if (!bpm || bpm <= 0 || !durationMs || durationMs <= 0 || steps.length === 0) return null;
+  const otherBeats = steps
+    .slice(0, -1)
+    .reduce((sum, s) => sum + beatsForStep(s.measures), 0);
+  const availableBeats = (durationMs / 1000 - firstBeatSec) * (bpm / 60) - otherBeats;
+  const measures = Math.max(0.5, Math.floor((availableBeats / 8) * 2) / 2);
+  if (!Number.isFinite(measures)) return null;
+  return measures === steps[steps.length - 1].measures ? null : measures;
+}
+
 /** A short human warning for a check, or null when it's ok/unknown. */
 export function lengthWarning(check: LengthCheck): string | null {
   if (check.status === 'overshoot') {

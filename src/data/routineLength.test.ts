@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   routineEndSec,
   checkRoutineLength,
+  fitLastStepMeasures,
   lengthWarning,
   OVERSHOOT_TOL_SEC,
   UNDERSHOOT_TOL_SEC,
@@ -19,6 +20,32 @@ describe('routineEndSec', () => {
 
   it('counts half measures (2.5 -> 20 beats)', () => {
     expect(routineEndSec(steps([2.5]), 0, 120)).toBeCloseTo((20 * 60) / 120, 6);
+  });
+});
+
+describe('fitLastStepMeasures', () => {
+  it('sizes the last step to land at the track end, snapped down to 0.5', () => {
+    // 120 bpm → 0.5s/beat, 4s per measure. Track 60s, first beat 0, first step
+    // 4 measures (16s) → 44s left = 11 measures exactly.
+    expect(fitLastStepMeasures(steps([4, 1]), 0, 120, 60_000)).toBe(11);
+    // 62s track → 11.5 measures fits (46s = 11.5 × 4s).
+    expect(fitLastStepMeasures(steps([4, 1]), 0, 120, 62_000)).toBe(11.5);
+    // 61s → 11.25 measures available, snap DOWN to 11 (never overshoot).
+    expect(fitLastStepMeasures(steps([4, 1]), 0, 120, 61_000)).toBe(11);
+  });
+
+  it('accounts for the first beat and clamps to a minimum of 0.5', () => {
+    expect(fitLastStepMeasures(steps([4, 1]), 2, 120, 60_000)).toBe(10.5);
+    // Other steps already overrun the track → smallest legal step.
+    expect(fitLastStepMeasures(steps([20, 4]), 0, 120, 60_000)).toBe(0.5);
+  });
+
+  it('returns null when not computable or already fitting', () => {
+    expect(fitLastStepMeasures(steps([4, 1]), 0, null, 60_000)).toBeNull();
+    expect(fitLastStepMeasures(steps([4, 1]), 0, 120, null)).toBeNull();
+    expect(fitLastStepMeasures([], 0, 120, 60_000)).toBeNull();
+    // Already exactly the fitted value → no-op.
+    expect(fitLastStepMeasures(steps([4, 11]), 0, 120, 60_000)).toBeNull();
   });
 });
 
