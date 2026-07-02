@@ -1,8 +1,10 @@
 import { Volume } from '../icons';
 
 /**
- * Speaker volume on the Connect device (no need to walk to the tablet). Disabled
- * until a reading is known; the engine debounces the write while dragging.
+ * Speaker volume on the Connect device (no need to walk to the tablet). Hidden
+ * entirely until a reading is known — a null volume means the device can't
+ * report (and usually can't accept) remote volume, so a dead slider would only
+ * mislead; the engine debounces the write while dragging.
  */
 export default function VolumeSlider({
   volumePercent,
@@ -11,6 +13,7 @@ export default function VolumeSlider({
   volumePercent: number | null;
   onChange: (percent: number) => void;
 }) {
+  if (volumePercent == null) return null;
   return (
     <div className="volume-row">
       <Volume size={18} />
@@ -20,13 +23,10 @@ export default function VolumeSlider({
         max={100}
         step={1}
         aria-label="Speaker volume"
-        value={volumePercent ?? 0}
-        disabled={volumePercent == null}
+        value={volumePercent}
         onChange={(e) => onChange(Number(e.target.value))}
       />
-      <span className="muted volume-pct">
-        {volumePercent == null ? '—' : `${volumePercent}%`}
-      </span>
+      <span className="muted volume-pct">{volumePercent}%</span>
     </div>
   );
 }
