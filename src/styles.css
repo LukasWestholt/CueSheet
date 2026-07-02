@@ -1627,6 +1627,63 @@ details.routines[open] > summary.routines-head::after {
   }
 }
 
+/* Stage mode ------------------------------------------------------------- */
+/* Minimal-chrome takeover: only the calling card (enlarged, stacked) + a thin
+   progress bar. Sits BELOW .overlay (z-index 10) so the gap/held/ended
+   overlays still surface on top of it. Tap anywhere to exit. */
+.stage {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  gap: var(--space-6);
+  padding: var(--space-6);
+  cursor: pointer;
+}
+.stage .calling-display {
+  background: none;
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    'now'
+    'ring'
+    'next';
+  justify-items: center;
+  text-align: center;
+  gap: var(--space-5);
+}
+.stage .step {
+  font-size: var(--text-display);
+}
+.stage .calling-display .next {
+  opacity: 1;
+}
+.stage .step-next {
+  font-size: var(--text-3xl);
+}
+.stage .cue {
+  font-size: var(--text-xl);
+}
+.stage .ring {
+  width: 180px;
+  height: 180px;
+}
+.stage .ring-inner {
+  width: 148px;
+  height: 148px;
+  background: var(--bg);
+}
+.stage .ring-num {
+  font-size: var(--text-display);
+}
+.stage-hint {
+  text-align: center;
+  font-size: var(--text-xs);
+}
+
 /* Count-in: emphasise the next move so the coach calls "3, 2, 1, <move>". */
 .calling-display.announcing {
   outline: 3px solid var(--accent);

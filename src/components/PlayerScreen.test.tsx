@@ -174,6 +174,18 @@ describe('PlayerScreen held overlay', () => {
   });
 });
 
+describe('PlayerScreen stage mode', () => {
+  it('enters via the topbar button and exits on tap', () => {
+    const { container } = renderPlayer();
+    expect(container.querySelector('.stage')).toBeNull();
+    fireEvent.click(screen.getByLabelText('Stage mode'));
+    const stage = container.querySelector('.stage');
+    expect(stage).not.toBeNull();
+    fireEvent.click(stage!);
+    expect(container.querySelector('.stage')).toBeNull();
+  });
+});
+
 describe('PlayerScreen ended overlay', () => {
   it('offers a replay after a single track ends', () => {
     state.engine = makeEngine({ phase: 'ended' });

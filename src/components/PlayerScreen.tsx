@@ -19,7 +19,7 @@ import GapOverlay from './player/GapOverlay';
 import HeldOverlay from './player/HeldOverlay';
 import EndedOverlay from './player/EndedOverlay';
 import DeviceBanners from './player/DeviceBanners';
-import { Pause, Link as LinkIcon, AlertTriangle, Pen } from './icons';
+import { Pause, Link as LinkIcon, AlertTriangle, Pen, Maximize } from './icons';
 import { trackPath } from '../nav/routes';
 import { sessionEstimate } from '../data/setlist';
 import { mirrorCue } from '../data/mirror';
@@ -60,6 +60,9 @@ export default function PlayerScreen({
   useWakeLock(true);
 
   const [tapping, setTapping] = useState(false);
+  // Stage mode: a minimal-chrome takeover showing only the calling, readable
+  // across a studio. Tap anywhere to exit.
+  const [stage, setStage] = useState(false);
   const [offsetMs, setOffsetMs] = useSyncOffset();
 
   // Kick off playback once when the screen opens — or attach to the running
@@ -175,6 +178,14 @@ export default function PlayerScreen({
           ‹ Tracks
         </button>
         <div className="topbar-end">
+          <button
+            className="icon-btn"
+            onClick={() => setStage(true)}
+            aria-label="Stage mode"
+            title="Stage mode — big display for the studio"
+          >
+            <Maximize size={18} />
+          </button>
           <span className="device-tag">{engine.deviceName ?? 'No device'}</span>
           <button
             className={`keepawake-chip${engine.keepAwake ? ' on' : ''}`}
@@ -346,6 +357,20 @@ export default function PlayerScreen({
         <button className="hold-btn" onClick={() => setTapping(true)}>
           Tap-to-time the steps
         </button>
+      )}
+
+      {stage && (
+        <div className="stage" onClick={() => setStage(false)}>
+          <CallingDisplay
+            callings={displayCallings}
+            positionSeconds={positionSeconds}
+            bpm={meta.bpm ?? undefined}
+          />
+          <div className="progress-bar">
+            <div className="progress-fill" style={{ width: `${progressPct}%` }} />
+          </div>
+          <span className="stage-hint muted">tap to exit</span>
+        </div>
       )}
 
       {engine.phase === 'gap' && (
