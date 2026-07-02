@@ -401,6 +401,21 @@ button:disabled:active {
   padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-pill);
 }
+/* Keep-awake status + toggle next to the device tag. */
+.keepawake-chip {
+  font-size: var(--text-xs);
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid transparent;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.keepawake-chip.on {
+  color: var(--accent);
+  border-color: var(--accent);
+}
 .topbar-end {
   display: flex;
   align-items: center;

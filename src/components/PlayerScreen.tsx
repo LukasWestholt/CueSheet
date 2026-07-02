@@ -143,6 +143,24 @@ export default function PlayerScreen({
         </button>
         <div className="topbar-end">
           <span className="device-tag">{engine.deviceName ?? 'No device'}</span>
+          <button
+            className={`keepawake-chip${engine.keepAwake ? ' on' : ''}`}
+            onClick={() => engine.setKeepAwake(!engine.keepAwake)}
+            aria-pressed={engine.keepAwake}
+            title={
+              engine.keepAwake
+                ? `Keeping the device awake between tracks (${
+                    engine.keepAwakeMethod === 'silent' ? 'silent track' : 'no-audio ping'
+                  }). Tap to turn off.`
+                : 'Keep-awake is off — the device may sleep between tracks. Tap to turn on.'
+            }
+          >
+            {engine.keepAwake
+              ? engine.keepAwakeMethod === 'silent'
+                ? 'awake · silent'
+                : 'awake'
+              : 'awake off'}
+          </button>
           {onEdit && (
             <button
               className="icon-btn"

@@ -66,6 +66,8 @@ export interface PlayerEngine {
   keepAwakeMethod: KeepAwakeMethod;
   /** Switch the keep-awake method live (e.g. stop the silent track from the overlay). */
   setKeepAwakeMethod: (m: KeepAwakeMethod) => void;
+  /** Turn keep-awake on/off live (the in-player chip; persists as a manual override). */
+  setKeepAwake: (v: boolean) => void;
   /** While keep-awake is on: the device wasn't found on the last check (asleep/offline). */
   deviceAsleep: boolean;
   /**
@@ -149,6 +151,7 @@ export function usePlayerEngine(
     asleep: deviceAsleep,
     method: keepAwakeMethod,
     setMethod: setKeepAwakeMethod,
+    setKeepAwake,
     recheck: recheckDevice,
     syncDefault: syncKeepAwakeDefault,
   } = useKeepAwake({ phaseRef, hijackedRef, deviceNameRef, deviceIdRef });
@@ -522,6 +525,7 @@ export function usePlayerEngine(
     volumePercent,
     keepAwake,
     keepAwakeMethod,
+    setKeepAwake,
     setKeepAwakeMethod,
     deviceAsleep,
     recheckDevice,

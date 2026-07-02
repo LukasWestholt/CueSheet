@@ -25,17 +25,24 @@ vi.mock('../spotify/api', () => ({
 
 // Keep-awake override (null = follow the device heuristic) + method. Controlled
 // per test instead of localStorage, which jsdom doesn't provide.
-const { loadKeepAwakeOverride, loadKeepAwakeMethod, loadSilentTrackUri, saveKeepAwakeMethod } =
-  vi.hoisted(() => ({
-    loadKeepAwakeOverride: vi.fn<() => boolean | null>(() => null),
-    loadKeepAwakeMethod: vi.fn<() => 'ping' | 'silent'>(() => 'ping'),
-    loadSilentTrackUri: vi.fn<() => string>(() => 'spotify:track:silentdefault0000000000'),
-    saveKeepAwakeMethod: vi.fn<(m: 'ping' | 'silent') => void>(),
-  }));
+const {
+  loadKeepAwakeOverride,
+  loadKeepAwakeMethod,
+  loadSilentTrackUri,
+  saveKeepAwake,
+  saveKeepAwakeMethod,
+} = vi.hoisted(() => ({
+  loadKeepAwakeOverride: vi.fn<() => boolean | null>(() => null),
+  loadKeepAwakeMethod: vi.fn<() => 'ping' | 'silent'>(() => 'ping'),
+  loadSilentTrackUri: vi.fn<() => string>(() => 'spotify:track:silentdefault0000000000'),
+  saveKeepAwake: vi.fn<(v: boolean) => void>(),
+  saveKeepAwakeMethod: vi.fn<(m: 'ping' | 'silent') => void>(),
+}));
 vi.mock('../data/keepAwakeSetting', () => ({
   loadKeepAwakeOverride,
   loadKeepAwakeMethod,
   loadSilentTrackUri,
+  saveKeepAwake,
   saveKeepAwakeMethod,
 }));
 
@@ -477,6 +484,41 @@ describe('usePlayerEngine', () => {
       await vi.advanceTimersByTimeAsync(16_000);
     });
     expect(transferPlayback).toHaveBeenCalledWith('d', false);
+  });
+
+  it('setKeepAwake(false) stops the pings live and persists the override', async () => {
+    setUserAgent(ANDROID_UA);
+    getPlaybackState.mockResolvedValue({
+      isPlaying: true,
+      progressMs: 1_000,
+      durationMs: 10_000,
+      trackUri: 'spotify:track:a',
+      deviceId: 'd',
+      deviceName: 'Pixel 7',
+      deviceType: null,
+      volumePercent: null,
+      fetchedAt: Date.now(),
+    });
+    getDevices.mockResolvedValue([{ id: 'd', name: 'Pixel 7', is_active: false }]);
+    const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
+    await startAt(result, 0);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_100);
+    });
+    expect(result.current.keepAwake).toBe(true);
+
+    await act(async () => {
+      result.current.holdNow();
+    });
+    act(() => result.current.setKeepAwake(false));
+    expect(result.current.keepAwake).toBe(false);
+    expect(saveKeepAwake).toHaveBeenCalledWith(false);
+
+    transferPlayback.mockClear();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(16_000);
+    });
+    expect(transferPlayback).not.toHaveBeenCalled();
   });
 
   it('does not keep alive a device that is not this machine', async () => {

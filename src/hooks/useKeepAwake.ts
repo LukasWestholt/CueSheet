@@ -5,6 +5,7 @@ import {
   loadKeepAwakeMethod,
   loadKeepAwakeOverride,
   loadSilentTrackUri,
+  saveKeepAwake,
   saveKeepAwakeMethod,
   type KeepAwakeMethod,
 } from '../data/keepAwakeSetting';
@@ -49,6 +50,8 @@ export interface KeepAwake {
   method: KeepAwakeMethod;
   /** Switch the method live (persists + takes effect this session, no remount). */
   setMethod: (m: KeepAwakeMethod) => void;
+  /** Turn keep-awake on/off live (persists as a manual override, like Settings). */
+  setKeepAwake: (v: boolean) => void;
   /** Re-check the device list now (and re-assert it if it's back). For a manual "Check again". */
   recheck: () => void;
   /** Recompute the heuristic default from the currently active device. */
@@ -167,5 +170,35 @@ export function useKeepAwake(refs: {
 
   const recheck = useCallback(() => void keepAliveOnce(), [keepAliveOnce]);
 
-  return { keepAwake, asleep, method, setMethod, recheck, syncDefault };
+  // Turn keep-awake on/off live (the in-player chip). Persists as a manual
+  // override — same store Settings writes — so the choice survives and wins
+  // over the heuristic. Turning it off while a silent track is holding the
+  // device pauses that track now (transfer play:false) rather than leaving it
+  // playing forever; guarded to between-tracks so it can never pause real music.
+  const setKeepAwake = useCallback(
+    (v: boolean) => {
+      saveKeepAwake(v);
+      overrideRef.current = v;
+      setKeepAwakeState(v);
+      const p = phaseRef.current;
+      const betweenTracks = p === 'gap' || p === 'held' || p === 'ended';
+      if (!v && methodRef.current === 'silent' && betweenTracks) {
+        void (async () => {
+          try {
+            const devices = await getDevices();
+            const target = deviceNameRef.current
+              ? devices.find((d) => d.name === deviceNameRef.current)
+              : null;
+            if (target) await transferPlayback(target.id, false);
+          } catch {
+            // Best-effort — the silent track stops at the latest when the
+            // device sleeps.
+          }
+        })();
+      }
+    },
+    [deviceNameRef, methodRef, phaseRef, setKeepAwakeState],
+  );
+
+  return { keepAwake, asleep, method, setMethod, setKeepAwake, recheck, syncDefault };
 }

@@ -58,6 +58,7 @@ function makeEngine(overrides: Partial<PlayerEngine> = {}): PlayerEngine {
     keepAwake: false,
     keepAwakeMethod: 'ping',
     setKeepAwakeMethod: vi.fn(),
+    setKeepAwake: vi.fn(),
     deviceAsleep: false,
     recheckDevice: vi.fn(),
     noDevice: false,
@@ -170,6 +171,23 @@ describe('PlayerScreen held overlay', () => {
     renderPlayer();
     expect(screen.getByText('Keeping Tablet awake')).toBeTruthy();
     expect(screen.queryByText('Stop the silent track')).toBeNull();
+  });
+});
+
+describe('PlayerScreen keep-awake chip', () => {
+  it('shows the on state (with method) and toggles off', () => {
+    state.engine = makeEngine({ keepAwake: true, keepAwakeMethod: 'silent' });
+    renderPlayer();
+    const chip = screen.getByText('awake · silent');
+    fireEvent.click(chip);
+    expect(state.engine.setKeepAwake).toHaveBeenCalledWith(false);
+  });
+
+  it('shows the off state and toggles on', () => {
+    state.engine = makeEngine({ keepAwake: false });
+    renderPlayer();
+    fireEvent.click(screen.getByText('awake off'));
+    expect(state.engine.setKeepAwake).toHaveBeenCalledWith(true);
   });
 });
 
