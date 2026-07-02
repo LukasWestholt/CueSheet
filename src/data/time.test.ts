@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatClock, formatLong } from './time';
+import { formatClock, formatLong, formatTimeOfDay } from './time';
 
 describe('formatClock', () => {
   it('formats minutes and zero-padded seconds', () => {
@@ -13,6 +13,14 @@ describe('formatClock', () => {
     expect(formatClock(1499)).toBe('0:01');
     expect(formatClock(1500)).toBe('0:02');
     expect(formatClock(-5000)).toBe('0:00');
+  });
+});
+
+describe('formatTimeOfDay', () => {
+  // Pin locale + timezone so the assertion doesn't depend on the test machine.
+  it('formats an epoch as a wall-clock HH:MM', () => {
+    expect(formatTimeOfDay(Date.UTC(2026, 0, 1, 18, 45), 'de-DE', 'UTC')).toBe('18:45');
+    expect(formatTimeOfDay(Date.UTC(2026, 0, 1, 8, 5), 'de-DE', 'UTC')).toBe('08:05');
   });
 });
 

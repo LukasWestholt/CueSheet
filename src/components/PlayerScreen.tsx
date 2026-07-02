@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Track } from '../data/tracks';
 import { buildCallings } from '../data/beats';
-import { formatClock, formatLong } from '../data/time';
+import { formatClock, formatLong, formatTimeOfDay } from '../data/time';
 import { usePlayerEngine, DEFAULT_GAP_SECONDS } from '../hooks/usePlayerEngine';
 import { useTrackMeta } from '../hooks/useTrackMeta';
 import { useCalibration } from '../hooks/useCalibration';
@@ -153,7 +153,9 @@ export default function PlayerScreen({
             Setlist · {engine.index + 1}/{sessionView.count}
           </span>
           <span className="muted">
-            ~{formatLong(sessionView.remainingMs)} left · {formatLong(sessionView.totalMs)} total
+            ~{formatLong(sessionView.remainingMs)} left · ends{' '}
+            {formatTimeOfDay(Date.now() + sessionView.remainingMs)} ·{' '}
+            {formatLong(sessionView.totalMs)} total
           </span>
         </div>
       )}

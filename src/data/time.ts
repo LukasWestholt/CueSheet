@@ -9,6 +9,18 @@ export function formatClock(ms: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+/**
+ * Wall-clock time of day (locale HH:MM) — for "class ends at 18:45" labels.
+ * locale/timeZone params exist for deterministic tests; callers omit them.
+ */
+export function formatTimeOfDay(epochMs: number, locale?: string, timeZone?: string): string {
+  return new Date(epochMs).toLocaleTimeString(locale, {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone,
+  });
+}
+
 /** `h:mm:ss` (hours field only when needed) — for long session totals. */
 export function formatLong(ms: number): string {
   const total = Math.max(0, Math.round(ms / 1000));
