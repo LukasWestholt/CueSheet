@@ -23,7 +23,8 @@ import { Pause, Link as LinkIcon, AlertTriangle, Pen } from './icons';
 import { trackPath } from '../nav/routes';
 import { sessionEstimate } from '../data/setlist';
 import { mirrorCue } from '../data/mirror';
-import { readFlag, writeFlag } from '../data/storage';
+import { readFlag, writeFlag, readString, writeString } from '../data/storage';
+import { useHapticCue } from '../hooks/useHapticCue';
 
 export default function PlayerScreen({
   tracks,
@@ -152,6 +153,16 @@ export default function PlayerScreen({
     if (callings[i].time <= positionSeconds) activeRow = i;
     else break;
   }
+
+  // Haptic cue on step change (Android only — iOS Safari has no Vibration API,
+  // so the toggle is hidden there). Default on when supported.
+  const hapticSupported = typeof navigator !== 'undefined' && 'vibrate' in navigator;
+  const [haptic, setHaptic] = useState(() => readString('tjf.haptic', '1') === '1');
+  const toggleHaptic = (v: boolean) => {
+    setHaptic(v);
+    writeString('tjf.haptic', v ? '1' : '0');
+  };
+  useHapticCue(activeRow, hapticSupported && haptic && engine.phase === 'playing');
 
   // Seek so a tapped step becomes the audible "now": the sync offset is
   // subtracted because positionSeconds = (rawPosition + offset).
@@ -303,6 +314,16 @@ export default function PlayerScreen({
             onChange={(e) => toggleMirror(e.target.checked)}
           />
         </label>
+        {hapticSupported && (
+          <label className="toggle-row" title="Vibrate when the step changes">
+            <span>Vibrate on step change</span>
+            <input
+              type="checkbox"
+              checked={haptic}
+              onChange={(e) => toggleHaptic(e.target.checked)}
+            />
+          </label>
+        )}
         {/* End the current song now and hold before the next track */}
         <button className="hold-btn" onClick={engine.holdNow}>
           <Pause size={18} /> End track &amp; hold
