@@ -27,6 +27,19 @@ export default defineConfig({
       // load offline — they're the app's data, not just static assets.
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,json,woff2}'],
+        // Album art (Spotify CDN) is immutable per URL — cache-first with a
+        // bounded store so covers appear instantly and survive offline. API
+        // calls are deliberately NOT runtime-cached (live playback state).
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/(i|mosaic)\.scdn\.co\//,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'spotify-art',
+              expiration: { maxEntries: 100, maxAgeSeconds: 30 * 24 * 3600 },
+            },
+          },
+        ],
       },
       manifest: {
         name: 'CueSheet',
