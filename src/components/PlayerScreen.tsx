@@ -22,6 +22,8 @@ import DeviceBanners from './player/DeviceBanners';
 import { Pause, Link as LinkIcon, AlertTriangle, Pen } from './icons';
 import { trackPath } from '../nav/routes';
 import { sessionEstimate } from '../data/setlist';
+import { mirrorCue } from '../data/mirror';
+import { readFlag, writeFlag } from '../data/storage';
 
 export default function PlayerScreen({
   tracks,
@@ -81,6 +83,25 @@ export default function PlayerScreen({
   const callings = useMemo(
     () => (meta.bpm ? buildCallings(track.steps, meta.firstBeatSec, meta.bpm) : []),
     [track, meta.bpm, meta.firstBeatSec],
+  );
+
+  // Mirrored calling (coach faces the class): swap left/right in the displayed
+  // step names/cues. Display-only — timing and the stored routine are untouched.
+  const [mirror, setMirror] = useState(() => readFlag('tjf.mirror'));
+  const toggleMirror = (v: boolean) => {
+    setMirror(v);
+    writeFlag('tjf.mirror', v);
+  };
+  const displayCallings = useMemo(
+    () =>
+      mirror
+        ? callings.map((c) => ({
+            ...c,
+            step: mirrorCue(c.step),
+            cue: c.cue ? mirrorCue(c.cue) : c.cue,
+          }))
+        : callings,
+    [callings, mirror],
   );
 
   const positionSeconds = (engine.positionMs + offsetMs) / 1000;
@@ -223,7 +244,7 @@ export default function PlayerScreen({
       />
 
       <CallingDisplay
-        callings={callings}
+        callings={displayCallings}
         positionSeconds={positionSeconds}
         bpm={meta.bpm ?? undefined}
       />
@@ -258,7 +279,7 @@ export default function PlayerScreen({
       <VolumeSlider volumePercent={engine.volumePercent} onChange={engine.setVolume} />
 
       <StepTimeline
-        callings={callings}
+        callings={displayCallings}
         steps={track.steps}
         activeRow={activeRow}
         phase={engine.phase}
@@ -272,6 +293,14 @@ export default function PlayerScreen({
             type="checkbox"
             checked={engine.autoContinue}
             onChange={(e) => engine.setAutoContinue(e.target.checked)}
+          />
+        </label>
+        <label className="toggle-row" title="Swap left/right in cues — the coach faces the class">
+          <span>Mirror L/R</span>
+          <input
+            type="checkbox"
+            checked={mirror}
+            onChange={(e) => toggleMirror(e.target.checked)}
           />
         </label>
         {/* End the current song now and hold before the next track */}
