@@ -289,10 +289,12 @@ export default function PlayerScreen({
         />
       )}
 
-      <div className="debug">
-        phase: {engine.phase} · raw {formatClock(engine.positionMs)} · device{' '}
-        {engine.deviceName ?? '—'}
-      </div>
+      {import.meta.env.DEV && (
+        <div className="debug">
+          phase: {engine.phase} · raw {formatClock(engine.positionMs)} · device{' '}
+          {engine.deviceName ?? '—'}
+        </div>
+      )}
     </div>
   );
 }
