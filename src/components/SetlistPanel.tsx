@@ -1,7 +1,5 @@
-import { useState } from 'react';
 import type { Track } from '../data/tracks';
-import { exportPlaylist, type TrackInfo } from '../spotify/api';
-import { toast } from '../data/toast';
+import type { TrackInfo } from '../spotify/api';
 import { sessionEstimate } from '../data/setlist';
 import { DEFAULT_GAP_SECONDS } from '../hooks/usePlayerEngine';
 import { ArrowUp, ArrowDown, X, Play, Link as LinkIcon } from './icons';
@@ -35,28 +33,7 @@ export default function SetlistPanel({
 }) {
   // Hooks must run unconditionally — the early return sits below them.
   const [linkCopied, copyText] = useCopyFlag();
-  const [exporting, setExporting] = useState(false);
   if (tracks.length === 0) return null;
-
-  // Save the setlist as a private Spotify playlist — a warm-up/backup copy in
-  // the Spotify app itself if the PWA or tablet dies mid-class.
-  const saveToSpotify = () => {
-    setExporting(true);
-    exportPlaylist(
-      `CueSheet setlist ${new Date().toLocaleDateString()}`,
-      tracks.map((t) => t.spotifyUri),
-      'Exported from CueSheet',
-    )
-      .then(() => toast('Setlist saved as a private playlist in your Spotify library.'))
-      .catch((e) =>
-        toast(
-          e instanceof Error && e.message.includes('403')
-            ? 'Saving needs a new Spotify permission — log out and back in, then retry.'
-            : 'Could not save the playlist — check the connection and try again.',
-        ),
-      )
-      .finally(() => setExporting(false));
-  };
 
   // Share the ordered setlist as a /session/a,b,c link (native sheet where the
   // Web Share API exists, clipboard otherwise) — any coach with the same
@@ -117,9 +94,6 @@ export default function SetlistPanel({
         </button>
         <button className="link" onClick={shareSetlist}>
           <LinkIcon size={16} /> {canShare ? 'Share' : linkCopied ? 'Copied!' : 'Copy link'}
-        </button>
-        <button className="link" onClick={saveToSpotify} disabled={exporting}>
-          {exporting ? 'Saving…' : 'Save to Spotify'}
         </button>
         <button className="primary" onClick={onStart}>
           Start session <Play size={16} />

@@ -158,9 +158,9 @@ export default function PlayerScreen({
   }
 
   // Haptic cue on step change (Android only — iOS Safari has no Vibration API,
-  // so the toggle is hidden there). Default on when supported.
+  // so the toggle is hidden there). Opt-in: off until the coach enables it.
   const hapticSupported = typeof navigator !== 'undefined' && 'vibrate' in navigator;
-  const [haptic, setHaptic] = useState(() => readString('tjf.haptic', '1') === '1');
+  const [haptic, setHaptic] = useState(() => readString('tjf.haptic', '0') === '1');
   const toggleHaptic = (v: boolean) => {
     setHaptic(v);
     writeString('tjf.haptic', v ? '1' : '0');

@@ -330,35 +330,6 @@ export async function getCurrentUser(): Promise<SpotifyAccount | null> {
   };
 }
 
-/**
- * Creates a private playlist from an ordered URI list (the setlist export —
- * a warm-up/backup copy in the Spotify app itself in case the PWA or tablet
- * dies mid-class). Needs the `playlist-modify-private` scope: tokens granted
- * before it was added 403 here until the user re-logs-in. Returns the
- * playlist's open.spotify.com URL.
- */
-export async function exportPlaylist(
-  name: string,
-  uris: string[],
-  description = '',
-): Promise<string> {
-  const meRes = await api('/me');
-  if (!meRes.ok) throw new Error(`Profile fetch failed (${meRes.status})`);
-  const me = await meRes.json();
-  const createRes = await api(`/users/${encodeURIComponent(me.id)}/playlists`, {
-    method: 'POST',
-    body: JSON.stringify({ name, description, public: false }),
-  });
-  if (!createRes.ok) throw new Error(`Create playlist failed (${createRes.status})`);
-  const playlist = await createRes.json();
-  const addRes = await api(`/playlists/${playlist.id}/tracks`, {
-    method: 'POST',
-    body: JSON.stringify({ uris }),
-  });
-  if (!addRes.ok) throw new Error(`Add tracks failed (${addRes.status})`);
-  return playlist.external_urls?.spotify ?? `https://open.spotify.com/playlist/${playlist.id}`;
-}
-
 /** Returns the current playback snapshot, or null when no device is active. */
 export async function getPlaybackState(): Promise<PlaybackSnapshot | null> {
   const res = await api('/me/player');

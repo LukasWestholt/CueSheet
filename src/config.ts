@@ -16,9 +16,6 @@ export const SCOPES: string[] = [
   // Reads the account profile (display name + Premium status) for the
   // Premium gate. See getCurrentUser() / GET /me.
   'user-read-private',
-  // Saves the setlist as a private playlist (exportPlaylist). Tokens granted
-  // before this scope was added 403 on export until the user re-logs-in.
-  'playlist-modify-private',
 ];
 
 export const IS_CONFIGURED: boolean =

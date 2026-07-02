@@ -181,6 +181,11 @@ export default function App() {
       return;
     }
     if (shared) {
+      // Importing overwrites the coach's own saved setlist — confirm first.
+      const ok = window.confirm(
+        `Load the shared setlist (${known.length} tracks)? It replaces your current setlist.`,
+      );
+      if (!ok) return; // pending already cleared — stay on the list
       setlist.replace(known);
       if (known.length < wanted.length) {
         toast(
