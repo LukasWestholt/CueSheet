@@ -1950,6 +1950,13 @@ details.routines[open] > summary.routines-head::after {
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
+/* End-of-session summary ("12 tracks · 48:10"). */
+.ended-summary {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
 
 /* Tap-to-time overlay ---------------------------------------------------- */
 .tap-card {

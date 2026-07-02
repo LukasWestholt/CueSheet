@@ -17,6 +17,7 @@ import VolumeSlider from './player/VolumeSlider';
 import CalibrationPanel from './player/CalibrationPanel';
 import GapOverlay from './player/GapOverlay';
 import HeldOverlay from './player/HeldOverlay';
+import EndedOverlay from './player/EndedOverlay';
 import DeviceBanners from './player/DeviceBanners';
 import { Pause, Link as LinkIcon, AlertTriangle, Pen } from './icons';
 import { trackPath } from '../nav/routes';
@@ -315,6 +316,17 @@ export default function PlayerScreen({
           onContinue={engine.skipGap}
           onRecheck={engine.recheckDevice}
           onStopSilent={() => engine.setKeepAwakeMethod('ping')}
+          onBack={onBack}
+        />
+      )}
+
+      {engine.phase === 'ended' && (
+        <EndedOverlay
+          session={
+            sessionView ? { count: sessionView.count, totalMs: sessionView.totalMs } : null
+          }
+          onReplay={() => engine.start(engine.index)}
+          onRestartSession={() => engine.start(0)}
           onBack={onBack}
         />
       )}

@@ -174,6 +174,39 @@ describe('PlayerScreen held overlay', () => {
   });
 });
 
+describe('PlayerScreen ended overlay', () => {
+  it('offers a replay after a single track ends', () => {
+    state.engine = makeEngine({ phase: 'ended' });
+    const { container } = renderPlayer();
+    expect(container.querySelector('.overlay')).not.toBeNull();
+    expect(screen.getByText('Track finished')).toBeTruthy();
+    fireEvent.click(screen.getByText(/Replay track/));
+    expect(state.engine.start).toHaveBeenCalledWith(0);
+  });
+
+  it('summarises a session and can restart it or go back', () => {
+    const onBack = vi.fn();
+    state.engine = makeEngine({ phase: 'ended', index: 1 });
+    renderPlayer({
+      session: { durationsMs: [60_000, 120_000], gapSeconds: 10 },
+      onBack,
+    });
+    expect(screen.getByText('Session complete')).toBeTruthy();
+    // 60s + 120s + one 10s gap = 3:10 across 2 tracks.
+    expect(screen.getByText(/2 tracks/)).toBeTruthy();
+    fireEvent.click(screen.getByText(/Restart session/));
+    expect(state.engine.start).toHaveBeenCalledWith(0);
+    fireEvent.click(screen.getByText('Back to list'));
+    expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders no ended overlay during playback', () => {
+    state.engine = makeEngine({ phase: 'playing' });
+    renderPlayer();
+    expect(screen.queryByText('Track finished')).toBeNull();
+  });
+});
+
 describe('PlayerScreen keep-awake chip', () => {
   it('shows the on state (with method) and toggles off', () => {
     state.engine = makeEngine({ keepAwake: true, keepAwakeMethod: 'silent' });
