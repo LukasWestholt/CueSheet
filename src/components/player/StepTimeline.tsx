@@ -32,7 +32,10 @@ export default function StepTimeline({
     ol.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
   }, [activeRow]);
 
-  const seekable = phase === 'playing' || phase === 'paused';
+  // Also seekable between tracks (gap/held/ended): the engine restarts the
+  // displayed track at the tapped step. Only idle (quiet detail view, user
+  // hasn't pressed Play) and loading stay non-seekable.
+  const seekable = phase !== 'idle' && phase !== 'loading';
 
   return (
     <section className="timeline">

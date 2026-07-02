@@ -168,6 +168,28 @@ describe('usePlayerEngine', () => {
     expect(playTrack).toHaveBeenCalledTimes(1); // never advanced
   });
 
+  it('seekTo during a hold restarts the displayed track at that position', async () => {
+    reportNearEnd('spotify:track:a');
+    const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
+    act(() => result.current.setAutoContinue(false));
+    await startAt(result, 0);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_200);
+    });
+    expect(result.current.phase).toBe('held');
+
+    // Tapping a step between tracks must re-play the track from there — a raw
+    // seek would target a dead (or silent keep-awake) playback.
+    playTrack.mockClear();
+    await act(async () => {
+      result.current.seekTo(5_000);
+      await vi.advanceTimersByTimeAsync(5);
+    });
+    expect(playTrack).toHaveBeenCalledWith('spotify:track:a', 'dev', 5_000);
+    expect(result.current.phase).toBe('playing');
+    expect(result.current.index).toBe(0);
+  });
+
   it('ends after the last track with no gap', async () => {
     reportNearEnd('spotify:track:b');
     const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));

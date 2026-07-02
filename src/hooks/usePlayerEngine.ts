@@ -156,16 +156,16 @@ export function usePlayerEngine(
   const track = tracks[index];
 
   const playIndex = useCallback(
-    async (i: number) => {
+    async (i: number, positionMs = 0) => {
       const t = tracks[i];
       if (!t) return;
       setIndex(i);
       setPhase('loading');
-      setPositionMs(0);
+      setPositionMs(positionMs);
       snapshotRef.current = null;
       setError(null);
       try {
-        await playTrack(t.spotifyUri, deviceIdRef.current ?? undefined, 0);
+        await playTrack(t.spotifyUri, deviceIdRef.current ?? undefined, positionMs);
         setPhase('playing');
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
@@ -424,6 +424,14 @@ export function usePlayerEngine(
 
   const seekTo = useCallback((rawPositionMs: number) => {
     const p = phaseRef.current;
+    if (p === 'gap' || p === 'held' || p === 'ended') {
+      // Between tracks the displayed track isn't playing any more (a silent
+      // keep-awake track may even be) — a raw seek would target the wrong
+      // playback. Restart the displayed track at the tapped position instead,
+      // so "start from the chorus" works from a hold.
+      void playIndex(indexRef.current, Math.max(0, rawPositionMs));
+      return;
+    }
     if (p !== 'playing' && p !== 'paused') return;
     const duration =
       snapshotRef.current?.durationMs || tracks[indexRef.current]?.durationMs || 0;
@@ -436,7 +444,7 @@ export function usePlayerEngine(
       snapshotRef.current = { ...snap, progressMs: target, fetchedAt: Date.now() };
     }
     setPositionMs(target);
-  }, [tracks, phaseRef, indexRef]);
+  }, [tracks, playIndex, phaseRef, indexRef]);
 
   const setVolume = useCallback((percent: number) => {
     const v = Math.max(0, Math.min(100, Math.round(percent)));
