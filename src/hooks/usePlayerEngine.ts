@@ -142,6 +142,10 @@ export function usePlayerEngine(
   // a moment after a user change so a stale snapshot doesn't snap the slider back.
   const volumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastVolumeSetAtRef = useRef(0);
+  // Devices that report a volume but reject writes (403) — remember per device
+  // so the slider hides instead of toasting "couldn't set volume" on every drag.
+  const volumeRejectedRef = useRef(false);
+  const volumeDeviceRef = useRef<string | null>(null);
 
   deviceIdRef.current = deviceId;
 
@@ -296,9 +300,17 @@ export function usePlayerEngine(
 
         snapshotRef.current = snap;
         setDeviceName(snap.deviceName);
+        // A different device may accept volume writes the last one rejected.
+        if (snap.deviceId !== volumeDeviceRef.current) {
+          volumeDeviceRef.current = snap.deviceId;
+          volumeRejectedRef.current = false;
+        }
         // Don't clobber a volume the coach just dragged with a stale reading.
+        // Report null (slider hidden) when the device says it doesn't accept
+        // remote volume, or a write already came back 403.
         if (Date.now() - lastVolumeSetAtRef.current > 1500) {
-          setVolumePercent(snap.volumePercent);
+          const usable = snap.supportsVolume !== false && !volumeRejectedRef.current;
+          setVolumePercent(usable ? snap.volumePercent : null);
         }
         syncKeepAwakeDefault(snap.deviceName, snap.deviceType);
         // If Spotify reports it stopped near the end, the track finished.
@@ -458,7 +470,17 @@ export function usePlayerEngine(
     // Debounce the PUT so dragging the slider doesn't fire a request per tick.
     if (volumeTimerRef.current) clearTimeout(volumeTimerRef.current);
     volumeTimerRef.current = setTimeout(() => {
-      apiSetVolume(v, deviceIdRef.current ?? undefined).catch(controlFailed('set volume'));
+      apiSetVolume(v, deviceIdRef.current ?? undefined).catch((e: Error & { status?: number }) => {
+        if (e.status === 403) {
+          // The device forbids remote volume — hide the slider for good
+          // (until the device changes) rather than erroring on every drag.
+          volumeRejectedRef.current = true;
+          setVolumePercent(null);
+          toast('This device doesn’t allow remote volume control.');
+        } else {
+          controlFailed('set volume')();
+        }
+      });
     }, 200);
   }, []);
   useEffect(() => () => {

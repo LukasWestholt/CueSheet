@@ -82,8 +82,11 @@ export async function setVolume(volumePercent: number, deviceId?: string): Promi
   const params = new URLSearchParams({ volume_percent: String(v) });
   if (deviceId) params.set('device_id', deviceId);
   const res = await api(`/me/player/volume?${params.toString()}`, { method: 'PUT' });
-  if (!res.ok && res.status !== 202 && res.status !== 204) {
-    throw new Error(`Set volume failed (${res.status})`);
+  if (!res.ok && res.status !== 202 && res.status !== 204) {// Carry the status so callers can tell "device forbids remote volume"
+    // (403 — permanent, hide the control) from a transient failure.
+    const err = new Error(`Set volume failed (${res.status})`) as Error & { status: number };
+    err.status = res.status;
+    throw err;
   }
 }
 
@@ -98,6 +101,12 @@ export interface PlaybackSnapshot {
   deviceType: string | null;
   /** Active device volume 0–100, or null when the device can't report it. */
   volumePercent: number | null;
+  /**
+   * Whether the device accepts remote volume control (Spotify's
+   * `supports_volume`). Optional so older fixtures don't need it; undefined
+   * means unknown — treat as supported and let a 403 write correct it.
+   */
+  supportsVolume?: boolean;
   fetchedAt: number;
 }
 
@@ -345,6 +354,7 @@ export async function getPlaybackState(): Promise<PlaybackSnapshot | null> {
     deviceName: data.device?.name ?? null,
     deviceType: data.device?.type ?? null,
     volumePercent: data.device?.volume_percent ?? null,
+    supportsVolume: data.device?.supports_volume ?? true,
     fetchedAt: Date.now(),
   };
 }

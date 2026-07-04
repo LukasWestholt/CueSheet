@@ -94,6 +94,8 @@ beforeEach(() => {
   getDevices.mockReset();
   getDevices.mockResolvedValue([]);
   transferPlayback.mockClear();
+  setVolume.mockReset();
+  setVolume.mockResolvedValue(undefined);
   loadKeepAwakeOverride.mockReset();
   loadKeepAwakeOverride.mockReturnValue(null);
   loadKeepAwakeMethod.mockReset();
@@ -231,6 +233,74 @@ describe('usePlayerEngine', () => {
     act(() => result.current.togglePlayPause());
     expect(resume).toHaveBeenCalled();
     expect(result.current.phase).toBe('playing');
+  });
+
+  const playingSnap = (extra: Partial<PlaybackSnapshot>): PlaybackSnapshot => ({
+    isPlaying: true,
+    progressMs: 1_000,
+    durationMs: 10_000,
+    trackUri: 'spotify:track:a',
+    deviceId: 'd',
+    deviceName: 'Tablet',
+    deviceType: null,
+    volumePercent: null,
+    fetchedAt: Date.now(),
+    ...extra,
+  });
+
+  it('reports the polled volume when the device supports remote volume', async () => {
+    getPlaybackState.mockImplementation(async () =>
+      playingSnap({ volumePercent: 50, supportsVolume: true }),
+    );
+    const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
+    await startAt(result, 0);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_100); // one poll
+    });
+    expect(result.current.volumePercent).toBe(50);
+  });
+
+  it('hides the volume when the device reports supports_volume: false', async () => {
+    // Some devices report a volume_percent but still reject remote writes —
+    // the slider must not show for them.
+    getPlaybackState.mockImplementation(async () =>
+      playingSnap({ volumePercent: 50, supportsVolume: false }),
+    );
+    const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
+    await startAt(result, 0);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_100);
+    });
+    expect(result.current.volumePercent).toBeNull();
+  });
+
+  it('hides the volume after a 403 write and keeps it hidden on later polls', async () => {
+    getPlaybackState.mockImplementation(async () =>
+      playingSnap({ volumePercent: 50, supportsVolume: true }),
+    );
+    setVolume.mockImplementation(async () => {
+      const err = new Error('Set volume failed (403)') as Error & { status: number };
+      err.status = 403;
+      throw err;
+    });
+    const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
+    await startAt(result, 0);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_100);
+    });
+    expect(result.current.volumePercent).toBe(50);
+
+    act(() => result.current.setVolume(30));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(250); // debounced PUT fires → 403
+    });
+    expect(result.current.volumePercent).toBeNull();
+
+    // Later polls still report volume_percent: 50, but the rejection sticks.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_500);
+    });
+    expect(result.current.volumePercent).toBeNull();
   });
 
   it('prev restarts the current track, then jumps back on a quick second press', async () => {
