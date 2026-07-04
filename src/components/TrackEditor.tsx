@@ -49,6 +49,15 @@ export default function TrackEditor({
     initial ? structuredClone(initial) : blankTrack(),
   );
   const [picked, setPicked] = useState<Set<string>>(new Set());
+  // Which step row's move-name suggestion menu is open (only the focused row's).
+  // A custom menu instead of <datalist>: iOS Safari renders datalist options in
+  // the tiny QuickType bar — when it shows them at all — so picking one was a
+  // race against the keyboard. All known moves, A–Z.
+  const [suggestFor, setSuggestFor] = useState<number | null>(null);
+  const moveNames = useMemo(
+    () => library.map((e) => e.step).sort((a, b) => a.localeCompare(b)),
+    [library],
+  );
   // Raw text buffer for the First beat field so an in-progress decimal like
   // "1.0" isn't normalised back to "1" mid-typing (which would swallow the
   // trailing zero and block values such as "1.05").
@@ -402,13 +411,52 @@ export default function TrackEditor({
       <ol className="editor-steps">
         {draft.steps.map((s, i) => (
           <li key={i} className="editor-step">
-            <input
-              className="step-name"
-              value={s.step}
-              placeholder="Move"
-              list="tjf-step-names"
-              onChange={(e) => setStep(i, { step: e.target.value })}
-            />
+            <div className="step-name-wrap">
+              <input
+                className="step-name"
+                value={s.step}
+                placeholder="Move"
+                autoCorrect="off"
+                spellCheck={false}
+                onChange={(e) => {
+                  setStep(i, { step: e.target.value });
+                  setSuggestFor(i);
+                }}
+                onFocus={() => setSuggestFor(i)}
+                onBlur={() => setSuggestFor(null)}
+                onKeyDown={(e) => e.key === 'Escape' && setSuggestFor(null)}
+              />
+              {suggestFor === i &&
+                (() => {
+                  const q = s.step.trim().toLowerCase();
+                  const matches = moveNames.filter(
+                    (n) => n.toLowerCase().includes(q) && n !== s.step.trim(),
+                  );
+                  if (matches.length === 0) return null;
+                  return (
+                    <div
+                      className="step-menu"
+                      // Keep the input focused while interacting with the menu
+                      // (incl. scrolling it) — a blur here would close the menu
+                      // before the tap's click lands.
+                      onMouseDown={(e) => e.preventDefault()}
+                    >
+                      {matches.map((n) => (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => {
+                            setStep(i, { step: n });
+                            setSuggestFor(null);
+                          }}
+                        >
+                          {n}
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })()}
+            </div>
             <input
               className="step-cue"
               value={s.cue ?? ''}
@@ -520,15 +568,6 @@ export default function TrackEditor({
       <button className="ghost add-step" onClick={addStep}>
         + Add step
       </button>
-      {/* Native autocomplete for the step-name inputs (all known moves). */}
-      {library.length > 0 && (
-        <datalist id="tjf-step-names">
-          {library.map((e) => (
-            <option key={e.step} value={e.step} />
-          ))}
-        </datalist>
-      )}
-
       {library.length > 0 && (
         <section className="library">
           <h3>Insert from library</h3>
