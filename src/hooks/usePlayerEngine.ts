@@ -30,6 +30,7 @@ const TICK_MS = 100; // how often we re-render the interpolated position
 const END_GUARD_MS = 500; // treat as ended this close to the track's end
 const NO_DEVICE_NULLS = 2; // consecutive empty polls before declaring the device lost
 const HIJACK_POLLS = 3; // consecutive wrong-track polls before declaring a hijack
+const EXT_PAUSE_POLLS = 2; // consecutive stopped polls before adopting an external pause
 const END_AUTOPLAY_WINDOW_MS = 1500; // a track change/restart this close to the end = the track ending, not a hijack
 const LOOP_RESTART_MS = 2000; // same track back within this of the start (after being near the end) = a repeat=track loop
 // On entering an idle/between-tracks phase, kick the keep-alive once after this
@@ -133,6 +134,7 @@ export function usePlayerEngine(
   const lastPrevAtRef = useRef(0);
   const nullPollsRef = useRef(0);
   const wrongTrackPollsRef = useRef(0);
+  const extPausedPollsRef = useRef(0);
   // Lets the poller call recover() (defined below) without re-subscribing, with
   // a debounce so the 1s poll doesn't fire repeated reconnects while one is in
   // flight (recover() clears noDevice only once it has resumed playback).
@@ -348,6 +350,20 @@ export function usePlayerEngine(
         ) {
           enterGapOrEnd('poller:stopped-near-end');
         }
+        // Externally paused (the device's own pause button): Spotify reports
+        // stopped mid-track while we still think 'playing' — without adopting
+        // it, keep-awake never fires (phase isn't idle) and the device sleeps.
+        // Two consecutive polls, since a single one can be play-command lag.
+        // The near-end stop above already became a gap/end by this point.
+        if (phaseRef.current === 'playing' && !snap.isPlaying) {
+          extPausedPollsRef.current += 1;
+          if (extPausedPollsRef.current >= EXT_PAUSE_POLLS) {
+            extPausedPollsRef.current = 0;
+            setPhase('paused');
+          }
+        } else {
+          extPausedPollsRef.current = 0;
+        }
       } catch {
         /* transient network error — keep extrapolating */
       }
@@ -358,7 +374,7 @@ export function usePlayerEngine(
       cancelled = true;
       clearInterval(id);
     };
-  }, [enterGapOrEnd, tracks, setNoDevice, setHijacked, syncKeepAwakeDefault, phaseRef, indexRef, noDeviceRef, hijackedRef]);
+  }, [enterGapOrEnd, tracks, setNoDevice, setHijacked, setPhase, syncKeepAwakeDefault, phaseRef, indexRef, noDeviceRef, hijackedRef]);
 
   // High-frequency ticker: interpolate position, run the gap countdown.
   useEffect(() => {

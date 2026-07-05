@@ -32,7 +32,8 @@ const KEEP_AWAKE_MS = 15000;
 // off). Module-level + a persisted flag so it's once per browser, not per mount.
 const SILENT_NOTICE_KEY = 'tjf.silentNoticeShown';
 let silentNoticeShown = false;
-function notifySilentOnce(deviceName: string | null): void {
+/** Exported for useDeviceKeepAwake (the list/editor/seed loop) — same notice. */
+export function notifySilentOnce(deviceName: string | null): void {
   if (silentNoticeShown || readFlag(SILENT_NOTICE_KEY)) return;
   silentNoticeShown = true;
   writeFlag(SILENT_NOTICE_KEY, true);
@@ -105,8 +106,14 @@ export function useKeepAwake(refs: {
   // manual "Check again" button.
   const keepAliveOnce = useCallback(async () => {
     const phase = phaseRef.current;
+    // Every idle the engine can be in — 'loading' stays excluded (a play we
+    // just sent is in flight) and 'playing' never reaches here.
     const silentOk =
-      phase === 'gap' || phase === 'held' || phase === 'ended' || phase === 'paused';
+      phase === 'gap' ||
+      phase === 'held' ||
+      phase === 'ended' ||
+      phase === 'paused' ||
+      phase === 'idle';
     // On/off: 'paused' + between-tracks respect the learned local-device
     // heuristic (keepAwakeRef, set from the poller). Pre-play 'idle' (a deep-
     // linked detail page, before Play) has no learned device, so it follows an
@@ -128,11 +135,11 @@ export function useKeepAwake(refs: {
         return;
       }
       // 'silent' mode plays a silent track to hold the device (and a Bluetooth
-      // speaker) alive — between tracks AND on a mid-track pause: the speaker
-      // drops within seconds of real silence, which is worse than losing the
-      // native resume (the engine re-plays the paused track at its frozen
-      // position — see silentTookOverRef in usePlayerEngine). Pre-play 'idle'
-      // keeps the no-audio ping: never start audio unprompted.
+      // speaker) alive on EVERY idle — between tracks, on a mid-track pause
+      // (the speaker drops within seconds of real silence, which is worse than
+      // losing the native resume: the engine re-plays the paused track at its
+      // frozen position — see silentTookOverRef in usePlayerEngine), and the
+      // pre-play detail view.
       if (methodRef.current === 'silent' && silentOk && silentUriRef.current) {
         await playTrack(silentUriRef.current, target.id);
         notifySilentOnce(target.name);
@@ -187,7 +194,8 @@ export function useKeepAwake(refs: {
       const p = phaseRef.current;
       // Phases where the silent track may be holding the device (real music is
       // not playing, so a transfer play:false can't pause anything that matters).
-      const silentPossible = p === 'gap' || p === 'held' || p === 'ended' || p === 'paused';
+      const silentPossible =
+        p === 'gap' || p === 'held' || p === 'ended' || p === 'paused' || p === 'idle';
       if (!v && methodRef.current === 'silent' && silentPossible) {
         void (async () => {
           try {

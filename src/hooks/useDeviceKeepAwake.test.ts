@@ -1,15 +1,24 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 
-const { getDevices, getPlaybackState, transferPlayback } = vi.hoisted(() => ({
+const { getDevices, getPlaybackState, playTrack, transferPlayback } = vi.hoisted(() => ({
   getDevices: vi.fn(),
   getPlaybackState: vi.fn(),
+  playTrack: vi.fn(),
   transferPlayback: vi.fn(),
 }));
-vi.mock('../spotify/api', () => ({ getDevices, getPlaybackState, transferPlayback }));
+vi.mock('../spotify/api', () => ({ getDevices, getPlaybackState, playTrack, transferPlayback }));
 
-const { loadKeepAwake } = vi.hoisted(() => ({ loadKeepAwake: vi.fn<() => boolean>(() => true) }));
-vi.mock('../data/keepAwakeSetting', () => ({ loadKeepAwake }));
+const { loadKeepAwake, loadKeepAwakeMethod, loadSilentTrackUri } = vi.hoisted(() => ({
+  loadKeepAwake: vi.fn<() => boolean>(() => true),
+  loadKeepAwakeMethod: vi.fn<() => 'ping' | 'silent'>(() => 'ping'),
+  loadSilentTrackUri: vi.fn<() => string>(() => 'spotify:track:silent123'),
+}));
+vi.mock('../data/keepAwakeSetting', () => ({
+  loadKeepAwake,
+  loadKeepAwakeMethod,
+  loadSilentTrackUri,
+}));
 
 import { useDeviceKeepAwake } from './useDeviceKeepAwake';
 
@@ -30,8 +39,14 @@ beforeEach(() => {
   getPlaybackState.mockResolvedValue(null); // nothing playing by default
   transferPlayback.mockReset();
   transferPlayback.mockResolvedValue(undefined);
+  playTrack.mockReset();
+  playTrack.mockResolvedValue(undefined);
   loadKeepAwake.mockReset();
   loadKeepAwake.mockReturnValue(true);
+  loadKeepAwakeMethod.mockReset();
+  loadKeepAwakeMethod.mockReturnValue('ping');
+  loadSilentTrackUri.mockReset();
+  loadSilentTrackUri.mockReturnValue('spotify:track:silent123');
 });
 afterEach(() => {
   vi.useRealTimers();
@@ -113,5 +128,40 @@ describe('useDeviceKeepAwake', () => {
       await vi.advanceTimersByTimeAsync(31_000); // mount + two 15s intervals
     });
     expect(transferPlayback.mock.calls.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('plays the silent track instead of pinging when the method is "silent"', async () => {
+    // A ping keeps the device on Connect but the Bluetooth speaker still drops
+    // — the list screen must hold it exactly like the player does.
+    loadKeepAwakeMethod.mockReturnValue('silent');
+    getDevices.mockResolvedValue([device('tab')]);
+    renderHook(() => useDeviceKeepAwake('tab', true));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1); // immediate tick on activation
+    });
+    expect(playTrack).toHaveBeenCalledWith('spotify:track:silent123', 'tab');
+    expect(transferPlayback).not.toHaveBeenCalled();
+  });
+
+  it('does not restart a silent track that is already playing', async () => {
+    loadKeepAwakeMethod.mockReturnValue('silent');
+    getPlaybackState.mockResolvedValue({
+      isPlaying: true, // the silent track already holds the device
+      progressMs: 60_000,
+      durationMs: 600_000,
+      trackUri: 'spotify:track:silent123',
+      deviceId: 'tab',
+      deviceName: 'tab',
+      deviceType: 'Tablet',
+      volumePercent: 50,
+      fetchedAt: Date.now(),
+    });
+    getDevices.mockResolvedValue([device('tab', { is_active: true })]);
+    renderHook(() => useDeviceKeepAwake('tab', true));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(31_000);
+    });
+    expect(playTrack).not.toHaveBeenCalled();
+    expect(transferPlayback).not.toHaveBeenCalled();
   });
 });

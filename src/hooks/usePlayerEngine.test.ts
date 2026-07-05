@@ -852,6 +852,52 @@ describe('usePlayerEngine', () => {
     expect(transferPlayback).toHaveBeenCalledWith('dev', false);
   });
 
+  it('plays the silent track in pre-play idle when the method is "silent"', async () => {
+    // Every idle holds the Bluetooth speaker, including the detail view — a
+    // ping keeps the device on Connect but the speaker still drops.
+    loadKeepAwakeMethod.mockReturnValue('silent');
+    loadSilentTrackUri.mockReturnValue('spotify:track:silent123');
+    getDevices.mockResolvedValue([{ id: 'dev', name: 'Tablet', is_active: false }]);
+    const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
+    await act(async () => {
+      result.current.select(0);
+    });
+    playTrack.mockClear();
+    transferPlayback.mockClear();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(16_000);
+    });
+    expect(playTrack).toHaveBeenCalledWith('spotify:track:silent123', 'dev');
+    expect(transferPlayback).not.toHaveBeenCalled();
+  });
+
+  it('adopts an external pause (device stopped mid-track) after two polls', async () => {
+    getPlaybackState.mockResolvedValue({
+      isPlaying: false, // the coach hit pause on the tablet itself
+      progressMs: 30_000,
+      durationMs: 600_000, // mid-track, nowhere near the end
+      trackUri: 'spotify:track:a',
+      deviceId: 'd',
+      deviceName: 'Tablet',
+      deviceType: null,
+      volumePercent: null,
+      fetchedAt: Date.now(),
+    });
+    const { result } = renderHook(() => usePlayerEngine(tracks, 'dev', 2));
+    await startAt(result, 0);
+    // One stopped poll could be play-command lag — still playing.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_100);
+    });
+    expect(result.current.phase).toBe('playing');
+    // The second consecutive stopped poll adopts the pause, so keep-awake
+    // (incl. the silent track) covers this idle too.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_100);
+    });
+    expect(result.current.phase).toBe('paused');
+  });
+
   it('does not keep awake in idle when keep-awake is explicitly off', async () => {
     loadKeepAwakeOverride.mockReturnValue(false); // coach turned it off in Settings
     getDevices.mockResolvedValue([
