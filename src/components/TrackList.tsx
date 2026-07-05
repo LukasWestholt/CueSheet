@@ -2,6 +2,8 @@ import type { Track } from '../data/tracks';
 import type { TrackInfo } from '../spotify/api';
 import { cleanTitle } from '../data/title';
 import { formatClock } from '../data/time';
+import { categoryOf, CATEGORY_LABELS, CATEGORY_TITLES } from '../data/trackCategory';
+import { loadCalibration } from '../data/calibration';
 import { Star, Music, Check, Plus, Pen } from './icons';
 
 export interface TrackItem {
@@ -42,6 +44,9 @@ export default function TrackList({
         const durationMs = t.durationMs ?? info?.durationMs;
         const fav = favorites.has(t.id);
         const queued = setlist?.has(t.id) ?? false;
+        // Session category (warm-up / main / main 2) — authored override wins,
+        // else derived from the authored-or-tapped BPM.
+        const cat = categoryOf(t, t.bpm ?? loadCalibration(t.spotifyUri)?.bpm);
         return (
           <li key={t.id} className="track-li">
             {(onToggleFavorite || onToggleSetlist) && (
@@ -84,6 +89,11 @@ export default function TrackList({
                 <span className="track-artist">{artist}</span>
               </span>
               <span className="track-aside">
+                {cat && (
+                  <span className={`badge cat-${cat}`} title={CATEGORY_TITLES[cat]}>
+                    {CATEGORY_LABELS[cat]}
+                  </span>
+                )}
                 {t.wip && <span className="badge badge-wip">WIP</span>}
                 <span className="badge">{t.steps.length} steps</span>
                 {durationMs != null && (

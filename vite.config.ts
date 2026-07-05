@@ -50,6 +50,13 @@ export default defineConfig({
         background_color: '#121821',
         display: 'standalone',
         orientation: 'portrait',
+        // Android (WebAPK) captures in-scope links — a shared /session/… or
+        // /track/:id opens the installed app; navigate-existing reuses the
+        // open window instead of stacking new ones. iOS has no PWA link
+        // capturing at all: there, shared links open in the browser, and the
+        // login flow carries the deep link through OAuth (src/spotify/auth.ts)
+        // so a logged-out browser still lands on the shared session.
+        launch_handler: { client_mode: 'navigate-existing' },
         icons: [
           { src: 'icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },

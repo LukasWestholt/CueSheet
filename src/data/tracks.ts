@@ -46,6 +46,13 @@ export interface Track {
   bpm?: number;
   /** Mark the routine as a work in progress (timings not finished/verified). */
   wip?: boolean;
+  /**
+   * Session-category override. When omitted it is derived from the resolved
+   * BPM + steps (src/data/trackCategory.ts): < 112 BPM → 'warmup'
+   * (warm-up / cool-down), ≥ 112 → 'main', or 'main2' when the routine
+   * contains a stomp move.
+   */
+  category?: 'warmup' | 'main' | 'main2';
 }
 
 /**

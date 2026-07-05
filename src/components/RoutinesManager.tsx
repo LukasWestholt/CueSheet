@@ -3,6 +3,7 @@ import type { Track } from '../data/tracks';
 import { serializeTracks } from '../data/tracksStore';
 import { validateTracks, type ValidationResult } from '../data/validateTracks';
 import { collectStepLibrary } from '../data/stepLibrary';
+import { isSignatureMove } from '../data/signatureMoves';
 import type { RoutineSourceRow } from '../data/routineSources';
 import { REPO_URL } from '../links';
 import { X, Check, Plus } from './icons';
@@ -195,7 +196,7 @@ export default function RoutinesManager({
       {showMoves && (
         <ul className="moves-list">
           {library.map((e) => (
-            <li key={e.step}>
+            <li key={e.step} className={isSignatureMove(e.step) ? 'is-signature' : undefined}>
               <span className="move-name">{e.step}</span>
               <span className="move-count">{e.count}×</span>
             </li>

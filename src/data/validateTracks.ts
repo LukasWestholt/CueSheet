@@ -105,6 +105,9 @@ export function validateTracks(data: unknown): ValidationResult {
     if (t.title != null && typeof t.title !== 'string') add('error', where, '"title" must be a string.');
     if (t.artist != null && typeof t.artist !== 'string') add('error', where, '"artist" must be a string.');
     if (t.wip != null && typeof t.wip !== 'boolean') add('error', where, '"wip" must be a boolean.');
+    if (t.category != null && t.category !== 'warmup' && t.category !== 'main' && t.category !== 'main2') {
+      add('error', where, `"category" must be "warmup", "main" or "main2" (got ${JSON.stringify(t.category)}).`);
+    }
 
     // Routine-vs-track length: only when both BPM and duration are authored and
     // every step has a valid measure (so we don't pile on top of step errors).

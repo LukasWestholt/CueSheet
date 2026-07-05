@@ -54,6 +54,10 @@
           "type": "boolean",
           "description": "Mark the routine as a work in progress (suppresses the length warning)."
         },
+        "category": {
+          "enum": ["warmup", "main", "main2"],
+          "description": "Optional session-category override. When omitted it is derived: BPM below 112 is 'warmup' (warm-up / cool-down); 112+ is 'main', or 'main2' when the routine contains a stomp move."
+        },
         "_description": {
           "type": "string",
           "description": "Free-text annotation (e.g. \"Title — Artist\"). JSON-only; ignored by the app."

@@ -55,6 +55,12 @@
   --section-4: #facc15;
   --section-5: #fb923c;
 
+  /* Session-category colors (trackCategory.ts): warm-up/cool-down, main part,
+     main part 2 (stompy). Used by the list badges and the setlist row edge. */
+  --cat-warmup: #38bdf8;
+  --cat-main: #34d399;
+  --cat-main2: #f472b6;
+
   /* ---- Typography ------------------------------------------------------- */
   --font-display: 'Barlow Condensed', 'Roboto Condensed', 'Arial Narrow',
     system-ui, sans-serif;
@@ -900,6 +906,14 @@ details.routines[open] > summary.routines-head::after {
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
+/* Signature moves (Scissors/Kick/Stomp/…) stand out from the filler steps. */
+.moves-list li.is-signature {
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface-2));
+}
+.moves-list li.is-signature .move-name {
+  color: var(--accent);
+  font-weight: 600;
+}
 
 /* Track list edit affordance + new routine ------------------------------- */
 .track-li {
@@ -1332,6 +1346,22 @@ details.routines[open] > summary.routines-head::after {
   border-radius: var(--radius-pill);
   white-space: nowrap;
 }
+/* Session-category badges (warm-up / main / main 2). */
+.badge.cat-warmup {
+  background: color-mix(in srgb, var(--cat-warmup) 22%, var(--surface-2));
+  color: var(--cat-warmup);
+  font-weight: 600;
+}
+.badge.cat-main {
+  background: color-mix(in srgb, var(--cat-main) 22%, var(--surface-2));
+  color: var(--cat-main);
+  font-weight: 600;
+}
+.badge.cat-main2 {
+  background: color-mix(in srgb, var(--cat-main2) 22%, var(--surface-2));
+  color: var(--cat-main2);
+  font-weight: 600;
+}
 .track-time {
   font-variant-numeric: tabular-nums;
   color: var(--muted);
@@ -1427,6 +1457,18 @@ details.routines[open] > summary.routines-head::after {
   background: var(--surface-2);
   border-radius: var(--radius-sm);
   padding: var(--space-2) var(--space-2);
+  /* Transparent by default so uncategorized rows keep the same alignment. */
+  border-left: 3px solid transparent;
+}
+/* Session-category edge — same colors as the track-list badges. */
+.setlist-row.cat-warmup {
+  border-left-color: var(--cat-warmup);
+}
+.setlist-row.cat-main {
+  border-left-color: var(--cat-main);
+}
+.setlist-row.cat-main2 {
+  border-left-color: var(--cat-main2);
 }
 .sl-pos {
   color: var(--muted);
@@ -1446,6 +1488,16 @@ details.routines[open] > summary.routines-head::after {
   color: var(--muted);
   font-size: var(--text-xs);
   font-variant-numeric: tabular-nums;
+}
+/* Per-track dominant signature move, for eyeballing session variety. */
+.sl-sig {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface-2));
+  font-size: var(--text-xs);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .sl-ops {
   display: flex;

@@ -4,6 +4,10 @@ import { SPOTIFY_CLIENT_ID, REDIRECT_URI, SCOPES } from '../config';
 
 const TOKEN_KEY = 'tjf.spotify.tokens';
 const VERIFIER_KEY = 'tjf.spotify.verifier';
+// Deep link (/session/a,b,c or /track/:id) the user was on when login started —
+// restored after the OAuth round-trip so a shared link opened while logged out
+// still lands on its target.
+const RETURN_PATH_KEY = 'tjf.postLoginPath';
 const AUTH_BASE = 'https://accounts.spotify.com';
 
 /** Fired when the session can't be refreshed (refresh token invalid/expired). */
@@ -71,6 +75,11 @@ export async function beginLogin(): Promise<void> {
   localStorage.setItem(VERIFIER_KEY, verifier);
   const challenge = base64url(await sha256(verifier));
 
+  // Remember a deep link so the callback can land the user back on it.
+  const here = window.location.pathname + window.location.search;
+  if (here !== import.meta.env.BASE_URL) localStorage.setItem(RETURN_PATH_KEY, here);
+  else localStorage.removeItem(RETURN_PATH_KEY);
+
   const params = new URLSearchParams({
     client_id: SPOTIFY_CLIENT_ID,
     response_type: 'code',
@@ -113,8 +122,13 @@ export async function handleRedirectCallback(): Promise<boolean> {
 
   storeTokens(await res.json());
   localStorage.removeItem(VERIFIER_KEY);
-  // Drop ?code=... from the address bar, back to the app root (Vite base path).
-  window.history.replaceState({}, '', import.meta.env.BASE_URL);
+  // Drop ?code=... from the address bar — back to the deep link the user came
+  // from (see beginLogin), or the app root. Same-origin base-path check so a
+  // tampered stored value can't navigate anywhere unexpected.
+  const returnTo = localStorage.getItem(RETURN_PATH_KEY);
+  localStorage.removeItem(RETURN_PATH_KEY);
+  const base = import.meta.env.BASE_URL;
+  window.history.replaceState({}, '', returnTo?.startsWith(base) ? returnTo : base);
   return true;
 }
 

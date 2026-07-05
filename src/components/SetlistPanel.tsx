@@ -4,6 +4,9 @@ import { sessionEstimate } from '../data/setlist';
 import { DEFAULT_GAP_SECONDS } from '../hooks/usePlayerEngine';
 import { ArrowUp, ArrowDown, X, Play, Link as LinkIcon } from './icons';
 import { formatClock } from '../data/time';
+import { primarySignature } from '../data/signatureMoves';
+import { categoryOf, CATEGORY_TITLES } from '../data/trackCategory';
+import { loadCalibration } from '../data/calibration';
 import { sessionPath } from '../nav/routes';
 import { useCopyFlag } from '../hooks/useCopyFlag';
 
@@ -63,10 +66,23 @@ export default function SetlistPanel({
         {tracks.map((t, i) => {
           const title = t.title ?? infos[t.spotifyUri]?.title ?? 'Unknown track';
           const dur = durations[i];
+          // Each row shows the track's dominant signature move, so an
+          // unbalanced session (three Scissors tracks in a row) is visible
+          // at a glance while ordering.
+          const sig = primarySignature(t.steps);
+          // Colored left edge = the track's session category (same colors as
+          // the list badges), so the warm-up → main → main 2 arc of the
+          // session is scannable top to bottom.
+          const cat = categoryOf(t, t.bpm ?? loadCalibration(t.spotifyUri)?.bpm);
           return (
-            <li key={t.id} className="setlist-row">
+            <li
+              key={t.id}
+              className={`setlist-row${cat ? ` cat-${cat}` : ''}`}
+              title={cat ? CATEGORY_TITLES[cat] : undefined}
+            >
               <span className="sl-pos">{i + 1}</span>
               <span className="sl-title">{title}</span>
+              {sig && <span className="sl-sig">{sig}</span>}
               {dur > 0 && <span className="sl-dur">{formatClock(dur)}</span>}
               <span className="sl-ops">
                 <button className="icon-btn" onClick={() => onMove(i, -1)} disabled={i === 0} aria-label="Move up">

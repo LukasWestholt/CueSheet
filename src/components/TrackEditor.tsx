@@ -8,6 +8,7 @@ import { bpmAdvice, bpmLevelClass } from '../data/bpmAdvice';
 import { checkRoutineLength, fitLastStepMeasures, lengthWarning } from '../data/routineLength';
 import { POPULAR_TRACKS, type PopularTrack } from '../data/popularTracks';
 import { formatClock } from '../data/time';
+import { deriveCategory, CATEGORY_TITLES } from '../data/trackCategory';
 import { ArrowUp, ArrowDown, X } from './icons';
 
 const TRACK_URI_RE = /^spotify:track:[A-Za-z0-9]{22}$/;
@@ -395,6 +396,23 @@ export default function TrackEditor({
             placeholder="fetched from Spotify"
             onChange={(e) => patch({ title: e.target.value || undefined })}
           />
+        </label>
+        <label className="field">
+          <span>Category (optional)</span>
+          <select
+            value={draft.category ?? ''}
+            onChange={(e) => patch({ category: (e.target.value || undefined) as Track['category'] })}
+          >
+            <option value="">
+              {(() => {
+                const auto = deriveCategory(effBpm ?? null, draft.steps);
+                return auto ? `Auto — ${CATEGORY_TITLES[auto]}` : 'Auto (needs a BPM)';
+              })()}
+            </option>
+            <option value="warmup">Warm-up / cool-down</option>
+            <option value="main">Main part</option>
+            <option value="main2">Main part 2</option>
+          </select>
         </label>
         <label className="field checkbox-field">
           <input

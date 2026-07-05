@@ -99,4 +99,15 @@ describe('validateTracks', () => {
     ]);
     expect(r.ok).toBe(false);
   });
+
+  it('accepts a valid category and errors on an unknown one', () => {
+    const withCategory = (category: unknown) => [
+      { id: 'a', spotifyUri: 'spotify:track:0t2w4jQazlBggyZS4axpnw', category, steps: [{ step: 'A', measures: 4 }] },
+    ];
+    expect(validateTracks(withCategory('warmup')).ok).toBe(true);
+    expect(validateTracks(withCategory('main2')).ok).toBe(true);
+    const r = validateTracks(withCategory('cooldown'));
+    expect(r.ok).toBe(false);
+    expect(r.issues[0].message).toMatch(/"category"/);
+  });
 });

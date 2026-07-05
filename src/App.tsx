@@ -153,10 +153,20 @@ export default function App() {
       .catch(() => {});
   }, [loggedIn, tracks, online]);
 
-  // Resolve a deep link (/track/:id) once the routine list has loaded. Opens the
-  // track's detail page in 'view' mode (shown quietly, not auto-played).
+  // After the OAuth round-trip the callback restores the deep link the user
+  // came from (auth.ts) — the mount-time parse only saw /callback, so re-parse
+  // once the session is ready.
   useEffect(() => {
-    if (!pendingTrackId) return;
+    if (!ready) return;
+    const r = parsePath(window.location.pathname, BASE);
+    if (r.name === 'track') setPendingTrackId(r.id);
+    else if (r.name === 'session') setPendingSessionIds(r.ids);
+  }, [ready]);
+
+  // Resolve a deep link (/track/:id) once logged in and the routine list has
+  // loaded. Opens the track's detail page in 'view' mode (quiet, not playing).
+  useEffect(() => {
+    if (!loggedIn || !pendingTrackId) return;
     const i = tracks.findIndex((t) => t.id === pendingTrackId);
     if (i >= 0) {
       setSelectedIndex(i);
@@ -164,14 +174,16 @@ export default function App() {
       setView('player');
       setPendingTrackId(null);
     }
-  }, [pendingTrackId, tracks]);
+  }, [loggedIn, pendingTrackId, tracks]);
 
   // Resolve a session deep link once the routine list is loaded. A shared id
   // list (/session/a,b,c) is imported into the setlist (skipping unknown ids,
   // with a toast); the bare /session (PWA shortcut) uses the saved setlist.
   // Opens the session player in 'view' mode — positioned, Play to start.
+  // Gated on login: importing must not run (or pop its confirm) behind the
+  // login screen — the pending ids wait until the user is in.
   useEffect(() => {
-    if (!pendingSessionIds || tracks.length === 0) return;
+    if (!loggedIn || !pendingSessionIds || tracks.length === 0) return;
     const shared = pendingSessionIds.length > 0;
     const wanted = shared ? pendingSessionIds : setlist.setlist;
     const known = wanted.filter((id) => tracks.some((t) => t.id === id));
@@ -197,7 +209,7 @@ export default function App() {
     setSessionActive(true);
     setPlayerMode('view');
     setView('player');
-  }, [pendingSessionIds, tracks, setlist]);
+  }, [loggedIn, pendingSessionIds, tracks, setlist]);
 
   // Land at the top whenever the screen changes (open a track, go back to the
   // list, enter the editor) — a deep-linked or re-opened view shouldn't inherit
