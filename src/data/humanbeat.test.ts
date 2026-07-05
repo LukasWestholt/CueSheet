@@ -65,6 +65,36 @@ describe('humanBeat', () => {
     expect(humanBeat(4, 40).announcing).toBe(false);
   });
 
+  describe('last step (beatsToNext = Infinity — nothing to call on time)', () => {
+    const s = { measures: 2 };
+
+    it('never enters the closing count-in', () => {
+      // Beats 8..15 would be the close for a 2-measure step; keep counting.
+      expect(humanBeat(12, Infinity, s)).toMatchObject({
+        count: 5,
+        mode: 'count',
+        announcing: false,
+      });
+      expect(humanBeat(15, Infinity, s)).toMatchObject({ count: 8, mode: 'count' });
+    });
+
+    it('counts the final measure like any other, downbeat included', () => {
+      expect(humanBeat(8, Infinity, s)).toMatchObject({ count: 2, downbeat: true });
+    });
+
+    it('keeps the half-count placement in the final measures', () => {
+      // 2.5 natural: [1:1][½:2][1:2] → downbeats at 0, 8, 12.
+      expect(humanBeat(8, Infinity, { measures: 2.5 })).toMatchObject({
+        count: 2,
+        downbeat: true,
+      });
+      expect(humanBeat(12, Infinity, { measures: 2.5 })).toMatchObject({
+        count: 2,
+        downbeat: true,
+      });
+    });
+  });
+
   describe('half-count placement', () => {
     const step = (measures: number, halfPosition?: number) => ({ measures, halfPosition });
 

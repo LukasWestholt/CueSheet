@@ -115,12 +115,14 @@ describe('CallingDisplay', () => {
     expect(screen.queryByText('CALL NOW')).toBeNull();
   });
 
-  it('closes the last step announcing the end ("CALL NOW" → End of track)', () => {
-    // 27s → 1s to the step's end (28s) = the announce beat.
+  it('keeps the regular count through the last step\'s final measure (no close)', () => {
+    // 27s → beat 14 = "7" of the second eight. No "4 3 2 →" — there is no
+    // next calling to hit on time, so the close would be noise.
     render(<CallingDisplay callings={lastWithMeasures} positionSeconds={27} bpm={120} />);
-    expect(screen.getByText('CALL NOW')).toBeTruthy();
-    expect(screen.getByText('→')).toBeTruthy();
-    expect(screen.getByText('End of track')).toBeTruthy();
+    expect(screen.getByText('7')).toBeTruthy();
+    expect(screen.queryByText('CALL NOW')).toBeNull();
+    expect(screen.queryByText('→')).toBeNull();
+    expect(screen.getByText('End of track')).toBeTruthy(); // still the NEXT label
   });
 
   it('shows ✓ only after the last step\'s span is over', () => {

@@ -47,18 +47,20 @@ export default function CallingDisplay({
   // beats fall; null → fall back to the seconds ring below.
   const secsPerBeat = bpm ? 60 / bpm : null;
   // The last step has no next calling, but it still has an authored length —
-  // count it like any other step (closing into "→ End of track") and show the
-  // ✓/End state only once its span is over, not for the whole final move.
+  // keep the regular running count through it (Infinity = no closing count-in:
+  // there's nothing to call on time) and show the ✓/End state only once its
+  // span is over, not for the whole final move.
   const lastStepEndsAt =
     !next && current && current.measures != null && secsPerBeat
       ? current.time + current.measures * BEATS_PER_MEASURE * secsPerBeat
       : null;
   const pastLastStep = lastStepEndsAt !== null && positionSeconds >= lastStepEndsAt;
-  const secondsToBoundary =
-    secondsToNext ??
-    (lastStepEndsAt !== null && !pastLastStep ? lastStepEndsAt - positionSeconds : null);
   const beatsToNext =
-    secondsToBoundary !== null && secsPerBeat ? secondsToBoundary / secsPerBeat : null;
+    secondsToNext !== null && secsPerBeat
+      ? secondsToNext / secsPerBeat
+      : lastStepEndsAt !== null && !pastLastStep
+        ? Infinity
+        : null;
   const beatsElapsed =
     current && secsPerBeat ? Math.max(0, (positionSeconds - current.time) / secsPerBeat) : 0;
   const curStep =

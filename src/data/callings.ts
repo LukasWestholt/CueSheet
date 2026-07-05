@@ -85,7 +85,10 @@ export interface BeatDisplay {
  * before the close.
  *
  * `beatsElapsed` — beats since the current step began (fractional ok).
- * `beatsToNext`  — beats until the next step, or null when there is none.
+ * `beatsToNext`  — beats until the next step; `Infinity` when the step is the
+ *                  last one (still counting, but nothing to call on time — no
+ *                  closing count-in, the final measure counts like any other);
+ *                  null when the step is over and nothing follows.
  * `step`         — the current step's length, so a half measure can be placed
  *                  (front vs. just-before-the-close). Omit to use plain 8-count
  *                  alignment (natural placement).
@@ -98,9 +101,12 @@ export function humanBeat(
   if (beatsToNext === null)
     return { count: null, mode: 'end', announcing: false, downbeat: false };
 
-  // Closing window: the last COUNT_FROM × BEATS_PER_COUNT beats before the switch.
+  // Closing window: the last COUNT_FROM × BEATS_PER_COUNT beats before the
+  // switch. Only when something follows — the close exists to call the next
+  // move on time, so the last step (Infinity) never enters it.
+  const lastStep = !Number.isFinite(beatsToNext);
   const closing = Math.ceil(beatsToNext / BEATS_PER_COUNT);
-  if (closing <= COUNT_FROM) {
+  if (!lastStep && closing <= COUNT_FROM) {
     // "4 3 2" are spoken; the would-be "1" beat announces the move instead.
     if (closing <= 1)
       return { count: null, mode: 'announce', announcing: true, downbeat: false };
@@ -111,7 +117,7 @@ export function humanBeat(
   const beat = Math.max(0, Math.floor(beatsElapsed));
   const { count, downbeat } =
     step && Number.isFinite(step.measures)
-      ? runningCount(beat, step.measures, step.halfPosition)
+      ? runningCount(beat, step.measures, step.halfPosition, lastStep)
       : plainCount(beat);
   return { count, mode: 'count', announcing: false, downbeat };
 }
@@ -146,11 +152,20 @@ interface BeatGroup {
  *
  *   4.5, halfPosition 0 → [½:1] [1:1] [1:2] [1:3]   →  1 2 3 4, 1…8, 2…8, 3…8
  *   4.5, halfPosition 3 → [1:1] [1:2] [1:3] [½:4]   →  1…8, 2…8, 3…8, 4 2 3 4
+ *
+ * `includeFinal` also counts the would-be close measure (used for the last
+ * step of a track, which has no close — nothing follows to call on time); the
+ * half measure's default/max placement stays before that final measure.
  */
-export function preCloseGroups(measures: number, halfPosition?: number): BeatGroup[] {
+export function preCloseGroups(
+  measures: number,
+  halfPosition?: number,
+  includeFinal = false,
+): BeatGroup[] {
   const F = Math.floor(measures);
   const hasHalf = Math.round(measures * 2) % 2 === 1;
-  const fullCount = Math.max(0, F - 1); // the last full measure is the close
+  const lastFull = Math.max(0, F - 1); // the last full measure is the close
+  const fullCount = includeFinal ? F : lastFull;
   const groups: BeatGroup[] = [];
   const addFull = (from: number, to: number) => {
     for (let k = from; k <= to; k++) groups.push({ len: BEATS_PER_MEASURE, label: k });
@@ -159,17 +174,22 @@ export function preCloseGroups(measures: number, halfPosition?: number): BeatGro
     addFull(1, fullCount);
     return groups;
   }
-  // 0 = front, default = just before the close.
-  const p = Math.min(Math.max(Math.round(halfPosition ?? fullCount), 0), fullCount);
+  // 0 = front, default = just before the close (= before the final measure).
+  const p = Math.min(Math.max(Math.round(halfPosition ?? lastFull), 0), lastFull);
   addFull(1, p);
   groups.push({ len: BEATS_PER_MEASURE / 2, label: p + 1 });
   addFull(p + 1, fullCount);
   return groups;
 }
 
-function runningCount(beat: number, measures: number, halfPosition?: number): RunningBeat {
+function runningCount(
+  beat: number,
+  measures: number,
+  halfPosition?: number,
+  includeFinal = false,
+): RunningBeat {
   let acc = 0;
-  for (const g of preCloseGroups(measures, halfPosition)) {
+  for (const g of preCloseGroups(measures, halfPosition, includeFinal)) {
     if (beat < acc + g.len) {
       const pos = beat - acc;
       return { count: pos === 0 ? g.label : pos + 1, downbeat: pos === 0 };
