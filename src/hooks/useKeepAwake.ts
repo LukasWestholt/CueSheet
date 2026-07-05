@@ -18,8 +18,9 @@ import type { Phase } from './usePlayerEngine';
 // Connect device "inactive" and drops it. To prevent that we periodically
 // re-assert it. Two methods (keepAwakeSetting.ts, set in Settings): the default
 // 'ping' re-asserts with transferPlayback (play:false → no audio); 'silent'
-// instead plays a silent track between tracks, which also keeps a Bluetooth
-// speaker connected (it drops after a pause). On/off defaults to following
+// instead plays a silent track between tracks and on a mid-track pause, which
+// also keeps a Bluetooth speaker connected (it drops within seconds of real
+// silence). On/off defaults to following
 // isLikelyLocalDevice (a user-agent → device-name heuristic) — on for our own
 // device, off otherwise — unless the coach has set an explicit on/off (e.g. to
 // rescue a privacy-frozen Android UA), which wins.
@@ -104,7 +105,8 @@ export function useKeepAwake(refs: {
   // manual "Check again" button.
   const keepAliveOnce = useCallback(async () => {
     const phase = phaseRef.current;
-    const betweenTracks = phase === 'gap' || phase === 'held' || phase === 'ended';
+    const silentOk =
+      phase === 'gap' || phase === 'held' || phase === 'ended' || phase === 'paused';
     // On/off: 'paused' + between-tracks respect the learned local-device
     // heuristic (keepAwakeRef, set from the poller). Pre-play 'idle' (a deep-
     // linked detail page, before Play) has no learned device, so it follows an
@@ -126,10 +128,12 @@ export function useKeepAwake(refs: {
         return;
       }
       // 'silent' mode plays a silent track to hold the device (and a Bluetooth
-      // speaker) alive — but only between tracks. On a mid-track pause or pre-
-      // play idle we must not start a track (it would lose the resume position /
-      // start audio unprompted), so there we fall back to the no-audio ping.
-      if (methodRef.current === 'silent' && betweenTracks && silentUriRef.current) {
+      // speaker) alive — between tracks AND on a mid-track pause: the speaker
+      // drops within seconds of real silence, which is worse than losing the
+      // native resume (the engine re-plays the paused track at its frozen
+      // position — see silentTookOverRef in usePlayerEngine). Pre-play 'idle'
+      // keeps the no-audio ping: never start audio unprompted.
+      if (methodRef.current === 'silent' && silentOk && silentUriRef.current) {
         await playTrack(silentUriRef.current, target.id);
         notifySilentOnce(target.name);
       } else {
@@ -181,8 +185,10 @@ export function useKeepAwake(refs: {
       overrideRef.current = v;
       setKeepAwakeState(v);
       const p = phaseRef.current;
-      const betweenTracks = p === 'gap' || p === 'held' || p === 'ended';
-      if (!v && methodRef.current === 'silent' && betweenTracks) {
+      // Phases where the silent track may be holding the device (real music is
+      // not playing, so a transfer play:false can't pause anything that matters).
+      const silentPossible = p === 'gap' || p === 'held' || p === 'ended' || p === 'paused';
+      if (!v && methodRef.current === 'silent' && silentPossible) {
         void (async () => {
           try {
             const devices = await getDevices();

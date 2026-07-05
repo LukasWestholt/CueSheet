@@ -2,8 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Track } from '../data/tracks';
 import { useStateRef } from './useStateRef';
 import { useKeepAwake } from './useKeepAwake';
-import type { KeepAwakeMethod } from '../data/keepAwakeSetting';
-import { interpolatePosition } from '../playback/position';
+import { loadSilentTrackUri, type KeepAwakeMethod } from '../data/keepAwakeSetting';
+import { interpolatePosition, smoothPosition, type SmoothState } from '../playback/position';
 import { toast } from '../data/toast';
 import {
   getDevices,
@@ -146,6 +146,16 @@ export function usePlayerEngine(
   // so the slider hides instead of toasting "couldn't set volume" on every drag.
   const volumeRejectedRef = useRef(false);
   const volumeDeviceRef = useRef<string | null>(null);
+  // Mid-track pause + silent keep-awake: the silent track takes over the device
+  // so the Bluetooth speaker stays connected. Once it has, a plain resume would
+  // unpause *the silent track* — resume must re-play the real track at the
+  // frozen position instead. The poller sets this when it sees the silent URI.
+  const silentUriRef = useRef(loadSilentTrackUri());
+  const silentTookOverRef = useRef(false);
+  // Displayed-position smoothing (see smoothPosition): poll corrections slew in
+  // instead of snapping, so the 8-count beats render evenly. null = start fresh
+  // (after a play/seek the next tick adopts the raw position).
+  const smoothRef = useRef<SmoothState | null>(null);
 
   deviceIdRef.current = deviceId;
 
@@ -170,6 +180,8 @@ export function usePlayerEngine(
       setPhase('loading');
       setPositionMs(positionMs);
       snapshotRef.current = null;
+      silentTookOverRef.current = false;
+      smoothRef.current = null;
       setError(null);
       try {
         await playTrack(t.spotifyUri, deviceIdRef.current ?? undefined, positionMs);
@@ -298,6 +310,20 @@ export function usePlayerEngine(
           return;
         }
 
+        // Our own silent keep-awake track holding the device through a mid-track
+        // pause — not a hijack. Freeze the snapshot at the pause point so the
+        // display doesn't track the silent track; resume re-plays the real track
+        // from that frozen position (see togglePlayPause).
+        if (
+          phaseRef.current === 'paused' &&
+          snap.trackUri === silentUriRef.current &&
+          snap.trackUri !== expectedUri
+        ) {
+          silentTookOverRef.current = true;
+          return;
+        }
+        if (snap.trackUri === expectedUri) silentTookOverRef.current = false;
+
         snapshotRef.current = snap;
         setDeviceName(snap.deviceName);
         // A different device may accept volume writes the last one rejected.
@@ -346,7 +372,10 @@ export function usePlayerEngine(
         if (snap && !noDeviceRef.current && !hijackedRef.current) {
           const pos = interpolatePosition(snap);
           const duration = snap.durationMs || tracks[indexRef.current]?.durationMs || 0;
-          setPositionMs(pos);
+          // Display gets the slewed clock (even beats); end detection stays on
+          // the raw interpolation so smoothing can't delay the pre-empt.
+          smoothRef.current = smoothPosition(smoothRef.current, pos, Date.now());
+          setPositionMs(smoothRef.current.posMs);
           setDurationMs(duration);
           if (duration > 0 && pos >= duration - END_GUARD_MS) {
             enterGapOrEnd('ticker:interpolated-end');
@@ -411,6 +440,16 @@ export function usePlayerEngine(
       }
       setPhase('paused');
     } else if (p === 'paused') {
+      if (silentTookOverRef.current) {
+        // The silent keep-awake track owns the device — a plain resume would
+        // unpause *it*. Re-play the real track at the frozen position instead.
+        const snap = snapshotRef.current;
+        void playIndex(
+          indexRef.current,
+          snap ? Math.max(0, Math.round(interpolatePosition(snap))) : 0,
+        );
+        return;
+      }
       apiResume(deviceIdRef.current ?? undefined).catch(controlFailed('resume'));
       const snap = snapshotRef.current;
       if (snap) {
@@ -451,6 +490,16 @@ export function usePlayerEngine(
     const duration =
       snapshotRef.current?.durationMs || tracks[indexRef.current]?.durationMs || 0;
     const target = Math.max(0, duration > 0 ? Math.min(rawPositionMs, duration) : rawPositionMs);
+    if (p === 'paused' && silentTookOverRef.current) {
+      // The silent keep-awake track owns the device — a raw seek would seek
+      // *it*. Just move the frozen position; resume re-plays the track there.
+      const snap = snapshotRef.current;
+      if (snap) {
+        snapshotRef.current = { ...snap, progressMs: target, fetchedAt: Date.now() };
+      }
+      setPositionMs(target);
+      return;
+    }
     apiSeek(target, deviceIdRef.current ?? undefined).catch(controlFailed('seek'));
     // Reflect the new position immediately so display + callings don't wait for
     // the next poll.
@@ -458,6 +507,7 @@ export function usePlayerEngine(
     if (snap) {
       snapshotRef.current = { ...snap, progressMs: target, fetchedAt: Date.now() };
     }
+    smoothRef.current = null; // deliberate jump — don't slew across it
     setPositionMs(target);
   }, [tracks, playIndex, phaseRef, indexRef]);
 

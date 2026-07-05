@@ -686,14 +686,14 @@ describe('usePlayerEngine', () => {
     expect(transferPlayback).not.toHaveBeenCalled();
   });
 
-  it('still pings (no silent track) on a mid-track pause even in "silent" mode', async () => {
+  it('plays the silent track on a mid-track pause and resumes the real track at the frozen position', async () => {
     setUserAgent(ANDROID_UA);
     loadKeepAwakeOverride.mockReturnValue(true);
     loadKeepAwakeMethod.mockReturnValue('silent');
     loadSilentTrackUri.mockReturnValue('spotify:track:silent123');
     getPlaybackState.mockResolvedValue({
       isPlaying: true,
-      progressMs: 1_000,
+      progressMs: 30_000,
       durationMs: 600_000, // long track so it never ends during the test
       trackUri: 'spotify:track:a',
       deviceId: 'spk',
@@ -712,11 +712,61 @@ describe('usePlayerEngine', () => {
     expect(result.current.phase).toBe('paused');
     playTrack.mockClear();
     transferPlayback.mockClear();
+    // Spotify now reports the track paused where it stopped.
+    getPlaybackState.mockResolvedValue({
+      isPlaying: false,
+      progressMs: 30_000,
+      durationMs: 600_000,
+      trackUri: 'spotify:track:a',
+      deviceId: 'spk',
+      deviceName: 'Living Room Speaker',
+      deviceType: null,
+      volumePercent: null,
+      fetchedAt: Date.now(),
+    });
+
+    // Bluetooth speakers drop within seconds of real silence, so the silent
+    // track must take over on a pause too (not just between tracks).
     await act(async () => {
       await vi.advanceTimersByTimeAsync(16_000);
     });
-    expect(transferPlayback).toHaveBeenCalledWith('spk', false);
-    expect(playTrack).not.toHaveBeenCalled();
+    expect(playTrack).toHaveBeenCalledWith('spotify:track:silent123', 'spk');
+    expect(transferPlayback).not.toHaveBeenCalled();
+
+    // The poller now sees the silent track — that's ours, not a hijack, and
+    // the frozen position must not track it.
+    getPlaybackState.mockResolvedValue({
+      isPlaying: true,
+      progressMs: 5_000,
+      durationMs: 600_000,
+      trackUri: 'spotify:track:silent123',
+      deviceId: 'spk',
+      deviceName: 'Living Room Speaker',
+      deviceType: null,
+      volumePercent: null,
+      fetchedAt: Date.now(),
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3_100);
+    });
+    expect(result.current.hijacked).toBe(false);
+    expect(result.current.phase).toBe('paused');
+
+    // Resume: a plain /resume would unpause the silent track — the engine must
+    // re-play the real track at the position where it was paused (~30s).
+    playTrack.mockClear();
+    await act(async () => {
+      result.current.togglePlayPause();
+      await vi.advanceTimersByTimeAsync(5);
+    });
+    expect(resume).not.toHaveBeenCalled();
+    expect(playTrack).toHaveBeenCalledTimes(1);
+    const [uri, device, pos] = playTrack.mock.calls[0] as unknown as [string, string, number];
+    expect(uri).toBe('spotify:track:a');
+    expect(device).toBe('dev');
+    expect(pos).toBeGreaterThanOrEqual(29_000);
+    expect(pos).toBeLessThanOrEqual(33_000);
+    expect(result.current.phase).toBe('playing');
   });
 
   it('starts the keep-awake silent track promptly on entering held (no 15s wait)', async () => {
