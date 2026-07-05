@@ -8,7 +8,7 @@
 //     the key is **per-user**: pasted in Settings (or via a `?getsongbpm_key=`
 //     bookmark) and kept in localStorage (`src/data/getsongbpmKey.ts`), never
 //     in the bundle. Without a key this source disables itself (returns null),
-//     so the app falls back to Deezer / manual tap calibration exactly as before.
+//     so the app falls back to Deezer / manually tapped timing exactly as before.
 //  2. **Mandatory backlink** — GetSongBPM suspends accounts that don't link
 //     back to getsongbpm.com, and verifies it by reading the *raw source HTML*
 //     (React-rendered nodes don't count). So the backlink is a static <a> in

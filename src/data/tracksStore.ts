@@ -1,5 +1,5 @@
 import type { Track } from './tracks';
-import { readJSON, writeJSON, removeKey, readFlag, writeFlag } from './storage';
+import { readJSON, writeJSON, removeKey, readFlag, writeFlag, keysWithPrefix } from './storage';
 
 // Runtime override for the routine list: imported/edited routines are stored
 // here so they drive the app without touching the committed routine JSON.
@@ -17,24 +17,65 @@ function withoutZeroFirstBeat(t: Track): Track {
   return copy;
 }
 
+// Legacy per-device tap-calibration store (`tjf.cal.<uri>` → {bpm, firstBeatSec}).
+// Retired 2026-07 when the timing flow moved into the editor and started
+// writing straight into the routine — see foldLegacyCalibration.
+const CAL_PREFIX = 'tjf.cal.';
+
+/**
+ * One-time migration: fold the legacy per-device calibration into the stored
+ * routine list (authored values win — only missing bpm/firstBeatSec are
+ * filled), then delete the store. Returns the folded list, or null when there
+ * was nothing to migrate.
+ */
+function foldLegacyCalibration(tracks: Track[]): Track[] | null {
+  const keys = keysWithPrefix(CAL_PREFIX);
+  if (keys.length === 0) return null;
+  const cals = new Map<string, { bpm?: number; firstBeatSec?: number }>();
+  for (const k of keys) {
+    const cal = readJSON<{ bpm?: number; firstBeatSec?: number } | null>(k, null);
+    if (cal) cals.set(k.slice(CAL_PREFIX.length), cal);
+  }
+  const folded = tracks.map((t) => {
+    const cal = cals.get(t.spotifyUri);
+    if (!cal) return t;
+    const next = { ...t };
+    if (next.bpm == null && typeof cal.bpm === 'number') next.bpm = cal.bpm;
+    if (next.firstBeatSec == null && typeof cal.firstBeatSec === 'number') {
+      next.firstBeatSec = cal.firstBeatSec;
+    }
+    return next;
+  });
+  keys.forEach(removeKey);
+  return folded;
+}
+
 export function loadStoredTracks(): Track[] | null {
-  const tracks = readJSON<Track[] | null>(KEY, null, (data) =>
+  let tracks = readJSON<Track[] | null>(KEY, null, (data) =>
     Array.isArray(data) ? (data as Track[]) : null,
   );
   if (tracks == null) return null;
+  let dirty = false;
   // One-time migration: lists materialized from the old playbook carry
   // `firstBeatSec: 0` on tracks that never authored one (those zeros were
-  // later stripped from the playbook because an authored 0 disables the
-  // player's "Mark first beat" capture). Clean them once. A 0 the coach
+  // later stripped from the playbook because an authored 0 disabled the old
+  // player-side "Mark first beat" capture). Clean them once. A 0 the coach
   // types *after* this is deliberate: it stays, and exports faithfully.
   if (!readFlag(ZERO_FIRSTBEAT_CLEANED)) {
     writeFlag(ZERO_FIRSTBEAT_CLEANED, true);
     if (tracks.some((t) => t.firstBeatSec === 0)) {
-      const cleaned = tracks.map(withoutZeroFirstBeat);
-      saveStoredTracks(cleaned);
-      return cleaned;
+      tracks = tracks.map(withoutZeroFirstBeat);
+      dirty = true;
     }
   }
+  // One-time migration: values tapped in the old player UI move into the
+  // routine list itself, where they're visible in the editor and exportable.
+  const folded = foldLegacyCalibration(tracks);
+  if (folded) {
+    tracks = folded;
+    dirty = true;
+  }
+  if (dirty) saveStoredTracks(tracks);
   return tracks;
 }
 

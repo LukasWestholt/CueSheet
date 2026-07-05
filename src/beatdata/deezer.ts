@@ -6,7 +6,7 @@
 // ISRC (which Spotify gives us via /tracks → external_ids.isrc).
 //
 // Caveat: Deezer reports `bpm: 0` for many tracks (coverage gaps), so this is a
-// best-effort auto-fill that ranks below authored values and tap calibration.
+// best-effort auto-fill that ranks below authored values (incl. tapped timing).
 // See docs/beat-data.md for the full comparison of free BPM sources.
 
 import { cached } from '../spotify/metaCache';

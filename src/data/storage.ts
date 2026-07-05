@@ -55,6 +55,20 @@ export function writeFlag(key: string, value: boolean): void {
   }
 }
 
+/** All stored keys starting with `prefix` ([] if storage is unavailable). */
+export function keysWithPrefix(prefix: string): string[] {
+  try {
+    const keys: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k?.startsWith(prefix)) keys.push(k);
+    }
+    return keys;
+  } catch {
+    return [];
+  }
+}
+
 /** Reads a raw string, returning `fallback` when absent or unreadable. */
 export function readString(key: string, fallback = ''): string {
   try {

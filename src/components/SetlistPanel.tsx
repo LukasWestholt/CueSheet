@@ -6,7 +6,6 @@ import { ArrowUp, ArrowDown, X, Play, Link as LinkIcon } from './icons';
 import { formatClock } from '../data/time';
 import { primarySignature } from '../data/signatureMoves';
 import { categoryOf, CATEGORY_TITLES } from '../data/trackCategory';
-import { loadCalibration } from '../data/calibration';
 import { sessionPath } from '../nav/routes';
 import { useCopyFlag } from '../hooks/useCopyFlag';
 
@@ -73,7 +72,7 @@ export default function SetlistPanel({
           // Colored left edge = the track's session category (same colors as
           // the list badges), so the warm-up → main → main 2 arc of the
           // session is scannable top to bottom.
-          const cat = categoryOf(t, t.bpm ?? loadCalibration(t.spotifyUri)?.bpm);
+          const cat = categoryOf(t);
           return (
             <li
               key={t.id}

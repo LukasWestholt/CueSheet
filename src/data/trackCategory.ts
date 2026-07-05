@@ -39,8 +39,8 @@ export function deriveCategory(
 
 /**
  * A track's effective category: the authored override wins; otherwise derived
- * from the given resolved BPM (pass the calibration/fetched value when the
- * track doesn't author one — defaults to `track.bpm`).
+ * from the resolved BPM (pass a fetched value when the track doesn't author
+ * one — defaults to `track.bpm`).
  */
 export function categoryOf(track: Track, bpm?: number | null): TrackCategory | null {
   if (track.category) return track.category;

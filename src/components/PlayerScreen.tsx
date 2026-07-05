@@ -4,17 +4,14 @@ import { buildCallings } from '../data/beats';
 import { formatClock, formatLong, formatTimeOfDay } from '../data/time';
 import { usePlayerEngine, DEFAULT_GAP_SECONDS } from '../hooks/usePlayerEngine';
 import { useTrackMeta } from '../hooks/useTrackMeta';
-import { useCalibration } from '../hooks/useCalibration';
 import { useWakeLock } from '../hooks/useWakeLock';
 import { useCopyFlag } from '../hooks/useCopyFlag';
 import { useSyncOffset } from '../hooks/useSyncOffset';
 import CallingDisplay from './CallingDisplay';
-import TapToTime from './TapToTime';
 import PlayerControls from './player/PlayerControls';
 import StepTimeline from './player/StepTimeline';
 import SyncOffsetSlider from './player/SyncOffsetSlider';
 import VolumeSlider from './player/VolumeSlider';
-import CalibrationPanel from './player/CalibrationPanel';
 import GapOverlay from './player/GapOverlay';
 import HeldOverlay from './player/HeldOverlay';
 import EndedOverlay from './player/EndedOverlay';
@@ -32,7 +29,6 @@ export default function PlayerScreen({
   mode = 'start',
   session,
   onBack,
-  onUpdateTrack,
   onEdit,
 }: {
   tracks: Track[];
@@ -47,8 +43,6 @@ export default function PlayerScreen({
    */
   mode?: 'start' | 'resume' | 'view';
   onBack: () => void;
-  /** Persist edits to a track (used by tap-to-time). */
-  onUpdateTrack?: (index: number, track: Track) => void;
   /** Open the routine editor for a track (the detail-page pen button). */
   onEdit?: (trackId: string) => void;
 }) {
@@ -58,7 +52,6 @@ export default function PlayerScreen({
   const engine = usePlayerEngine(tracks, deviceId, gapSeconds);
   useWakeLock(true);
 
-  const [tapping, setTapping] = useState(false);
   // Stage mode: a minimal-chrome takeover showing only the calling, readable
   // across a studio. Tap anywhere to exit.
   const [stage, setStage] = useState(false);
@@ -78,10 +71,9 @@ export default function PlayerScreen({
 
   const track = engine.track;
 
-  // Title/artist/duration come from Spotify; BPM + first beat are tapped in by
-  // the coach (saved calibration) since Spotify's tempo endpoints are gone.
-  const { cal, update: updateCal, clear: clearCal } = useCalibration(track.spotifyUri);
-  const meta = useTrackMeta(track, cal);
+  // Title/artist/duration come from Spotify; BPM + first beat are authored in
+  // the routine (the editor's timing flow) since Spotify's tempo endpoints are gone.
+  const meta = useTrackMeta(track);
 
   const callings = useMemo(
     () => (meta.bpm ? buildCallings(track.steps, meta.firstBeatSec, meta.bpm) : []),
@@ -89,18 +81,6 @@ export default function PlayerScreen({
   );
 
   const positionSeconds = (engine.positionMs + offsetMs) / 1000;
-
-  // Tap-to-time: write the captured first beat + per-step measures back to the
-  // track. Only enabled when a BPM is known and a persist callback is wired.
-  const canTapTime = onUpdateTrack != null && meta.bpm != null;
-  const saveTapTiming = (firstBeatSec: number, measures: number[]) => {
-    onUpdateTrack?.(engine.index, {
-      ...track,
-      firstBeatSec,
-      steps: track.steps.map((s, i) => ({ ...s, measures: measures[i] ?? s.measures })),
-    });
-    setTapping(false);
-  };
 
   // Session (setlist) progress estimate. Refine the current track's duration
   // with the live value from Spotify when we have it.
@@ -301,22 +281,6 @@ export default function PlayerScreen({
 
       <SyncOffsetSlider offsetMs={offsetMs} onChange={setOffsetMs} />
 
-      <CalibrationPanel
-        track={track}
-        meta={meta}
-        cal={cal}
-        phase={engine.phase}
-        positionSeconds={positionSeconds}
-        updateCal={updateCal}
-        clearCal={clearCal}
-      />
-
-      {canTapTime && (
-        <button className="hold-btn" onClick={() => setTapping(true)}>
-          Tap-to-time the steps
-        </button>
-      )}
-
       {stage && (
         <div className="stage" onClick={() => setStage(false)}>
           <CallingDisplay
@@ -361,17 +325,6 @@ export default function PlayerScreen({
           onReplay={() => engine.start(engine.index)}
           onRestartSession={() => engine.start(0)}
           onBack={onBack}
-        />
-      )}
-
-      {tapping && meta.bpm != null && (
-        <TapToTime
-          steps={track.steps}
-          bpm={meta.bpm}
-          positionSeconds={positionSeconds}
-          onRestart={() => engine.seekTo(0)}
-          onSave={saveTapTiming}
-          onCancel={() => setTapping(false)}
         />
       )}
 

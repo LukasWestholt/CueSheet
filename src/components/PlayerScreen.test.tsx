@@ -22,9 +22,6 @@ vi.mock('../hooks/usePlayerEngine', () => ({
   DEFAULT_GAP_SECONDS: 10,
 }));
 vi.mock('../hooks/useWakeLock', () => ({ useWakeLock: () => {} }));
-vi.mock('../hooks/useCalibration', () => ({
-  useCalibration: () => ({ cal: null, update: vi.fn(), clear: vi.fn() }),
-}));
 const meta: ResolvedMeta = {
   title: 'Test Track',
   artist: 'Tester',

@@ -1,6 +1,25 @@
-// Convert a sequence of taps (made while the track plays) into a routine's
-// timing. The coach taps at the start of each step, then once more at the end
-// of the last step, so N steps need N+1 taps.
+// Convert coach taps into a routine's timing.
+//
+// Two kinds of tap series live here: wall-clock taps → BPM (bpmFromTaps), and
+// playback-position taps → first beat + per-step measures (tapsToTiming).
+// Both feed the editor's TimingFlow.
+
+/**
+ * Estimates BPM from a series of tap timestamps (ms) as the rounded inverse of
+ * the average gap between consecutive taps. Needs at least two taps.
+ */
+export function bpmFromTaps(timestamps: number[]): number | null {
+  if (timestamps.length < 2) return null;
+  const sorted = [...timestamps].sort((a, b) => a - b);
+  let sum = 0;
+  for (let i = 1; i < sorted.length; i++) sum += sorted[i] - sorted[i - 1];
+  const avgMs = sum / (sorted.length - 1);
+  if (avgMs <= 0) return null;
+  return Math.round(60_000 / avgMs);
+}
+
+// Tap-to-time: the coach taps at the start of each step while the track plays,
+// then once more at the end of the last step, so N steps need N+1 taps.
 
 export interface TapTiming {
   /** Start of the routine = first tap (seconds). */

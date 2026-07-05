@@ -69,7 +69,6 @@ export default function App() {
     stepLibrary,
     sourceRows,
     commitTracks,
-    updateTrack,
     toggleSource,
     addCustomFile,
     removeCustomFile,
@@ -287,6 +286,7 @@ export default function App() {
         <TrackEditor
           initial={editIndex != null ? tracks[editIndex] : null}
           library={stepLibrary}
+          deviceId={deviceId}
           onSave={saveTrack}
           onDelete={editIndex != null ? deleteTrack : undefined}
           onCancel={() => setView('list')}
@@ -339,7 +339,6 @@ export default function App() {
               : undefined
           }
           onBack={goList}
-          onUpdateTrack={(_i, t) => updateTrack(t)}
           onEdit={(id) => {
             const i = tracks.findIndex((t) => t.id === id);
             if (i >= 0) openEditor(i);

@@ -3,7 +3,6 @@ import type { TrackInfo } from '../spotify/api';
 import { cleanTitle } from '../data/title';
 import { formatClock } from '../data/time';
 import { categoryOf, CATEGORY_LABELS, CATEGORY_TITLES } from '../data/trackCategory';
-import { loadCalibration } from '../data/calibration';
 import { Star, Music, Check, Plus, Pen } from './icons';
 
 export interface TrackItem {
@@ -45,8 +44,9 @@ export default function TrackList({
         const fav = favorites.has(t.id);
         const queued = setlist?.has(t.id) ?? false;
         // Session category (warm-up / main / main 2) — authored override wins,
-        // else derived from the authored-or-tapped BPM.
-        const cat = categoryOf(t, t.bpm ?? loadCalibration(t.spotifyUri)?.bpm);
+        // else derived from the authored BPM (tapped values are authored too,
+        // via the editor's timing flow).
+        const cat = categoryOf(t);
         return (
           <li key={t.id} className="track-li">
             {(onToggleFavorite || onToggleSetlist) && (

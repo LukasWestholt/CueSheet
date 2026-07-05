@@ -9,6 +9,8 @@ import { checkRoutineLength, fitLastStepMeasures, lengthWarning } from '../data/
 import { POPULAR_TRACKS, type PopularTrack } from '../data/popularTracks';
 import { formatClock } from '../data/time';
 import { deriveCategory, CATEGORY_TITLES } from '../data/trackCategory';
+import { useTimingPlayback } from '../hooks/useTimingPlayback';
+import TimingFlow from './TimingFlow';
 import { ArrowUp, ArrowDown, X } from './icons';
 
 const TRACK_URI_RE = /^spotify:track:[A-Za-z0-9]{22}$/;
@@ -36,12 +38,15 @@ function parseOptionalNum(s: string): number | undefined {
 export default function TrackEditor({
   initial,
   library,
+  deviceId = null,
   onSave,
   onDelete,
   onCancel,
 }: {
   initial: Track | null;
   library: StepLibraryEntry[];
+  /** Selected Spotify Connect device — the timing flow plays the track on it. */
+  deviceId?: string | null;
   onSave: (track: Track) => void;
   onDelete?: () => void;
   onCancel: () => void;
@@ -203,6 +208,39 @@ export default function TrackEditor({
   const effBpm = draft.bpm ?? (typeof recBpm === 'number' ? recBpm : undefined);
   const advice = effBpm != null ? bpmAdvice(effBpm) : null;
 
+  // "Time this track": the guided tap flow (tempo → first beat → steps).
+  // Results land in the draft fields below — review them, then Save the
+  // routine as usual. Playback runs on the selected Connect device.
+  const [timing, setTiming] = useState(false);
+  const playback = useTimingPlayback(draft.spotifyUri, deviceId);
+  const openTiming = () => {
+    setTiming(true);
+    void playback.start();
+  };
+  const closeTiming = () => {
+    setTiming(false);
+    playback.stop();
+  };
+  const applyFirstBeat = (sec: number) => {
+    // Keep the raw-text buffer in sync or the controlled input would show stale text.
+    setFirstBeatText(String(sec));
+    patch({ firstBeatSec: sec });
+  };
+  const applyTiming = (firstBeatSec: number, measures: number[]) => {
+    applyFirstBeat(firstBeatSec);
+    // A re-timed step gets a fresh half-count placement — the old halfPosition
+    // may be out of range for the new measures. And when the measures were
+    // tapped against the *recommended* BPM, author it: the derived timeline
+    // must use the tempo the taps were converted with.
+    setDraft((d) => ({
+      ...d,
+      ...(d.bpm == null && effBpm != null ? { bpm: effBpm } : {}),
+      steps: d.steps.map((s, i) =>
+        measures[i] != null ? { ...s, measures: measures[i], halfPosition: undefined } : s,
+      ),
+    }));
+  };
+
   // Routine-vs-track length: does the timeline fit the song? Uses the best
   // available duration (authored, else fetched from Spotify).
   const effDurationMs = draft.durationMs ?? fetchedDurationMs ?? null;
@@ -331,6 +369,18 @@ export default function TrackEditor({
             />
           </label>
         </div>
+        <button
+          className="hold-btn"
+          onClick={openTiming}
+          disabled={!TRACK_URI_RE.test(draft.spotifyUri)}
+          title={
+            TRACK_URI_RE.test(draft.spotifyUri)
+              ? 'Play the track and tap the BPM, first beat and step changes'
+              : 'Pick a Spotify track first'
+          }
+        >
+          Time this track (tap along)
+        </button>
         {advice && (
           <p className={`bpm-advice ${bpmLevelClass(advice.level)}`}>{advice.label}</p>
         )}
@@ -591,6 +641,21 @@ export default function TrackEditor({
         <button className="hold-btn danger-btn" onClick={onDelete}>
           Delete routine
         </button>
+      )}
+
+      {timing && (
+        <TimingFlow
+          steps={draft.steps}
+          bpm={effBpm ?? null}
+          positionSeconds={playback.positionSeconds}
+          playing={playback.playing}
+          error={playback.error}
+          onStart={() => void playback.start()}
+          onApplyBpm={(bpm) => patch({ bpm })}
+          onSaveFirstBeat={applyFirstBeat}
+          onSaveTiming={applyTiming}
+          onClose={closeTiming}
+        />
       )}
     </div>
   );

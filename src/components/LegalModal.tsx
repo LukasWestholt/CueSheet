@@ -52,7 +52,7 @@ export default function LegalModal({ open, onClose }: { open: boolean; onClose: 
           CueSheet has no backend of its own and stores no personal data on a server. It
           runs entirely in your browser and keeps data only in your browser&rsquo;s local
           storage: your Spotify access/refresh tokens (so you stay logged in) and your
-          preferences (favorites, setlist, sync offset, tap calibration). This storage is
+          routines and preferences (favorites, setlist, sync offset). This storage is
           strictly necessary for the app to work — there is no tracking, analytics or
           advertising.
         </p>
