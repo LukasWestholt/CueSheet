@@ -98,4 +98,43 @@ describe('CallingDisplay', () => {
     const ring = container.querySelector('.ring') as HTMLElement;
     expect(ring.style.background).toContain('50%');
   });
+
+  // The last step has no next calling but still has an authored length — it
+  // must count like any other step; ✓/End only after its span.
+  const lastWithMeasures: Calling[] = [
+    { time: 0, step: 'High Knees' },
+    // 2 measures = 16 beats; at 120 BPM (0.5s/beat) it spans 20 → 28s.
+    { time: 20, step: 'Cooldown', measures: 2 },
+  ];
+
+  it('keeps the running count through the last step instead of showing ✓', () => {
+    render(<CallingDisplay callings={lastWithMeasures} positionSeconds={20.6} bpm={120} />);
+    // Beat 2 of the last step's first eight.
+    expect(screen.getByText('2')).toBeTruthy();
+    expect(screen.queryByText('✓')).toBeNull();
+    expect(screen.queryByText('CALL NOW')).toBeNull();
+  });
+
+  it('closes the last step announcing the end ("CALL NOW" → End of track)', () => {
+    // 27s → 1s to the step's end (28s) = the announce beat.
+    render(<CallingDisplay callings={lastWithMeasures} positionSeconds={27} bpm={120} />);
+    expect(screen.getByText('CALL NOW')).toBeTruthy();
+    expect(screen.getByText('→')).toBeTruthy();
+    expect(screen.getByText('End of track')).toBeTruthy();
+  });
+
+  it('shows ✓ only after the last step\'s span is over', () => {
+    render(<CallingDisplay callings={lastWithMeasures} positionSeconds={28.5} bpm={120} />);
+    expect(screen.getByText('✓')).toBeTruthy();
+    expect(screen.getByText('End of track')).toBeTruthy();
+  });
+
+  it('fills the last step\'s ring toward its own end, not 100% throughout', () => {
+    const { container } = render(
+      <CallingDisplay callings={lastWithMeasures} positionSeconds={24} bpm={120} />,
+    );
+    // 4s into the 8s span → ~50% fill.
+    const ring = container.querySelector('.ring') as HTMLElement;
+    expect(ring.style.background).toContain('50%');
+  });
 });

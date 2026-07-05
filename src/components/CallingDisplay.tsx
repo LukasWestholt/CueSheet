@@ -1,5 +1,6 @@
 import type { Calling } from '../data/tracks';
 import { resolveCallings, humanBeat } from '../data/callings';
+import { BEATS_PER_MEASURE } from '../data/beats';
 
 /**
  * Builds a conic-gradient that splits the ring's track into `measures` arcs,
@@ -45,8 +46,19 @@ export default function CallingDisplay({
   // bulk of the step, then a "4 3 2 →move" close. Needs a BPM to know where the
   // beats fall; null → fall back to the seconds ring below.
   const secsPerBeat = bpm ? 60 / bpm : null;
+  // The last step has no next calling, but it still has an authored length —
+  // count it like any other step (closing into "→ End of track") and show the
+  // ✓/End state only once its span is over, not for the whole final move.
+  const lastStepEndsAt =
+    !next && current && current.measures != null && secsPerBeat
+      ? current.time + current.measures * BEATS_PER_MEASURE * secsPerBeat
+      : null;
+  const pastLastStep = lastStepEndsAt !== null && positionSeconds >= lastStepEndsAt;
+  const secondsToBoundary =
+    secondsToNext ??
+    (lastStepEndsAt !== null && !pastLastStep ? lastStepEndsAt - positionSeconds : null);
   const beatsToNext =
-    secondsToNext !== null && secsPerBeat ? secondsToNext / secsPerBeat : null;
+    secondsToBoundary !== null && secsPerBeat ? secondsToBoundary / secsPerBeat : null;
   const beatsElapsed =
     current && secsPerBeat ? Math.max(0, (positionSeconds - current.time) / secsPerBeat) : 0;
   const curStep =
@@ -54,7 +66,7 @@ export default function CallingDisplay({
       ? { measures: current.measures, halfPosition: current.halfPosition }
       : undefined;
   const beat = secsPerBeat ? humanBeat(beatsElapsed, beatsToNext, curStep) : null;
-  const announcing = next !== null && (beat?.announcing ?? false);
+  const announcing = beat?.announcing ?? false;
 
   // In a run of consecutive short steps, alternate the count-in frame colour
   // (green → yellow) so two quick switches are easy to tell apart.
@@ -77,9 +89,16 @@ export default function CallingDisplay({
   // that crowds its predecessor, so it flips to yellow; then they alternate.
   const altFrame = announcing && isShortCur && shortRunBack % 2 === 0;
 
-  // Countdown ring fills as we approach the next calling. Keep two decimals so
-  // the conic sweep flows each 100ms tick instead of jumping a whole percent.
-  const ringPct = Math.round(segmentProgress * 10000) / 100;
+  // Countdown ring fills as we approach the next calling. The last step (no
+  // next calling) fills toward its own authored end instead of sitting at 100%.
+  // Keep two decimals so the conic sweep flows each 100ms tick instead of
+  // jumping a whole percent.
+  const lastStepProgress =
+    current && lastStepEndsAt !== null && lastStepEndsAt > current.time
+      ? Math.min(1, Math.max(0, (positionSeconds - current.time) / (lastStepEndsAt - current.time)))
+      : segmentProgress;
+  const ringPct =
+    Math.round((lastStepEndsAt !== null ? lastStepProgress : segmentProgress) * 10000) / 100;
 
   // Shade the ring's track into the current step's measures ("Takte"), so its
   // length is visible at a glance. The accent progress sweep is layered on top,
