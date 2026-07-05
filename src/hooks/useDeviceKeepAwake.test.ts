@@ -131,8 +131,8 @@ describe('useDeviceKeepAwake', () => {
   });
 
   it('plays the silent track instead of pinging when the method is "silent"', async () => {
-    // A ping keeps the device on Connect but the Bluetooth speaker still drops
-    // — the list screen must hold it exactly like the player does.
+    // Some clients sleep through a mere ping — the list screen must hold the
+    // client with real playback exactly like the player does.
     loadKeepAwakeMethod.mockReturnValue('silent');
     getDevices.mockResolvedValue([device('tab')]);
     renderHook(() => useDeviceKeepAwake('tab', true));

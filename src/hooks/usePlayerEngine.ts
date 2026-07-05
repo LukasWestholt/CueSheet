@@ -149,7 +149,8 @@ export function usePlayerEngine(
   const volumeRejectedRef = useRef(false);
   const volumeDeviceRef = useRef<string | null>(null);
   // Mid-track pause + silent keep-awake: the silent track takes over the device
-  // so the Bluetooth speaker stays connected. Once it has, a plain resume would
+  // so the client can't fall asleep (once asleep, this app can't wake it).
+  // After the takeover a plain resume would
   // unpause *the silent track* — resume must re-play the real track at the
   // frozen position instead. The poller sets this when it sees the silent URI.
   const silentUriRef = useRef(loadSilentTrackUri());

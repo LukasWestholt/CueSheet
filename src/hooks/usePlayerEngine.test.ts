@@ -725,8 +725,8 @@ describe('usePlayerEngine', () => {
       fetchedAt: Date.now(),
     });
 
-    // Bluetooth speakers drop within seconds of real silence, so the silent
-    // track must take over on a pause too (not just between tracks).
+    // Some clients fall asleep within seconds of silence (and this app can't
+    // wake them), so the silent track must take over on a pause too.
     await act(async () => {
       await vi.advanceTimersByTimeAsync(16_000);
     });
@@ -853,8 +853,8 @@ describe('usePlayerEngine', () => {
   });
 
   it('plays the silent track in pre-play idle when the method is "silent"', async () => {
-    // Every idle holds the Bluetooth speaker, including the detail view — a
-    // ping keeps the device on Connect but the speaker still drops.
+    // Every idle keeps the client awake, including the detail view — some
+    // clients sleep through a mere ping, only real playback holds them.
     loadKeepAwakeMethod.mockReturnValue('silent');
     loadSilentTrackUri.mockReturnValue('spotify:track:silent123');
     getDevices.mockResolvedValue([{ id: 'dev', name: 'Tablet', is_active: false }]);

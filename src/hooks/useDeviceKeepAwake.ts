@@ -12,9 +12,10 @@ const KEEP_AWAKE_MS = 15000;
  * coach is still browsing or building a setlist. Every 15s (plus immediately on
  * activation) it re-asserts the device: the no-audio `transferPlayback`
  * play:false ping, or — when the **'silent' method** is on — the silent track,
- * which also keeps a Bluetooth speaker connected (a mere ping doesn't; the
- * speaker drops within seconds of real silence). Method/URI are re-read each
- * tick, like the on/off flag, since Settings lives on these screens.
+ * for clients whose sleep is too strong for a mere ping (iPhones especially;
+ * only real playback keeps them awake, and once asleep this app cannot wake
+ * them). Method/URI are re-read each tick, like the on/off flag, since
+ * Settings lives on these screens.
  *
  * It targets ONLY the device the coach has **explicitly selected** in the picker
  * (`selectedDeviceId`) — no active-device / local-machine guessing here, since

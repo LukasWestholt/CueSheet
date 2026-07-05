@@ -14,13 +14,15 @@ const METHOD_KEY = 'tjf.keepAwakeMethod';
 const SILENT_URI_KEY = 'tjf.silentTrackUri';
 
 /**
- * How keep-awake holds the device active between tracks:
+ * How keep-awake holds the Spotify client active while nothing plays. A client
+ * that idles too long goes to sleep, and this app cannot wake it again — the
+ * Web API only reaches a live client — so sleep must be prevented, not cured:
  *   'ping'   — a no-audio API ping (transferPlayback play:false). The default.
- *   'silent' — actually play a silent track on the device. Keeps a Bluetooth
- *              speaker connected (it would otherwise drop after a pause) and the
- *              device awake more reliably than a ping, at the cost of "playing"
- *              an inaudible track between tracks. Only used between tracks, never
- *              on a mid-track pause (which would lose the resume position).
+ *   'silent' — actually play a silent track on the device, for clients whose
+ *              sleep is too strong for a mere ping (iPhones especially — only
+ *              real playback keeps them awake), at the cost of "playing" an
+ *              inaudible track. Runs on every idle, incl. a mid-track pause
+ *              (resume re-plays the paused track at its frozen position).
  */
 export type KeepAwakeMethod = 'ping' | 'silent';
 

@@ -14,13 +14,14 @@ import { toast } from '../data/toast';
 import { useStateRef } from './useStateRef';
 import type { Phase } from './usePlayerEngine';
 
-// Keep-awake: while we're paused between tracks, Spotify eventually marks the
-// Connect device "inactive" and drops it. To prevent that we periodically
-// re-assert it. Two methods (keepAwakeSetting.ts, set in Settings): the default
+// Keep-awake: a Spotify client that idles too long goes to sleep, and this app
+// CANNOT wake it again — the Web API only reaches a live client — so sleep must
+// be prevented, not cured; the coach would otherwise have to walk to the
+// device. Two methods (keepAwakeSetting.ts, set in Settings): the default
 // 'ping' re-asserts with transferPlayback (play:false → no audio); 'silent'
-// instead plays a silent track between tracks and on a mid-track pause, which
-// also keeps a Bluetooth speaker connected (it drops within seconds of real
-// silence). On/off defaults to following
+// instead plays a silent track on every idle, for devices whose sleep is too
+// strong for a mere ping (iPhones especially — only real playback keeps them
+// awake). On/off defaults to following
 // isLikelyLocalDevice (a user-agent → device-name heuristic) — on for our own
 // device, off otherwise — unless the coach has set an explicit on/off (e.g. to
 // rescue a privacy-frozen Android UA), which wins.
@@ -134,12 +135,11 @@ export function useKeepAwake(refs: {
         setAsleep(true);
         return;
       }
-      // 'silent' mode plays a silent track to hold the device (and a Bluetooth
-      // speaker) alive on EVERY idle — between tracks, on a mid-track pause
-      // (the speaker drops within seconds of real silence, which is worse than
-      // losing the native resume: the engine re-plays the paused track at its
-      // frozen position — see silentTookOverRef in usePlayerEngine), and the
-      // pre-play detail view.
+      // 'silent' mode plays a silent track to keep the client awake on EVERY
+      // idle — between tracks, on a mid-track pause (a client asleep is worse
+      // than losing the native resume: the engine re-plays the paused track at
+      // its frozen position — see silentTookOverRef in usePlayerEngine), and
+      // the pre-play detail view.
       if (methodRef.current === 'silent' && silentOk && silentUriRef.current) {
         await playTrack(silentUriRef.current, target.id);
         notifySilentOnce(target.name);

@@ -151,9 +151,10 @@ export default function Settings() {
               Play a silent track instead of an API ping
               <small className="muted">
                 {' '}
-                · keeps a Bluetooth speaker connected between tracks (it would
-                otherwise drop after a pause). Only runs between tracks, never
-                mid-song.
+                · some devices (iPhones especially) fall asleep despite the
+                ping and can then only be woken at the device itself — real
+                playback prevents that. Runs whenever nothing is playing,
+                never over a song.
               </small>
             </span>
             <input
