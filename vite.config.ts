@@ -22,11 +22,11 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icon.svg'],
+      includeAssets: ['icon.svg', 'apple-touch-icon.png'],
       // Precache the routine JSON too so the default set (and import targets)
       // load offline — they're the app's data, not just static assets.
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,json,woff2}'],
+        globPatterns: ['**/*.{js,css,html,svg,json,woff2,png}'],
         // Album art (Spotify CDN) is immutable per URL — cache-first with a
         // bounded store so covers appear instantly and survive offline. API
         // calls are deliberately NOT runtime-cached (live playback state).
@@ -51,7 +51,12 @@ export default defineConfig({
         display: 'standalone',
         orientation: 'portrait',
         icons: [
-          { src: 'icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' },
+          { src: 'icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+          { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          // Full-bleed, art inside the safe zone — Android launchers crop
+          // this into circles/squircles.
+          { src: 'icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
         // Home-screen long-press shortcut (Android/desktop; iOS ignores it).
         // Relative URL → resolves against the manifest scope, so it works on
