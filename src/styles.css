@@ -1074,52 +1074,15 @@ details.routines[open] > summary.routines-head::after {
 .step-measures {
   text-align: center;
 }
-/* Anchor for the move-name suggestion menu. */
-.step-name-wrap {
-  position: relative;
-  min-width: 0;
-}
-/* Custom move-name suggestions (replaces <datalist> — unusable on iOS Safari). */
-.step-menu {
-  position: absolute;
-  top: calc(100% + 2px);
-  left: 0;
-  min-width: 100%;
-  max-width: min(320px, 88vw);
-  max-height: 240px;
-  overflow-y: auto;
-  z-index: 20;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-}
-.step-menu button {
-  display: block;
-  width: 100%;
-  text-align: left;
-  background: none;
-  border: 0;
-  border-radius: 0;
-  color: var(--text);
-  font: inherit;
-  /* Comfortable ~44px touch targets. */
-  padding: var(--space-3);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.step-menu button:hover,
-.step-menu button:active {
-  background: var(--surface-3, rgba(255, 255, 255, 0.08));
-}
 /* Phones: the move name gets the whole first row instead of sharing it with
-   cue + measures + ops — a quarter-width input was too small to type in. */
+   cue + measures + ops — a quarter-width input was too small to type in, and
+   iOS needs the room to show the <datalist> chevron that opens the native
+   suggestion picker. */
 @media (max-width: 560px) {
   .editor-step {
     grid-template-columns: 1fr 64px auto;
   }
-  .step-name-wrap {
+  .step-name {
     grid-column: 1 / -1;
   }
 }
